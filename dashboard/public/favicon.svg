@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" width="665.64" height="661.22" viewBox="0 0 665.64 661.22">
+  <g id="b" data-name="Layer 1">
+    <g>
+      <circle cx="143.28" cy="392.83" r="42.29" fill="#7c3aed"/>
+      <circle cx="21.15" cy="148.57" r="21.15" fill="#7c3aed"/>
+      <circle cx="143.28" cy="514.97" r="31.72" fill="#7c3aed"/>
+      <circle cx="143.28" cy="636.44" r="23.23" fill="#7c3aed"/>
+      <circle cx="143.28" cy="270.7" r="52.87" fill="#7c3aed"/>
+      <circle cx="265.41" cy="392.83" r="33.04" transform="translate(-27.18 19.8) rotate(-4.07)" fill="#7c3aed"/>
+      <circle cx="265.41" cy="270.7" r="39.65" transform="translate(-30.12 508.15) rotate(-84.35)" fill="#7c3aed"/>
+      <circle cx="265.41" cy="636.44" r="24.78" transform="translate(-424.15 638.09) rotate(-67.5)" fill="#7c3aed"/>
+      <circle cx="265.41" cy="514.97" r="33.04" transform="translate(-79.06 49.16) rotate(-9.22)" fill="#7c3aed"/>
+      <circle cx="143.28" cy="148.57" r="52.87" fill="#7c3aed"/>
+      <circle cx="21.15" cy="636.44" r="13.53" transform="translate(-614.28 594.77) rotate(-84.35)" fill="#7c3aed"/>
+      <circle cx="143.28" cy="26.43" r="26.43" fill="#7c3aed"/>
+      <path d="M387.54,158.71c5.6,0,10.15-4.54,10.15-10.15s-4.55-10.15-10.15-10.15-10.15,4.55-10.15,10.15,4.54,10.15,10.15,10.15Z" fill="#7c3aed" fill-rule="evenodd"/>
+      <circle cx="265.41" cy="148.57" r="19.83" transform="translate(26.59 336.92) rotate(-67.5)" fill="#7c3aed"/>
+      <circle cx="387.54" cy="270.7" r="33.04" fill="#7c3aed"/>
+      <circle cx="21.15" cy="514.97" r="21.15" fill="#7c3aed"/>
+      <circle cx="21.15" cy="270.7" r="21.15" fill="#7c3aed"/>
+      <circle cx="21.15" cy="392.83" r="21.15" fill="#7c3aed"/>
+      <circle cx="387.54" cy="636.44" r="14.87" fill="#7c3aed"/>
+      <circle cx="21.15" cy="26.43" r="13.53" transform="translate(-11.37 35.85) rotate(-67.5)" fill="#7c3aed"/>
+      <circle cx="265.41" cy="26.43" r="13.53" transform="translate(139.42 261.53) rotate(-67.5)" fill="#7c3aed"/>
+      <circle cx="509.68" cy="270.7" r="31.72" transform="translate(-11.74 23.37) rotate(-2.6)" fill="#7c3aed"/>
+      <path d="M387.54,32.14c3.16,0,5.71-2.55,5.71-5.71s-2.55-5.71-5.71-5.71-5.71,2.55-5.71,5.71,2.55,5.71,5.71,5.71Z" fill="#7c3aed" fill-rule="evenodd"/>
+      <circle cx="631.81" cy="148.57" r="33.83" fill="#7c3aed"/>
+      <circle cx="387.54" cy="514.97" r="41.3" fill="#7c3aed"/>
+      <circle cx="631.81" cy="270.7" r="33.04" transform="translate(326.59 886.57) rotate(-86.83)" fill="#7c3aed"/>
+      <circle cx="509.68" cy="26.43" r="13.53" transform="translate(2.35 81.98) rotate(-9.22)" fill="#7c3aed"/>
+      <circle cx="509.68" cy="148.57" r="21.15" fill="#7c3aed"/>
+      <circle cx="631.81" cy="26.43" r="21.15" fill="#7c3aed"/>
+      <circle cx="509.68" cy="514.97" r="21.15" fill="#7c3aed"/>
+      <circle cx="509.68" cy="392.83" r="33.04" fill="#7c3aed"/>
+      <circle cx="631.81" cy="392.83" r="11.9" fill="#7c3aed"/>
+      <circle cx="387.54" cy="392.83" r="49.56" fill="#7c3aed"/>
+      <circle cx="509.68" cy="636.44" r="5.71" transform="translate(-173.89 1080.92) rotate(-84.35)" fill="#7c3aed"/>
+      <circle cx="631.81" cy="636.44" r="5.71" transform="translate(-43.53 46.39) rotate(-4.07)" fill="#7c3aed"/>
+      <path d="M631.81,509.25c-3.16,0-5.71,2.55-5.71,5.71s2.55,5.71,5.71,5.71,5.71-2.55,5.71-5.71-2.55-5.71-5.71-5.71Z" fill="#7c3aed" fill-rule="evenodd"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,252 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { Card, CardContent } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
+import { Icon } from '@/shared/components/ui/icon'
+import { Section } from '@/shared/components/ui/section'
+import { useAuth, useToast } from '@/app/providers'
+import { supabase } from '@/shared/lib/supabase'
+
+interface ProfileFormData {
+  fullName: string
+}
+
+interface PasswordFormData {
+  newPassword: string
+  confirmPassword: string
+}
+
+export function ProfilePage() {
+  const { t } = useTranslation()
+  const { user, updatePassword } = useAuth()
+  const toast = useToast()
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+
+  const profileForm = useForm<ProfileFormData>({
+    defaultValues: {
+      fullName: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
+    },
+  })
+
+  const passwordForm = useForm<PasswordFormData>({
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: '',
+    },
+  })
+
+  const handleProfileSubmit = async (data: ProfileFormData) => {
+    setIsUpdatingProfile(true)
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          full_name: data.fullName,
+          name: data.fullName,
+        },
+      })
+
+      if (error) throw error
+      toast.success(t('profile.updateSuccess'))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('profile.updateError'))
+    } finally {
+      setIsUpdatingProfile(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (data: PasswordFormData) => {
+    if (data.newPassword !== data.confirmPassword) {
+      toast.error(t('profile.passwordMismatch'))
+      return
+    }
+
+    if (data.newPassword.length < 6) {
+      toast.error(t('profile.passwordTooShort'))
+      return
+    }
+
+    setIsUpdatingPassword(true)
+
+    try {
+      await updatePassword(data.newPassword)
+      toast.success(t('profile.passwordUpdateSuccess'))
+      passwordForm.reset()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('profile.passwordUpdateError'))
+    } finally {
+      setIsUpdatingPassword(false)
+    }
+  }
+
+  // Get user info
+  const email = user?.email || ''
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+  const provider = user?.app_metadata?.provider || 'email'
+  const createdAt = user?.created_at ? new Date(user.created_at) : null
+
+  return (
+    <div className="space-y-8">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">{t('profile.title')}</h1>
+        <p className="text-muted">{t('profile.subtitle')}</p>
+      </div>
+
+      {/* Account Info */}
+      <Section title={t('profile.accountInfo')} description={t('profile.accountInfoDesc')}>
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-start gap-6">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={t('profile.avatar')}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon name="person" size="2xl" className="text-primary" />
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-sm text-muted">{t('profile.email')}</p>
+                  <p className="font-medium">{email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted">{t('profile.authProvider')}</p>
+                  <div className="flex items-center gap-2">
+                    <Icon 
+                      name={provider === 'google' ? 'g_mobiledata' : 'mail'} 
+                      size="sm" 
+                      className="text-muted" 
+                    />
+                    <span className="font-medium capitalize">{provider}</span>
+                  </div>
+                </div>
+                {createdAt && (
+                  <div>
+                    <p className="text-sm text-muted">{t('profile.memberSince')}</p>
+                    <p className="font-medium">
+                      {createdAt.toLocaleDateString(undefined, { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* Edit Profile */}
+      <Section title={t('profile.editProfile')} description={t('profile.editProfileDesc')}>
+        <Card>
+          <CardContent className="py-6">
+            <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="fullName" className="block text-sm font-medium leading-tight">
+                  {t('profile.fullName')}
+                </label>
+                <Input
+                  id="fullName"
+                  {...profileForm.register('fullName', { required: true })}
+                  placeholder={t('profile.fullNamePlaceholder')}
+                  className="max-w-md"
+                />
+              </div>
+
+              <Button type="submit" disabled={isUpdatingProfile}>
+                {isUpdatingProfile ? (
+                  <>
+                    <Icon name="sync" size="sm" className="mr-2 animate-spin" />
+                    {t('common.saving')}
+                  </>
+                ) : (
+                  t('common.save')
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* Change Password - Only show for email auth */}
+      {provider === 'email' && (
+        <Section title={t('profile.changePassword')} description={t('profile.changePasswordDesc')}>
+          <Card>
+            <CardContent className="py-6">
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="newPassword" className="block text-sm font-medium leading-tight">
+                    {t('profile.newPassword')}
+                  </label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    {...passwordForm.register('newPassword', { required: true })}
+                    placeholder={t('profile.newPasswordPlaceholder')}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="confirmPassword" className="text-sm font-medium leading-tight">
+                    {t('profile.confirmPassword')}
+                  </label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    {...passwordForm.register('confirmPassword', { required: true })}
+                    placeholder={t('profile.confirmPasswordPlaceholder')}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <Button type="submit" disabled={isUpdatingPassword}>
+                  {isUpdatingPassword ? (
+                    <>
+                      <Icon name="sync" size="sm" className="mr-2 animate-spin" />
+                      {t('common.saving')}
+                    </>
+                  ) : (
+                    t('profile.updatePassword')
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Section>
+      )}
+
+      {/* Danger Zone */}
+      <Section title={t('profile.dangerZone')} description={t('profile.dangerZoneDesc')}>
+        <Card className="border-destructive/50">
+          <CardContent className="py-6">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+              <div>
+                <p className="font-medium text-destructive">{t('profile.deleteAccount')}</p>
+                <p className="text-sm text-muted">{t('profile.deleteAccountDesc')}</p>
+              </div>
+              <Button variant="destructive" disabled>
+                {t('profile.deleteAccount')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </Section>
+    </div>
+  )
+}

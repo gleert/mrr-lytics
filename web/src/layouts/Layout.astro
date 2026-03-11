@@ -1,0 +1,62 @@
+---
+import '../styles/global.css'
+import { type Lang, defaultLang, getAlternateUrls } from '../i18n'
+import BackgroundLights from '../components/BackgroundLights.astro'
+import { ViewTransitions } from 'astro:transitions'
+
+interface Props {
+  title: string
+  description?: string
+  lang?: Lang
+}
+
+const { 
+  title, 
+  description = 'MRRlytics - Analytics platform for WHMCS billing data. Track MRR, churn, revenue trends and more.',
+  lang = defaultLang,
+} = Astro.props
+
+const alternateUrls = getAlternateUrls(Astro.url.pathname, lang)
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    {alternateUrls.map(({ lang: altLang, url }) => (
+      <link rel="alternate" hreflang={altLang} href={url} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href="/" />
+    <title>{title}</title>
+    <ViewTransitions />
+  </head>
+  <body>
+    <BackgroundLights transition:persist />
+    <div class="page-content" transition:animate="fade">
+      <slot />
+    </div>
+  </body>
+</html>
+
+<style>
+  .page-content {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

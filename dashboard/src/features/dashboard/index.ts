@@ -1,0 +1,7 @@
+export { DashboardPage } from './pages/dashboard-page'
+export { KPICard } from './components/kpi-card'
+export { MRRChart } from './components/mrr-chart'
+export { TopProductsChart } from './components/top-products-chart'
+export { RecentActivity } from './components/recent-activity'
+export { DashboardFilters } from './components/dashboard-filters'
+export { useMetrics, useMRRMetrics, useChurnMetrics } from './hooks/use-metrics'

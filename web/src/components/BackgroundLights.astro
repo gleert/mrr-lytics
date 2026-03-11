@@ -1,0 +1,454 @@
+---
+// Animated background lights that move on scroll with organic motion
+// Plus Tron-style light trails
+---
+
+<div class="lights-container" aria-hidden="true">
+  <div class="light light-1"></div>
+  <div class="light light-2"></div>
+  <div class="light light-3"></div>
+  <div class="light light-4"></div>
+  <div class="light light-5"></div>
+</div>
+
+<!-- Tron grid lines -->
+<canvas id="tron-canvas" aria-hidden="true"></canvas>
+
+<style>
+  .lights-container {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -2;
+  }
+
+  #tron-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.4;
+    filter: blur(1px);
+  }
+
+  .light {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    will-change: transform, opacity;
+  }
+
+  /* Violet primary - main hero light */
+  .light-1 {
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0.2) 40%, transparent 70%);
+    top: -15%;
+    left: 10%;
+    animation: pulse1 8s ease-in-out infinite;
+  }
+
+  /* Purple deeper - right side */
+  .light-2 {
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.45) 0%, rgba(124, 58, 237, 0.15) 45%, transparent 70%);
+    top: 20%;
+    right: -10%;
+    animation: pulse2 12s ease-in-out infinite;
+  }
+
+  /* Blue accent - left bottom */
+  .light-3 {
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(99, 102, 241, 0.1) 50%, transparent 70%);
+    top: 50%;
+    left: -15%;
+    animation: pulse3 15s ease-in-out infinite;
+  }
+
+  /* Pink/magenta - bottom right */
+  .light-4 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(192, 132, 252, 0.4) 0%, rgba(192, 132, 252, 0.1) 45%, transparent 70%);
+    top: 70%;
+    right: 15%;
+    animation: pulse4 10s ease-in-out infinite;
+  }
+
+  /* Soft violet - center accent */
+  .light-5 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(167, 139, 250, 0.1) 40%, transparent 70%);
+    top: 35%;
+    left: 50%;
+    animation: pulse5 7s ease-in-out infinite;
+  }
+
+  @keyframes pulse1 {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  @keyframes pulse2 {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    30% { opacity: 0.9; transform: scale(1.15); }
+    70% { opacity: 0.7; transform: scale(1.05); }
+  }
+
+  @keyframes pulse3 {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    40% { opacity: 0.8; transform: scale(1.08); }
+    80% { opacity: 0.5; transform: scale(0.95); }
+  }
+
+  @keyframes pulse4 {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    25% { opacity: 0.4; transform: scale(0.9); }
+    75% { opacity: 1; transform: scale(1.12); }
+  }
+
+  @keyframes pulse5 {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.2); }
+  }
+</style>
+
+<script>
+  const lights = document.querySelectorAll('.light');
+  
+  // Each light has unique movement characteristics
+  const lightConfigs = [
+    { speedX: 0.08, speedY: 0.12, phase: 0, amplitude: 30, frequency: 0.003 },
+    { speedX: -0.1, speedY: 0.06, phase: 1.5, amplitude: 40, frequency: 0.004 },
+    { speedX: 0.05, speedY: -0.09, phase: 3, amplitude: 35, frequency: 0.0025 },
+    { speedX: -0.07, speedY: -0.05, phase: 4.5, amplitude: 25, frequency: 0.0035 },
+    { speedX: 0.06, speedY: 0.08, phase: 2, amplitude: 20, frequency: 0.005 },
+  ];
+
+  // Current interpolated positions for smooth animation
+  const currentPositions = lightConfigs.map(() => ({ x: 0, y: 0 }));
+  const targetPositions = lightConfigs.map(() => ({ x: 0, y: 0 }));
+  
+  // Easing function for smooth organic motion
+  function easeOutCubic(t: number): number {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  // Sine wave for organic wobble
+  function wave(scroll: number, phase: number, frequency: number, amplitude: number): number {
+    return Math.sin(scroll * frequency + phase) * amplitude;
+  }
+
+  function calculateTargets() {
+    const scrollY = window.scrollY;
+    
+    lightConfigs.forEach((config, index) => {
+      // Base scroll movement
+      const baseX = scrollY * config.speedX;
+      const baseY = scrollY * config.speedY;
+      
+      // Add organic sine wave movement
+      const waveX = wave(scrollY, config.phase, config.frequency, config.amplitude);
+      const waveY = wave(scrollY, config.phase + 1.57, config.frequency * 0.8, config.amplitude * 0.7);
+      
+      targetPositions[index].x = baseX + waveX;
+      targetPositions[index].y = baseY + waveY;
+    });
+  }
+
+  let animationId: number | null = null;
+  const lerpFactor = 0.08; // Smoothing factor (lower = smoother but slower)
+
+  function lerp(current: number, target: number, factor: number): number {
+    return current + (target - current) * factor;
+  }
+
+  function animate() {
+    let needsUpdate = false;
+    
+    lights.forEach((light, index) => {
+      const current = currentPositions[index];
+      const target = targetPositions[index];
+      
+      // Lerp towards target for smooth motion
+      const newX = lerp(current.x, target.x, lerpFactor);
+      const newY = lerp(current.y, target.y, lerpFactor);
+      
+      // Check if we need to keep animating
+      const deltaX = Math.abs(target.x - newX);
+      const deltaY = Math.abs(target.y - newY);
+      
+      if (deltaX > 0.1 || deltaY > 0.1) {
+        needsUpdate = true;
+      }
+      
+      current.x = newX;
+      current.y = newY;
+      
+      // Apply transform with slight scale variation for depth
+      const scale = 1 + Math.sin(window.scrollY * 0.001 + index) * 0.05;
+      (light as HTMLElement).style.transform = `translate(${newX}px, ${newY}px) scale(${scale})`;
+    });
+    
+    if (needsUpdate) {
+      animationId = requestAnimationFrame(animate);
+    } else {
+      animationId = null;
+    }
+  }
+
+  function onScroll() {
+    calculateTargets();
+    
+    if (!animationId) {
+      animationId = requestAnimationFrame(animate);
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  
+  // Initial setup
+  calculateTargets();
+  // Set initial positions immediately
+  lightConfigs.forEach((_, index) => {
+    currentPositions[index].x = targetPositions[index].x;
+    currentPositions[index].y = targetPositions[index].y;
+  });
+  animate();
+
+  // ========== TRON LIGHT TRAILS ==========
+  const canvas = document.getElementById('tron-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  interface Trail {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    speed: number;
+    length: number;
+    color: string;
+    glowColor: string;
+    width: number;
+    history: { x: number; y: number }[];
+    turnCooldown: number;
+    maxLength: number;
+    blur: number;
+    depth: number; // 0 = far (slow parallax), 1 = close (fast parallax)
+  }
+
+  const trails: Trail[] = [];
+  
+  // Color palettes with more variety
+  const colorPalettes = [
+    { main: 'rgba(139, 92, 246, ', glow: 'rgba(139, 92, 246, ' },   // violet
+    { main: 'rgba(59, 130, 246, ', glow: 'rgba(59, 130, 246, ' },   // blue
+    { main: 'rgba(236, 72, 153, ', glow: 'rgba(236, 72, 153, ' },   // pink
+    { main: 'rgba(34, 211, 238, ', glow: 'rgba(34, 211, 238, ' },   // cyan
+    { main: 'rgba(168, 85, 247, ', glow: 'rgba(168, 85, 247, ' },   // purple
+    { main: 'rgba(99, 102, 241, ', glow: 'rgba(99, 102, 241, ' },   // indigo
+    { main: 'rgba(244, 114, 182, ', glow: 'rgba(244, 114, 182, ' }, // light pink
+    { main: 'rgba(56, 189, 248, ', glow: 'rgba(56, 189, 248, ' },   // sky blue
+  ];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createTrail(): Trail {
+    const isHorizontal = Math.random() > 0.5;
+    // Much more varied speeds: slow (0.5) to fast (4)
+    const speed = 0.5 + Math.random() * 3.5;
+    
+    let x: number, y: number, vx: number, vy: number;
+    
+    if (isHorizontal) {
+      const fromLeft = Math.random() > 0.5;
+      x = fromLeft ? -50 : canvas.width + 50;
+      y = Math.random() * canvas.height;
+      vx = fromLeft ? speed : -speed;
+      vy = 0;
+    } else {
+      const fromTop = Math.random() > 0.5;
+      x = Math.random() * canvas.width;
+      y = fromTop ? -50 : canvas.height + 50;
+      vx = 0;
+      vy = fromTop ? speed : -speed;
+    }
+
+    // Random color with random opacity - more subtle
+    const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+    const opacity = 0.3 + Math.random() * 0.4; // 0.3 to 0.7
+    const glowOpacity = opacity * 0.5;
+
+    // Depth affects parallax speed and visual size
+    const depth = Math.random();
+    
+    return {
+      x,
+      y,
+      vx,
+      vy,
+      speed,
+      length: 0,
+      color: palette.main + opacity + ')',
+      glowColor: palette.glow + glowOpacity + ')',
+      width: (0.5 + Math.random() * 1.5) * (0.5 + depth * 0.5), // Closer = thicker, but thinner overall
+      history: [],
+      turnCooldown: 150 + Math.random() * 200,
+      maxLength: (50 + Math.random() * 300) * (0.5 + depth * 0.5), // Closer = longer
+      blur: Math.random() * 2,
+      depth,
+    };
+  }
+
+  // Initialize trails
+  for (let i = 0; i < 12; i++) {
+    trails.push(createTrail());
+  }
+
+  function updateTrails() {
+    trails.forEach((trail, index) => {
+      // Store position in history
+      trail.history.push({ x: trail.x, y: trail.y });
+      
+      // Limit history length
+      if (trail.history.length > trail.maxLength) {
+        trail.history.shift();
+      }
+
+      // Move trail - closer trails move faster
+      const depthSpeedMultiplier = 0.6 + trail.depth * 0.8;
+      trail.x += trail.vx * depthSpeedMultiplier;
+      trail.y += trail.vy * depthSpeedMultiplier;
+
+      // Random 90-degree turns (Tron style) - less frequent
+      trail.turnCooldown--;
+      if (trail.turnCooldown <= 0 && Math.random() < 0.008) {
+        const speed = Math.sqrt(trail.vx * trail.vx + trail.vy * trail.vy);
+        if (trail.vx !== 0) {
+          trail.vx = 0;
+          trail.vy = Math.random() > 0.5 ? speed : -speed;
+        } else {
+          trail.vy = 0;
+          trail.vx = Math.random() > 0.5 ? speed : -speed;
+        }
+        trail.turnCooldown = 150 + Math.random() * 200;
+      }
+
+      // Reset if off screen
+      const margin = 100;
+      if (
+        trail.x < -margin ||
+        trail.x > canvas.width + margin ||
+        trail.y < -margin ||
+        trail.y > canvas.height + margin
+      ) {
+        trails[index] = createTrail();
+      }
+    });
+  }
+
+  let lastScrollY = 0;
+  let scrollDelta = 0;
+
+  function updateScroll() {
+    const currentScrollY = window.scrollY;
+    scrollDelta = currentScrollY - lastScrollY;
+    lastScrollY = currentScrollY;
+  }
+
+  window.addEventListener('scroll', updateScroll, { passive: true });
+
+  function drawTrails() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Sort by depth so far trails render first
+    const sortedTrails = [...trails].sort((a, b) => a.depth - b.depth);
+
+    sortedTrails.forEach((trail) => {
+      if (trail.history.length < 2) return;
+
+      // Calculate parallax offset based on depth
+      // depth 0 = far = moves slow, depth 1 = close = moves fast
+      const parallaxSpeed = 0.1 + trail.depth * 0.4;
+      const parallaxOffset = scrollDelta * parallaxSpeed;
+
+      // Draw glow layer first (thicker, more transparent)
+      ctx.beginPath();
+      ctx.moveTo(trail.history[0].x, trail.history[0].y + parallaxOffset);
+      for (let i = 1; i < trail.history.length; i++) {
+        ctx.lineTo(trail.history[i].x, trail.history[i].y + parallaxOffset);
+      }
+      
+      const glowGradient = ctx.createLinearGradient(
+        trail.history[0].x,
+        trail.history[0].y + parallaxOffset,
+        trail.x,
+        trail.y + parallaxOffset
+      );
+      glowGradient.addColorStop(0, 'transparent');
+      glowGradient.addColorStop(1, trail.glowColor);
+      
+      ctx.strokeStyle = glowGradient;
+      ctx.lineWidth = trail.width * 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Draw main trail
+      ctx.beginPath();
+      ctx.moveTo(trail.history[0].x, trail.history[0].y + parallaxOffset);
+      for (let i = 1; i < trail.history.length; i++) {
+        ctx.lineTo(trail.history[i].x, trail.history[i].y + parallaxOffset);
+      }
+
+      const gradient = ctx.createLinearGradient(
+        trail.history[0].x,
+        trail.history[0].y + parallaxOffset,
+        trail.x,
+        trail.y + parallaxOffset
+      );
+      gradient.addColorStop(0, 'transparent');
+      gradient.addColorStop(1, trail.color);
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = trail.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Draw bright head with glow
+      ctx.beginPath();
+      ctx.arc(trail.x, trail.y + parallaxOffset, trail.width * 2, 0, Math.PI * 2);
+      ctx.fillStyle = trail.glowColor;
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.arc(trail.x, trail.y + parallaxOffset, trail.width, 0, Math.PI * 2);
+      ctx.fillStyle = trail.color;
+      ctx.fill();
+    });
+    
+    // Decay scroll delta for smooth effect
+    scrollDelta *= 0.95;
+  }
+
+  function animateTron() {
+    updateTrails();
+    drawTrails();
+    requestAnimationFrame(animateTron);
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  animateTron();
+</script>

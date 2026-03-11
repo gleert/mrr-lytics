@@ -1,0 +1,48 @@
+---
+import { type Lang, defaultLang, useTranslations } from '../i18n'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = defaultLang } = Astro.props
+const t = useTranslations(lang)
+
+const features = [
+  { num: '01', ...t.features.items.mrrTracking },
+  { num: '02', ...t.features.items.churnAnalysis },
+  { num: '03', ...t.features.items.revenueBreakdown },
+  { num: '04', ...t.features.items.clientInsights },
+  { num: '05', ...t.features.items.forecasting },
+  { num: '06', ...t.features.items.instantSync },
+]
+---
+
+<section id="features" class="py-32 md:py-40">
+  <div class="wrap">
+    <!-- Section header -->
+    <div class="max-w-3xl mb-20">
+      <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-6">
+        {t.features.title}
+      </h2>
+      <p class="text-lg text-[var(--color-text-muted)] leading-relaxed">
+        {t.features.subtitle}
+      </p>
+    </div>
+
+    <!-- Features grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {features.map((feature) => (
+        <div class="glass-card p-8 md:p-10 group transition-all duration-300">
+          <span class="text-xs text-[var(--color-text-muted)] font-mono">{feature.num}</span>
+          <h3 class="text-xl font-semibold mt-6 mb-4 group-hover:text-[var(--color-primary-400)] transition-colors">
+            {feature.title}
+          </h3>
+          <p class="text-[var(--color-text-muted)] leading-relaxed">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

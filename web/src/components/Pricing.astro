@@ -1,0 +1,78 @@
+---
+import { type Lang, defaultLang, useTranslations } from '../i18n'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = defaultLang } = Astro.props
+const t = useTranslations(lang)
+
+const plans = [
+  { key: 'free' as const, price: '$0', href: 'https://app.mrrlytics.com/register', featured: false },
+  { key: 'starter' as const, price: '$19', href: 'https://app.mrrlytics.com/register?plan=starter', featured: false },
+  { key: 'pro' as const, price: '$49', href: 'https://app.mrrlytics.com/register?plan=pro', featured: true },
+  { key: 'business' as const, price: '$149', href: 'mailto:sales@mrrlytics.com', featured: false },
+]
+---
+
+<section id="pricing" class="glass-section py-32 md:py-40">
+  <div class="wrap relative">
+    <!-- Section header -->
+    <div class="max-w-3xl mb-20">
+      <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-6">
+        {t.pricing.title}
+      </h2>
+      <p class="text-lg text-[var(--color-text-muted)] leading-relaxed">
+        {t.pricing.subtitle}
+      </p>
+    </div>
+
+    <!-- Pricing grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {plans.map(plan => {
+        const data = t.pricing.plans[plan.key]
+        return (
+          <div class:list={[
+            "glass-card relative p-8 transition-all duration-300",
+            plan.featured && "ring-1 ring-[var(--color-primary-500)]"
+          ]}>
+            {plan.featured && (
+              <span class="absolute -top-3 left-6 px-3 py-1 text-xs font-medium bg-gradient-to-r from-[var(--color-primary-400)] to-[var(--color-primary-600)] text-black rounded-full z-10">
+                {t.pricing.mostPopular}
+              </span>
+            )}
+            
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold">{data.name}</h3>
+              <p class="text-sm text-[var(--color-text-muted)] mt-1">{data.description}</p>
+            </div>
+            
+            <div class="mb-8">
+              <span class="text-4xl font-bold tracking-tight">{plan.price}</span>
+              <span class="text-[var(--color-text-muted)]">{t.pricing.perMonth}</span>
+            </div>
+
+            <div class="line-dotted mb-6"></div>
+
+            <ul class="space-y-3 mb-8">
+              {data.features.map((feature: string) => (
+                <li class="flex items-start gap-3 text-sm">
+                  <svg class="w-4 h-4 mt-0.5 text-[var(--color-primary-400)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="text-[var(--color-text-muted)]">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <a href={plan.href} class:list={["btn w-full justify-center", plan.featured ? "btn-primary" : "btn-secondary"]}>
+              {plan.featured && <span class="dot"></span>}
+              <span>{data.cta}</span>
+            </a>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+</section>

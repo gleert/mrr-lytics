@@ -1,0 +1,347 @@
+import { headers } from 'next/headers'
+import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { getAuthContext } from '@/lib/auth'
+import { success, error } from '@/utils/api-response'
+import { UnauthorizedError } from '@/utils/errors'
+import { parseDateRange } from '@/utils/date-helpers'
+
+export const dynamic = 'force-dynamic'
+
+/**
+ * GET /api/forecasting - Get forecasting statistics
+ * 
+ * Calculates projections based on the selected period:
+ * - Current Committed MRR: MRR from active services
+ * - Projected MRR: MRR projected based on trends within the period
+ * - Projected Growth: Expected growth percentage based on period trends
+ * - Projected ARR: Annual projection
+ * - Confidence Level: Based on data quality and trends
+ * 
+ * The period determines:
+ * - Which historical data to analyze for trends
+ * - The timeframe for growth calculations
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const headersList = await headers()
+    const auth = getAuthContext(headersList)
+
+    if (!auth) {
+      throw new UnauthorizedError('Authentication required')
+    }
+
+    const { searchParams } = new URL(request.url)
+    const instanceIdsParam = searchParams.get('instance_ids')
+    const instanceIdParam = searchParams.get('instance_id')
+    const period = searchParams.get('period') || '30d'
+
+    let instanceIds: string[] = []
+    if (instanceIdsParam) {
+      instanceIds = instanceIdsParam.split(',').filter(id => id.trim())
+    } else if (instanceIdParam) {
+      instanceIds = [instanceIdParam]
+    }
+
+    if (instanceIds.length === 0) {
+      throw new Error('No instance specified')
+    }
+
+    // Parse the period to get date range
+    const { startDate, endDate, days } = parseDateRange(period, null, null)
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // Get active hosting services for MRR calculation (current state)
+    const { data: hostingServices, error: hostingError } = await supabase
+      .from('whmcs_hosting')
+      .select('amount, billingcycle, domainstatus')
+      .in('instance_id', instanceIds)
+      .eq('domainstatus', 'Active')
+
+    if (hostingError) {
+      console.error('Hosting query error:', hostingError)
+      throw new Error('Failed to fetch hosting data')
+    }
+
+    // Calculate current MRR from active services AND breakdown by billing cycle
+    let currentMRR = 0
+    const billingCycleBreakdown = new Map<string, { count: number; mrr: number; total: number }>()
+    
+    // Helper to convert billing cycle to monthly amount
+    const toMonthlyAmount = (amount: number, cycle: string): number => {
+      switch (cycle) {
+        case 'monthly': return amount
+        case 'quarterly': return amount / 3
+        case 'semi-annually':
+        case 'semiannually': return amount / 6
+        case 'annually':
+        case 'yearly': return amount / 12
+        case 'biennially': return amount / 24
+        case 'triennially': return amount / 36
+        default: return amount
+      }
+    }
+
+    // Normalize billing cycle names for display
+    const normalizeCycleName = (cycle: string): string => {
+      switch (cycle) {
+        case 'monthly': return 'Monthly'
+        case 'quarterly': return 'Quarterly'
+        case 'semi-annually':
+        case 'semiannually': return 'Semi-Annually'
+        case 'annually':
+        case 'yearly': return 'Annually'
+        case 'biennially': return 'Biennially'
+        case 'triennially': return 'Triennially'
+        case 'free account':
+        case 'free': return 'Free'
+        case 'one time':
+        case 'onetime': return 'One Time'
+        default: return cycle ? cycle.charAt(0).toUpperCase() + cycle.slice(1) : 'Unknown'
+      }
+    }
+
+    hostingServices?.forEach(service => {
+      const amount = Number(service.amount) || 0
+      const cycle = service.billingcycle?.toLowerCase() || 'monthly'
+      const monthlyAmount = toMonthlyAmount(amount, cycle)
+      currentMRR += monthlyAmount
+
+      // Track breakdown by billing cycle
+      const cycleName = normalizeCycleName(cycle)
+      const existing = billingCycleBreakdown.get(cycleName) || { count: 0, mrr: 0, total: 0 }
+      billingCycleBreakdown.set(cycleName, {
+        count: existing.count + 1,
+        mrr: existing.mrr + monthlyAmount,
+        total: existing.total + amount,
+      })
+    })
+
+    // Get historical invoice data within the selected period for trend analysis
+    const { data: periodInvoices, error: invoicesError } = await supabase
+      .from('whmcs_invoices')
+      .select('total, datepaid')
+      .in('instance_id', instanceIds)
+      .eq('status', 'Paid')
+      .gte('datepaid', startDate.toISOString().split('T')[0])
+      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .order('datepaid', { ascending: true })
+
+    if (invoicesError) {
+      console.error('Invoices query error:', invoicesError)
+    }
+
+    // Calculate revenue by time bucket based on period length
+    // For shorter periods, use daily buckets; for longer periods, use weekly/monthly
+    const revenueByBucket = new Map<string, number>()
+    let bucketFormat: 'daily' | 'weekly' | 'monthly'
+    
+    if (days <= 30) {
+      bucketFormat = 'daily'
+    } else if (days <= 90) {
+      bucketFormat = 'weekly'
+    } else {
+      bucketFormat = 'monthly'
+    }
+
+    periodInvoices?.forEach(invoice => {
+      if (invoice.datepaid) {
+        let bucketKey: string
+        const invoiceDate = new Date(invoice.datepaid)
+        
+        switch (bucketFormat) {
+          case 'daily':
+            bucketKey = invoice.datepaid.substring(0, 10) // YYYY-MM-DD
+            break
+          case 'weekly':
+            // Get the week number
+            const weekStart = new Date(invoiceDate)
+            weekStart.setDate(invoiceDate.getDate() - invoiceDate.getDay())
+            bucketKey = weekStart.toISOString().substring(0, 10)
+            break
+          case 'monthly':
+          default:
+            bucketKey = invoice.datepaid.substring(0, 7) // YYYY-MM
+            break
+        }
+        
+        revenueByBucket.set(bucketKey, (revenueByBucket.get(bucketKey) || 0) + (Number(invoice.total) || 0))
+      }
+    })
+
+    // Sort buckets chronologically and get values
+    const sortedBuckets = Array.from(revenueByBucket.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+    const revenueValues = sortedBuckets.map(([_, value]) => value)
+    
+    let growthRate = 0
+    let confidenceLevel = 30 // Base confidence (lower for shorter periods)
+
+    // Need at least 2 data points to calculate growth
+    if (revenueValues.length >= 2) {
+      // Calculate average period-over-period growth
+      let totalGrowth = 0
+      let growthCount = 0
+      for (let i = 1; i < revenueValues.length; i++) {
+        if (revenueValues[i - 1] > 0) {
+          totalGrowth += (revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1]
+          growthCount++
+        }
+      }
+      growthRate = growthCount > 0 ? (totalGrowth / growthCount) * 100 : 0
+      
+      // Adjust confidence based on data availability and period length
+      const dataPointBonus = Math.min(30, revenueValues.length * 5)
+      const periodBonus = Math.min(20, Math.floor(days / 30) * 5)
+      confidenceLevel = Math.min(95, 30 + dataPointBonus + periodBonus)
+      
+      // Adjust confidence based on revenue consistency
+      if (revenueValues.length >= 3) {
+        const avgRevenue = revenueValues.reduce((a, b) => a + b, 0) / revenueValues.length
+        const variance = revenueValues.reduce((sum, val) => sum + Math.pow(val - avgRevenue, 2), 0) / revenueValues.length
+        const stdDev = Math.sqrt(variance)
+        const coefficientOfVariation = avgRevenue > 0 ? stdDev / avgRevenue : 1
+        
+        // Lower confidence if revenue is highly variable
+        if (coefficientOfVariation > 0.5) {
+          confidenceLevel = Math.max(20, confidenceLevel - 20)
+        } else if (coefficientOfVariation < 0.2) {
+          confidenceLevel = Math.min(95, confidenceLevel + 10)
+        }
+      }
+    }
+
+    // Cap growth rate to reasonable bounds
+    growthRate = Math.max(-50, Math.min(200, growthRate))
+
+    // Project next period MRR based on current MRR and observed growth
+    const projectedMRR = currentMRR * (1 + growthRate / 100)
+
+    // Calculate projected ARR
+    const projectedARR = projectedMRR * 12
+
+    // Calculate scenario projections (pessimistic, baseline, optimistic)
+    // Based on standard deviation of growth rates if we have enough data
+    let growthStdDev = 0
+    if (revenueValues.length >= 3) {
+      const growthRates: number[] = []
+      for (let i = 1; i < revenueValues.length; i++) {
+        if (revenueValues[i - 1] > 0) {
+          growthRates.push((revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1] * 100)
+        }
+      }
+      if (growthRates.length >= 2) {
+        const avgGrowthRate = growthRates.reduce((a, b) => a + b, 0) / growthRates.length
+        const variance = growthRates.reduce((sum, val) => sum + Math.pow(val - avgGrowthRate, 2), 0) / growthRates.length
+        growthStdDev = Math.sqrt(variance)
+      }
+    }
+
+    // Use stdDev for scenario spread, with minimum spread of 5%
+    const scenarioSpread = Math.max(5, Math.min(25, growthStdDev))
+    
+    // Pessimistic: baseline growth minus spread — always <= baseline
+    const pessimisticGrowth = growthRate - scenarioSpread
+    const pessimisticMRR = currentMRR * (1 + pessimisticGrowth / 100)
+    const pessimisticARR = pessimisticMRR * 12
+
+    // Baseline: uses the calculated growth rate (already computed as projectedMRR/ARR)
+    
+    // Optimistic: baseline growth plus spread — always >= baseline (no artificial ceiling that would invert the order)
+    const optimisticGrowth = growthRate + scenarioSpread
+    const optimisticMRR = currentMRR * (1 + optimisticGrowth / 100)
+    const optimisticARR = optimisticMRR * 12
+
+    // Scenario comparison data
+    const scenarios = {
+      pessimistic: {
+        growth: Math.round(pessimisticGrowth * 100) / 100,
+        mrr: Math.round(pessimisticMRR * 100) / 100,
+        arr: Math.round(pessimisticARR * 100) / 100,
+      },
+      baseline: {
+        growth: Math.round(growthRate * 100) / 100,
+        mrr: Math.round(projectedMRR * 100) / 100,
+        arr: Math.round(projectedARR * 100) / 100,
+      },
+      optimistic: {
+        growth: Math.round(optimisticGrowth * 100) / 100,
+        mrr: Math.round(optimisticMRR * 100) / 100,
+        arr: Math.round(optimisticARR * 100) / 100,
+      },
+    }
+
+    // Calculate total revenue in period
+    const periodRevenue = revenueValues.reduce((sum, val) => sum + val, 0)
+
+    // Format revenue trend data for charts
+    const revenueTrend = sortedBuckets.map(([date, value]) => ({
+      date,
+      revenue: Math.round(value * 100) / 100,
+    }))
+
+    // Add projected data point (next period)
+    if (revenueTrend.length > 0) {
+      const lastDate = revenueTrend[revenueTrend.length - 1].date
+      let nextDate: string
+      
+      if (bucketFormat === 'daily') {
+        const d = new Date(lastDate)
+        d.setDate(d.getDate() + 1)
+        nextDate = d.toISOString().substring(0, 10)
+      } else if (bucketFormat === 'weekly') {
+        const d = new Date(lastDate)
+        d.setDate(d.getDate() + 7)
+        nextDate = d.toISOString().substring(0, 10)
+      } else {
+        const d = new Date(lastDate + '-01')
+        d.setMonth(d.getMonth() + 1)
+        nextDate = d.toISOString().substring(0, 7)
+      }
+
+      // Calculate projected value for next period based on average and growth
+      const avgRevenue = periodRevenue / revenueValues.length
+      const projectedPeriodRevenue = avgRevenue * (1 + growthRate / 100)
+      
+      revenueTrend.push({
+        date: nextDate,
+        revenue: Math.round(projectedPeriodRevenue * 100) / 100,
+      })
+    }
+
+    // Format billing cycle breakdown for charts (sorted by MRR descending, max 6)
+    const billingCycleData = Array.from(billingCycleBreakdown.entries())
+      .map(([name, data]) => ({
+        name,
+        count: data.count,
+        mrr: Math.round(data.mrr * 100) / 100,
+        total: Math.round(data.total * 100) / 100,
+      }))
+      .sort((a, b) => b.mrr - a.mrr)
+      .slice(0, 6)
+
+    return success({
+      current_mrr: Math.round(currentMRR * 100) / 100,
+      projected_mrr: Math.round(projectedMRR * 100) / 100,
+      projected_growth: Math.round(growthRate * 100) / 100,
+      projected_arr: Math.round(projectedARR * 100) / 100,
+      confidence_level: Math.round(confidenceLevel),
+      data_points: revenueValues.length,
+      period_days: days,
+      period_revenue: Math.round(periodRevenue * 100) / 100,
+      bucket_type: bucketFormat,
+      // Breakdown data
+      revenue_trend: revenueTrend,
+      billing_cycle_breakdown: billingCycleData,
+      // Scenario comparison
+      scenarios,
+    }, { instance_ids: instanceIds })
+  } catch (err) {
+    console.error('Error in /api/forecasting:', err)
+    return error(err instanceof Error ? err : new Error('Failed to get forecasting data'))
+  }
+}

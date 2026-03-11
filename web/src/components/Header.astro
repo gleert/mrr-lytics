@@ -1,0 +1,53 @@
+---
+import { type Lang, defaultLang, useTranslations, getLocalizedPath } from '../i18n'
+import LanguageSwitcher from './LanguageSwitcher.astro'
+
+interface Props {
+  lang?: Lang
+}
+
+const { lang = defaultLang } = Astro.props
+const t = useTranslations(lang)
+
+const navLinks = [
+  { href: '#features', label: t.header.features },
+  { href: '#pricing', label: t.header.pricing },
+  { href: '#faq', label: t.header.faq },
+]
+
+const homePath = getLocalizedPath('', lang)
+---
+
+<header class="fixed top-0 left-0 right-0 z-50 glass">
+  <div class="wrap">
+    <nav class="flex items-center justify-between h-20">
+      <!-- Logo -->
+      <a href={homePath} class="flex items-center">
+        <img src="/logo-white.svg" alt="MRRlytics" class="h-[34px] w-auto" />
+      </a>
+
+      <!-- Center nav -->
+      <ul class="hidden md:flex items-center gap-8">
+        {navLinks.map(link => (
+          <li>
+            <a href={link.href} class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <!-- Right side -->
+      <div class="flex items-center gap-5">
+        <LanguageSwitcher lang={lang} />
+        <a href="https://app.mrrlytics.com/login" class="hidden md:block text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+          {t.header.signIn}
+        </a>
+        <a href="https://app.mrrlytics.com/register" class="btn btn-primary">
+          <span class="dot"></span>
+          <span>{t.header.getStarted}</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
