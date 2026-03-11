@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
+import { useAuth } from './auth-provider'
 
 // Period presets
 export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'ytd'
@@ -86,6 +87,10 @@ const STORAGE_KEY_INSTANCE = 'mrrlytics-current-instance'
 const STORAGE_KEY_PERIOD = 'mrrlytics-current-period'
 
 export function FiltersProvider({ children }: FiltersProviderProps) {
+  const { isAuthenticated } = useAuth()
+  const queryClient = useQueryClient()
+  const [isSettingUp, setIsSettingUp] = React.useState(false)
+
   // Load initial period from localStorage
   const [period, setPeriodState] = React.useState<PeriodPreset>(() => {
     const stored = localStorage.getItem(STORAGE_KEY_PERIOD)
@@ -114,7 +119,32 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
+    enabled: isAuthenticated,
   })
+
+  // Auto-provision tenant for new users (no tenants yet)
+  React.useEffect(() => {
+    if (
+      isAuthenticated &&
+      !isLoadingTenants &&
+      tenantsResponse &&
+      tenantsResponse.tenants.length === 0 &&
+      !isSettingUp
+    ) {
+      setIsSettingUp(true)
+      api.post('/api/user/setup')
+        .then(() => {
+          // Refetch tenants after setup
+          queryClient.invalidateQueries({ queryKey: ['user', 'tenants'] })
+        })
+        .catch((err) => {
+          console.error('Auto-setup failed:', err)
+        })
+        .finally(() => {
+          setIsSettingUp(false)
+        })
+    }
+  }, [isAuthenticated, isLoadingTenants, tenantsResponse, isSettingUp, queryClient])
 
   const tenants = tenantsResponse?.tenants || []
   

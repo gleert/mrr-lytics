@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Icon } from '@/shared/components/ui/icon'
 import { KPICard } from '@/features/dashboard/components/kpi-card'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
@@ -60,6 +61,7 @@ export function ClientsPage() {
   }
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Page header with filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -353,5 +355,6 @@ export function ClientsPage() {
         )}
       </div>
     </div>
+    </NoInstancesGuard>
   )
 }

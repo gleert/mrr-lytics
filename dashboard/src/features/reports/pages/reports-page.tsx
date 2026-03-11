@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
@@ -125,6 +126,7 @@ export function ReportsPage() {
   }
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -189,9 +191,10 @@ export function ReportsPage() {
             <p className="text-sm text-muted max-w-xs leading-relaxed">
               {t('reports.selectReportDesc')}
             </p>
-          </div>
+           </div>
         )}
       </div>
     </div>
+    </NoInstancesGuard>
   )
 }

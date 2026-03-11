@@ -73,6 +73,17 @@ function getQueryClient() {
   }
 }
 
+/**
+ * Clear all cached query data and persisted storage.
+ * Call this on logout to prevent data leaking between users.
+ */
+export function clearQueryCache() {
+  if (browserQueryClient) {
+    browserQueryClient.clear()
+  }
+  localStoragePersister.removeClient()
+}
+
 interface QueryProviderProps {
   children: React.ReactNode
 }

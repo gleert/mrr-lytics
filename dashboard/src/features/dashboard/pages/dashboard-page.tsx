@@ -14,6 +14,7 @@ import { UncategorizedProductsBanner } from '../components/uncategorized-product
 import { useMetrics, usePendingCancellations } from '../hooks/use-metrics'
 import { useSyncStatus } from '@/features/sync/hooks/use-sync'
 import { useAuth } from '@/app/providers'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 
 export function DashboardPage() {
   const { t } = useTranslation()
@@ -37,6 +38,7 @@ export function DashboardPage() {
                       'dashboard.goodEvening'
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Page header with filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -161,5 +163,6 @@ export function DashboardPage() {
         />
       </div>
     </div>
+    </NoInstancesGuard>
   )
 }

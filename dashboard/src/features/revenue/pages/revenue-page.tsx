@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   Area,
   XAxis,
@@ -123,6 +124,7 @@ export function RevenuePage() {
   )
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Page header with filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -328,5 +330,6 @@ export function RevenuePage() {
 
       <RevenueTransactionsTable />
     </div>
+    </NoInstancesGuard>
   )
 }

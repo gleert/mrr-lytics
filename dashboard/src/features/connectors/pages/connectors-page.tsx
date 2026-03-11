@@ -15,6 +15,7 @@ import { EmailFormModal } from '../components/email-form-modal'
 import { EmailCard } from '../components/email-card'
 import { SlackFormModal } from '../components/slack-form-modal'
 import { SlackCard } from '../components/slack-card'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   useConnectors,
   useCreateConnector,
@@ -392,6 +393,7 @@ export function ConnectorsPage() {
   const isLoadingComms = isLoadingConnectors || isLoadingSlack || isLoadingEmails
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-8">
       {/* Header */}
       <div>
@@ -735,5 +737,6 @@ export function ConnectorsPage() {
         </div>
       )}
     </div>
+    </NoInstancesGuard>
   )
 }

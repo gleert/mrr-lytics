@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Icon } from '@/shared/components/ui/icon'
 import { Section } from '@/shared/components/ui/section'
-import { useAuth, useToast } from '@/app/providers'
+import { useAuth, useToast, useFilters } from '@/app/providers'
 import { supabase } from '@/shared/lib/supabase'
 
 interface ProfileFormData {
@@ -21,6 +21,7 @@ interface PasswordFormData {
 export function ProfilePage() {
   const { t } = useTranslation()
   const { user, updatePassword } = useAuth()
+  const { tenants, allInstances } = useFilters()
   const toast = useToast()
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
@@ -150,6 +151,69 @@ export function ProfilePage() {
           </CardContent>
         </Card>
       </Section>
+
+      {/* Organization / Tenant Info */}
+      {tenants.length > 0 && (
+        <Section title={t('profile.organization')} description={t('profile.organizationDesc')}>
+          <Card>
+            <CardContent className="py-6">
+              <div className="space-y-4">
+                {tenants.map((tenant) => (
+                  <div
+                    key={tenant.tenant_id}
+                    className="flex items-start gap-4 rounded-lg border border-border p-4"
+                  >
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Icon name="apartment" size="lg" className="text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{tenant.tenant_name}</p>
+                        {tenant.is_default && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+                        <span className="flex items-center gap-1">
+                          <Icon name="badge" size="sm" />
+                          {t('profile.role')}: <span className="capitalize font-medium text-foreground">{tenant.role}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="dns" size="sm" />
+                          {tenant.instances.length} {tenant.instances.length === 1 ? 'instance' : 'instances'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="payments" size="sm" />
+                          {tenant.currency}
+                        </span>
+                      </div>
+                      {tenant.instances.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {tenant.instances.map((inst) => (
+                            <span
+                              key={inst.instance_id}
+                              className="inline-flex items-center gap-1 rounded-md bg-surface-secondary px-2 py-1 text-xs"
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  inst.status === 'active' ? 'bg-success' : 'bg-warning'
+                                }`}
+                              />
+                              {inst.instance_name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </Section>
+      )}
 
       {/* Edit Profile */}
       <Section title={t('profile.editProfile')} description={t('profile.editProfileDesc')}>

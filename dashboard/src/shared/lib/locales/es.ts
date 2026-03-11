@@ -479,6 +479,15 @@ export const es = {
       },
     },
 
+    // Empty states
+    empty: {
+      noInstancesTitle: 'Configura tu primera instancia WHMCS',
+      noInstancesDescription: 'Conecta una instancia WHMCS para empezar a monitorizar tu MRR, ingresos, clientes y m\u00e1s.',
+      addFirstInstance: 'A\u00f1adir instancia WHMCS',
+      noInstancesHint: 'Ve a Configuraci\u00f3n para configurar tu conexi\u00f3n WHMCS.',
+      noInstancesToast: 'Necesitas configurar una instancia WHMCS para acceder a esta secci\u00f3n.',
+    },
+
     // Profile
     profile: {
       title: 'Perfil',
@@ -506,6 +515,9 @@ export const es = {
       passwordUpdateError: 'Error al actualizar la contraseña',
       passwordMismatch: 'Las contraseñas no coinciden',
       passwordTooShort: 'La contraseña debe tener al menos 6 caracteres',
+      organization: 'Organización',
+      organizationDesc: 'Los tenants e instancias WHMCS vinculados a tu cuenta',
+      role: 'Rol',
       dangerZone: 'Zona de peligro',
       dangerZoneDesc: 'Acciones irreversibles y destructivas',
       deleteAccount: 'Eliminar cuenta',
@@ -779,6 +791,9 @@ export const es = {
       },
       deleteConfirm: '¿Estás seguro de que quieres eliminar "{{name}}"?',
       deleteWarning: 'Esto eliminará permanentemente la instancia y todos los datos asociados. Esta acción no se puede deshacer.',
+      moduleRequired: 'Módulo WHMCS necesario',
+      moduleRequiredDesc: 'Descarga e instala el módulo addon de MRRlytics en tu instancia WHMCS antes de conectar. Sube el contenido del zip a /modules/addons/mrrlytics/ y activa el addon desde Setup > Addon Modules.',
+      downloadModule: 'Descargar módulo WHMCS',
       syncNow: 'Sincronizar ahora / Probar conexión',
       syncFailed: 'Sincronización fallida',
       syncSuccess: 'Conexión exitosa',
@@ -1051,6 +1066,22 @@ export const es = {
         activeServices: 'Servicios Activos',
         percentage: '% del MRR',
       },
+    },
+
+    // Command Palette
+    commandPalette: {
+      title: 'Paleta de Comandos',
+      placeholder: 'Buscar páginas, acciones...',
+      noResults: 'Sin resultados',
+      sectionPages: 'Páginas',
+      sectionActions: 'Acciones',
+      sectionSettings: 'Configuración',
+      hintNavigate: 'navegar',
+      hintSelect: 'seleccionar',
+      hintClose: 'cerrar',
+      toggleTheme: 'Cambiar modo oscuro/claro',
+      logout: 'Cerrar sesión',
+      syncNow: 'Sincronizar datos ahora',
     },
 
     // Errors

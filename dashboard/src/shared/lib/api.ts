@@ -100,8 +100,15 @@ class ApiClient {
         }
       }
 
+      // Ensure message is always a string
+      const errorMessage = typeof errorData.message === 'string'
+        ? errorData.message
+        : typeof errorData.error === 'string'
+          ? errorData.error
+          : JSON.stringify(errorData.message || errorData.error || 'Unknown error')
+
       throw new ApiRequestError(
-        errorData.message || errorData.error,
+        errorMessage,
         response.status,
         errorData
       )

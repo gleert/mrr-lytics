@@ -1,6 +1,7 @@
 import * as React from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/shared/lib/supabase'
+import { clearQueryCache } from './query-provider'
 
 export type UserRole = 'admin' | 'viewer'
 
@@ -46,10 +47,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: false,
   })
 
+  // Track the current user ID to detect user switches
+  const currentUserIdRef = React.useRef<string | null>(null)
+
   // Initialize auth state
   React.useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      currentUserIdRef.current = session?.user?.id ?? null
       setState((prev) => ({
         ...prev,
         session,
@@ -62,7 +67,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const newUserId = session?.user?.id ?? null
+      const previousUserId = currentUserIdRef.current
+
+      // Clear cache when user changes (different user logged in) or on sign out
+      if (
+        event === 'SIGNED_OUT' ||
+        (newUserId && previousUserId && newUserId !== previousUserId)
+      ) {
+        clearQueryCache()
+      }
+
+      currentUserIdRef.current = newUserId
       setState((prev) => ({
         ...prev,
         session,
@@ -135,6 +152,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const signOut = React.useCallback(async () => {
+    // Clear cached data first to prevent leaking between users
+    clearQueryCache()
     const { error } = await supabase.auth.signOut()
     if (error) {
       console.error('Sign out error:', error)

@@ -110,7 +110,38 @@ export function InstanceFormModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          {/* WHMCS Module prerequisite banner (only on create) */}
+          {!isEdit && (
+            <div className="rounded-xl border border-primary-500/20 bg-primary-500/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-500/10">
+                  <Icon name="extension" size="md" className="text-primary-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground leading-tight">
+                    {t('instances.moduleRequired')}
+                  </p>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    {t('instances.moduleRequiredDesc')}
+                  </p>
+                  <a
+                    href="/downloads/mrrlytics-whmcs-module.zip"
+                    download
+                    className={cn(
+                      'mt-3 inline-flex items-center gap-2 rounded-lg px-3 py-1.5',
+                      'bg-primary-500 text-white text-xs font-medium',
+                      'hover:bg-primary-600 transition-colors'
+                    )}
+                  >
+                    <Icon name="download" size="sm" />
+                    {t('instances.downloadModule')}
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Name */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium leading-tight text-foreground">

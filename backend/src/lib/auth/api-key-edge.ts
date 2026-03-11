@@ -124,6 +124,25 @@ export function isJwtToken(token: string): boolean {
 }
 
 /**
+ * Validate a Supabase JWT (auth only, no tenant lookup).
+ * Used for /api/user/* endpoints where the user might not have a tenant yet.
+ */
+export async function validateJwtAuthOnly(jwt: string): Promise<{ id: string; email: string }> {
+  const supabase = createEdgeClient()
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
+  
+  if (authError || !user) {
+    throw new Error('Invalid or expired JWT')
+  }
+  
+  return {
+    id: user.id,
+    email: user.email || '',
+  }
+}
+
+/**
  * Validate a Supabase JWT and return the user's tenant info
  */
 export async function validateJwtEdge(jwt: string): Promise<ValidatedJwtUser> {

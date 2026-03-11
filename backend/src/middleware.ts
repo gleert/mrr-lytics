@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToken, validateJwtEdge } from '@/lib/auth/api-key-edge'
+import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToken, validateJwtEdge, validateJwtAuthOnly } from '@/lib/auth/api-key-edge'
 
 // Paths that don't require authentication
 const PUBLIC_PATHS = ['/api/health']
@@ -130,11 +130,13 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const jwtUser = await validateJwtEdge(token)
+      // Use auth-only validation for /api/user/* paths
+      // The user might not have a tenant yet (e.g. /api/user/setup)
+      const authUser = await validateJwtAuthOnly(token)
       const requestHeaders = new Headers(request.headers)
-      requestHeaders.set('x-auth-id', jwtUser.id)
+      requestHeaders.set('x-auth-id', authUser.id)
       requestHeaders.set('x-auth-type', 'jwt')
-      requestHeaders.set('x-user-email', jwtUser.email)
+      requestHeaders.set('x-user-email', authUser.email)
 
       const response = NextResponse.next({
         request: { headers: requestHeaders },

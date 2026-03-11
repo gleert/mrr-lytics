@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avat
 import { useTheme, useAuth } from '@/app/providers'
 import { cn, formatRelativeTime } from '@/shared/lib/utils'
 import { useSyncStatus, useTriggerSync } from '@/features/sync/hooks/use-sync'
+import { useCommandPalette } from '@/shared/components/command-palette'
 
 interface HeaderProps {
   isMobile?: boolean
@@ -19,9 +20,8 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   const { setTheme, resolvedTheme } = useTheme()
   const { user, signOut } = useAuth()
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
-  const [searchOpen, setSearchOpen] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
-  const searchRef = React.useRef<HTMLDivElement>(null)
+  const { open: openCommandPalette } = useCommandPalette()
   
   // Sync status and trigger
   const { data: syncStatus } = useSyncStatus()
@@ -35,12 +35,6 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setDropdownOpen(false)
-      }
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setSearchOpen(false)
       }
     }
 
@@ -78,9 +72,9 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="glass flex h-16 items-center justify-between px-4 lg:px-6 border-b border-border bg-surface/80 dark:bg-surface/60 relative z-50">
+    <header className="glass flex h-16 items-center gap-4 px-4 lg:px-6 border-b border-border bg-surface/80 dark:bg-surface/60 relative z-50">
       {/* Left side */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-1 min-w-0 items-center gap-3">
         {/* Hamburger menu (mobile) */}
         {isMobile && (
           <Button
@@ -93,59 +87,38 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
           </Button>
         )}
 
-        {/* Search */}
-        <div ref={searchRef} className="relative">
-          {/* Search icon (mobile) or full search bar (desktop) */}
-          {isMobile ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSearchOpen(!searchOpen)}
-                className="rounded-xl text-muted hover:text-foreground"
-              >
-                <Icon name={searchOpen ? 'close' : 'search'} size="lg" />
-              </Button>
-              
-              {/* Expandable search on mobile */}
-              {searchOpen && (
-                <div className="absolute left-0 top-full mt-2 z-50">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    autoFocus
-                    className={cn(
-                      'h-10 w-64 rounded-xl bg-surface-elevated pl-4 pr-4 text-base font-light',
-                      'placeholder:text-muted-foreground',
-                      'border border-border',
-                      'focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20',
-                      'transition-all duration-200'
-                    )}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="relative">
-              <Icon name="search" size="md" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className={cn(
-                  'h-10 w-72 rounded-xl bg-surface-hover pl-10 pr-4 text-base font-light',
-                  'placeholder:text-muted-foreground',
-                  'border border-transparent',
-                  'focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20',
-                  'transition-all duration-200'
-                )}
-              />
-            </div>
-          )}
-        </div>
+        {/* Command palette trigger */}
+        {isMobile ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openCommandPalette}
+            className="rounded-xl text-muted hover:text-foreground"
+          >
+            <Icon name="search" size="lg" />
+          </Button>
+        ) : (
+          <button
+            onClick={openCommandPalette}
+            className={cn(
+              'flex items-center gap-3 h-10 min-w-0 flex-1 max-w-xl rounded-xl bg-surface-hover pl-3 pr-3',
+              'text-muted-foreground',
+              'border border-transparent',
+              'hover:border-border hover:bg-surface-elevated',
+              'transition-all duration-200 cursor-pointer'
+            )}
+          >
+            <Icon name="search" size="md" className="text-muted shrink-0" />
+            <span className="flex-1 min-w-0 truncate text-left text-sm font-light">{t('commandPalette.placeholder')}</span>
+            <kbd className="shrink-0 inline-flex items-center gap-0.5 rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium text-muted select-none">
+              {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+K
+            </kbd>
+          </button>
+        )}
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {/* Sync status and button */}
         {!isMobile && syncStatus && (
           <div className="flex items-center gap-2 mr-1">

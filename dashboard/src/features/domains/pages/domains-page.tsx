@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   BarChart,
   Bar,
@@ -225,6 +226,7 @@ export function DomainsPage() {
   }
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Page header with filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -857,5 +859,6 @@ export function DomainsPage() {
         )}
       </div>
     </div>
+    </NoInstancesGuard>
   )
 }

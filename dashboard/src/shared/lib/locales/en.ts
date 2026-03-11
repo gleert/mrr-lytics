@@ -525,6 +525,15 @@ export const en = {
       },
     },
 
+    // Empty states
+    empty: {
+      noInstancesTitle: 'Set up your first WHMCS instance',
+      noInstancesDescription: 'Connect a WHMCS instance to start tracking your MRR, revenue, clients and more.',
+      addFirstInstance: 'Add WHMCS Instance',
+      noInstancesHint: 'Go to Settings to configure your WHMCS connection.',
+      noInstancesToast: 'You need to set up a WHMCS instance to access this section.',
+    },
+
     // Profile
     profile: {
       title: 'Profile',
@@ -552,6 +561,9 @@ export const en = {
       passwordUpdateError: 'Failed to update password',
       passwordMismatch: 'Passwords do not match',
       passwordTooShort: 'Password must be at least 6 characters',
+      organization: 'Organization',
+      organizationDesc: 'The tenants and WHMCS instances linked to your account',
+      role: 'Role',
       dangerZone: 'Danger Zone',
       dangerZoneDesc: 'Irreversible and destructive actions',
       deleteAccount: 'Delete Account',
@@ -826,6 +838,9 @@ export const en = {
       },
       deleteConfirm: 'Are you sure you want to delete "{{name}}"?',
       deleteWarning: 'This will permanently delete the instance and all associated data. This action cannot be undone.',
+      moduleRequired: 'WHMCS Module Required',
+      moduleRequiredDesc: 'Download and install the MRRlytics addon module in your WHMCS instance before connecting. Upload the zip contents to /modules/addons/mrrlytics/ and activate the addon from Setup > Addon Modules.',
+      downloadModule: 'Download WHMCS Module',
       syncNow: 'Sync now / Test connection',
       syncFailed: 'Sync failed',
       syncSuccess: 'Connection successful',
@@ -1098,6 +1113,22 @@ export const en = {
         activeServices: 'Active Services',
         percentage: '% of MRR',
       },
+    },
+
+    // Command Palette
+    commandPalette: {
+      title: 'Command Palette',
+      placeholder: 'Search pages, actions...',
+      noResults: 'No results found',
+      sectionPages: 'Pages',
+      sectionActions: 'Actions',
+      sectionSettings: 'Settings',
+      hintNavigate: 'navigate',
+      hintSelect: 'select',
+      hintClose: 'close',
+      toggleTheme: 'Toggle dark/light mode',
+      logout: 'Log out',
+      syncNow: 'Sync data now',
     },
 
     // Errors

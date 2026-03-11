@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
@@ -148,6 +149,7 @@ export function ProductsPage() {
   }
 
   return (
+    <NoInstancesGuard>
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -320,5 +322,6 @@ export function ProductsPage() {
         isLoading={createCategory.isPending}
       />
     </div>
+    </NoInstancesGuard>
   )
 }

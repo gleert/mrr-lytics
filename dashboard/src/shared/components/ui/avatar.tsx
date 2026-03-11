@@ -1,28 +1,45 @@
 import * as React from 'react'
 import { cn } from '@/shared/lib/utils'
 
+type ImageLoadingStatus = 'loading' | 'loaded' | 'error'
+
+const AvatarContext = React.createContext<ImageLoadingStatus>('error')
+
 const Avatar = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    className={cn(
-      'relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full',
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, children, ...props }, ref) => {
+  const [imageStatus, setImageStatus] = React.useState<ImageLoadingStatus>('error')
+
+  return (
+    <AvatarContext.Provider value={imageStatus}>
+      <span
+        ref={ref}
+        className={cn(
+          'relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full',
+          className
+        )}
+        {...props}
+      >
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement<AvatarImageProps>(child) && child.type === AvatarImage) {
+            return React.cloneElement(child, { _onStatusChange: setImageStatus } as Partial<AvatarImageProps>)
+          }
+          return child
+        })}
+      </span>
+    </AvatarContext.Provider>
+  )
+})
 Avatar.displayName = 'Avatar'
 
 interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
-  onLoadingStatusChange?: (status: 'loading' | 'loaded' | 'error') => void
+  _onStatusChange?: (status: ImageLoadingStatus) => void
 }
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, src, onLoadingStatusChange, ...props }, ref) => {
-    const [status, setStatus] = React.useState<'loading' | 'loaded' | 'error'>(
+  ({ className, src, _onStatusChange, ...props }, ref) => {
+    const [status, setStatus] = React.useState<ImageLoadingStatus>(
       src ? 'loading' : 'error'
     )
 
@@ -35,10 +52,9 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
     }, [src])
 
     React.useEffect(() => {
-      onLoadingStatusChange?.(status)
-    }, [status, onLoadingStatusChange])
+      _onStatusChange?.(status)
+    }, [status, _onStatusChange])
 
-    // Don't render if no src or if load failed
     if (!src || status === 'error') {
       return null
     }
@@ -60,16 +76,25 @@ AvatarImage.displayName = 'AvatarImage'
 const AvatarFallback = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    className={cn(
-      'flex h-full w-full items-center justify-center rounded-full bg-primary-500/20 text-primary-400 text-sm font-semibold uppercase tracking-wide',
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const imageStatus = React.useContext(AvatarContext)
+
+  // Only show fallback when there is no image or image failed to load
+  if (imageStatus === 'loaded') {
+    return null
+  }
+
+  return (
+    <span
+      ref={ref}
+      className={cn(
+        'flex h-full w-full items-center justify-center rounded-full bg-primary-500/20 text-primary-400 text-sm font-semibold uppercase tracking-wide',
+        className
+      )}
+      {...props}
+    />
+  )
+})
 AvatarFallback.displayName = 'AvatarFallback'
 
 export { Avatar, AvatarImage, AvatarFallback }

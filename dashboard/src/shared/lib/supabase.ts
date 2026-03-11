@@ -19,7 +19,7 @@ export const supabase = createClient(
       detectSessionInUrl: true,
       storage: localStorage,
       storageKey: 'mrrlytics-auth',
-      flowType: 'pkce',
+      flowType: 'implicit',
     },
   }
 )
