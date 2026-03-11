@@ -15,7 +15,7 @@ interface ReportExportBarProps {
 
 const REPORT_ICONS: Record<ReportType, string> = {
   mrr:      'trending_up',
-  revenue:  'payments',
+  revenue:  'paid',
   clients:  'group',
   domains:  'language',
   churn:    'trending_down',

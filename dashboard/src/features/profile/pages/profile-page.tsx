@@ -185,7 +185,7 @@ export function ProfilePage() {
                           {tenant.instances.length} {tenant.instances.length === 1 ? 'instance' : 'instances'}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Icon name="payments" size="sm" />
+                          <Icon name="paid" size="sm" />
                           {tenant.currency}
                         </span>
                       </div>

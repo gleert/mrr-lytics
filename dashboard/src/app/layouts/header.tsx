@@ -166,12 +166,6 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
           />
         </Button>
 
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative rounded-xl text-muted hover:text-foreground">
-          <Icon name="notifications" size="lg" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary-500" />
-        </Button>
-
         {/* Theme toggle */}
         <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-muted hover:text-foreground">
           <Icon name={resolvedTheme === 'dark' ? 'light_mode' : 'dark_mode'} size="lg" />

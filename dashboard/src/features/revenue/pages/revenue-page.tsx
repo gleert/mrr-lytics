@@ -142,7 +142,7 @@ export function RevenuePage() {
           value={stats?.total_revenue ?? 0}
           format="currency"
           loading={isLoading}
-          icon={<Icon name="payments" size="2xl" />}
+          icon={<Icon name="paid" size="2xl" />}
           accentColor="primary"
           changePercent={stats?.revenue_change}
         />

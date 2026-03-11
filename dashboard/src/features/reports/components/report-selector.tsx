@@ -15,7 +15,7 @@ interface ReportDefinition {
 
 const REPORTS: ReportDefinition[] = [
   { type: 'mrr',      icon: 'trending_up',   cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
-  { type: 'revenue',  icon: 'payments',       cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
+  { type: 'revenue',  icon: 'paid',       cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
   { type: 'clients',  icon: 'group',          cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
   { type: 'domains',  icon: 'language',       cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
   { type: 'churn',    icon: 'trending_down',  cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },

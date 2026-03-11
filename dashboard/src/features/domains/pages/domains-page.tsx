@@ -294,7 +294,7 @@ export function DomainsPage() {
             value={stats?.total_recurring ?? 0}
             format="currency"
             loading={statsLoading}
-            icon={<Icon name="payments" size="2xl" />}
+            icon={<Icon name="paid" size="2xl" />}
             accentColor="primary"
           />
           <KPICard

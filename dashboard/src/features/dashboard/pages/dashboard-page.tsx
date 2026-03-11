@@ -62,7 +62,7 @@ export function DashboardPage() {
           changePercent={metrics?.mrr.mrr_change}
           format="currency"
           loading={metricsLoading}
-          icon={<Icon name="payments" size="2xl" />}
+          icon={<Icon name="paid" size="2xl" />}
           accentColor="primary"
         />
         <KPICard

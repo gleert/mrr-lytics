@@ -75,7 +75,7 @@ export function ForecastingPage() {
             value={stats?.current_mrr ?? 0}
             format="currency"
             loading={isLoading}
-            icon={<Icon name="payments" size="2xl" />}
+            icon={<Icon name="paid" size="2xl" />}
             accentColor="primary"
           />
           <KPICard

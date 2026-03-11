@@ -21,7 +21,7 @@ interface NavItem {
 // Main menu items
 const menuItems: NavItem[] = [
   { to: '/', icon: 'dashboard', labelKey: 'nav.dashboard' },
-  { to: '/revenue', icon: 'payments', labelKey: 'nav.revenue' },
+  { to: '/revenue', icon: 'paid', labelKey: 'nav.revenue' },
   { to: '/forecasting', icon: 'trending_up', labelKey: 'nav.forecasting' },
   { to: '/clients', icon: 'group', labelKey: 'nav.clients' },
 ]

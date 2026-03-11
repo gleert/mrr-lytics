@@ -33,7 +33,7 @@ const buildRegistry = (extra: {
 }): CommandItem[] => [
   // Pages
   { id: 'page-dashboard',    kind: 'page', icon: 'dashboard',    labelKey: 'nav.dashboard',    to: '/',              keywords: ['home', 'inicio', 'panel', 'overview'] },
-  { id: 'page-revenue',      kind: 'page', icon: 'payments',     labelKey: 'nav.revenue',      to: '/revenue',       keywords: ['mrr', 'arr', 'ingresos', 'money', 'income'] },
+  { id: 'page-revenue',      kind: 'page', icon: 'paid',         labelKey: 'nav.revenue',      to: '/revenue',       keywords: ['mrr', 'arr', 'ingresos', 'money', 'income'] },
   { id: 'page-forecasting',  kind: 'page', icon: 'trending_up',  labelKey: 'nav.forecasting',  to: '/forecasting',   keywords: ['forecast', 'prediction', 'pronóstico', 'growth', 'projection'] },
   { id: 'page-clients',      kind: 'page', icon: 'group',        labelKey: 'nav.clients',      to: '/clients',       keywords: ['customers', 'clientes', 'users', 'churn'] },
   { id: 'page-products',     kind: 'page', icon: 'inventory_2',  labelKey: 'nav.products',     to: '/products',      keywords: ['services', 'servicios', 'productos', 'categories'] },

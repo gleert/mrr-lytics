@@ -84,7 +84,7 @@ export function ForecastCTA() {
       <div className="rounded-xl overflow-hidden p-8 bg-gradient-to-br from-emerald-600 to-emerald-700 flex flex-col justify-between gap-6">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-white/70">
-            <Icon name="payments" size="lg" />
+            <Icon name="paid" size="lg" />
             <span className="text-sm font-medium uppercase tracking-wider">
               {t('dashboard.revenueCta.label')}
             </span>
