@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { Icon } from './ui/icon'
 import { useFilters } from '@/app/providers'
 import { InstanceFormModal } from '@/features/settings/components/instance-form-modal'
-import { useCreateInstance } from '@/features/settings/hooks/use-instances'
+import { useCreateInstance, type CreateInstanceData, type UpdateInstanceData } from '@/features/settings/hooks/use-instances'
 import { useToast } from './ui/toast'
 
 interface NoInstancesGuardProps {
@@ -44,7 +44,7 @@ export function NoInstancesGuard({ children }: NoInstancesGuardProps) {
     return <>{children}</>
   }
 
-  const handleSubmit = (data: Parameters<typeof createInstance.mutate>[0]) => {
+  const handleSubmit = (data: CreateInstanceData | UpdateInstanceData) => {
     createInstance.mutate(data, {
       onSuccess: () => {
         setModalOpen(false)

@@ -21,7 +21,7 @@ interface PasswordFormData {
 export function ProfilePage() {
   const { t } = useTranslation()
   const { user, updatePassword } = useAuth()
-  const { tenants, allInstances } = useFilters()
+  const { tenants } = useFilters()
   const toast = useToast()
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
