@@ -45,7 +45,7 @@ export function NoInstancesGuard({ children }: NoInstancesGuardProps) {
   }
 
   const handleSubmit = (data: CreateInstanceData | UpdateInstanceData) => {
-    createInstance.mutate(data, {
+    createInstance.mutate(data as CreateInstanceData, {
       onSuccess: () => {
         setModalOpen(false)
         success(t('instances.instanceCreated'))
