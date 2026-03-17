@@ -33,3 +33,6 @@ yarn-error.log*
 
 # TypeScript build info
 *.tsbuildinfo
+
+# OpenCode config (contains MCP auth)
+opencode.json

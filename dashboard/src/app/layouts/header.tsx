@@ -8,6 +8,7 @@ import { useTheme, useAuth } from '@/app/providers'
 import { cn, formatRelativeTime } from '@/shared/lib/utils'
 import { useSyncStatus, useTriggerSync } from '@/features/sync/hooks/use-sync'
 import { useCommandPalette } from '@/shared/components/command-palette'
+import { getKnownAccounts, removeKnownAccount } from '@/shared/lib/account-store'
 
 interface HeaderProps {
   isMobile?: boolean
@@ -18,7 +19,7 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setTheme, resolvedTheme } = useTheme()
-  const { user, signOut } = useAuth()
+  const { user, signOut, switchAccount, addAccount } = useAuth()
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const { open: openCommandPalette } = useCommandPalette()
@@ -221,45 +222,122 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
           </Button>
 
           {/* Dropdown menu */}
-          {dropdownOpen && (
-            <div className="glass absolute right-0 top-full z-[9999] mt-2 w-56 rounded-xl p-1.5 shadow-xl animate-fade-in">
-              {/* User info */}
-              <div className="px-3 py-2.5 border-b border-border mb-1">
-                <p className="text-sm font-normal">
-                  {user?.user_metadata?.full_name || 'User'}
-                </p>
-                <p className="text-xs text-muted truncate font-light">{user?.email}</p>
+          {dropdownOpen && (() => {
+            const otherAccounts = getKnownAccounts().filter(a => a.id !== user?.id)
+            return (
+              <div className="glass absolute right-0 top-full z-[9999] mt-2 w-72 rounded-xl p-1.5 shadow-xl animate-fade-in">
+                {/* Current account */}
+                <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border mb-1">
+                  <Avatar className="h-9 w-9 shrink-0 ring-2 ring-primary-500/30">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt="" />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(user?.user_metadata?.full_name, user?.email ?? undefined)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-normal truncate">
+                      {user?.user_metadata?.full_name || 'User'}
+                    </p>
+                    <p className="text-xs text-muted truncate font-light">{user?.email}</p>
+                  </div>
+                  <Icon name="check_circle" size="md" className="text-primary-500 shrink-0" />
+                </div>
+
+                {/* Other known accounts */}
+                {otherAccounts.length > 0 && (
+                  <>
+                    <p className="px-3 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted select-none">
+                      {t('auth.otherAccounts')}
+                    </p>
+                    {otherAccounts.map(account => (
+                      <div key={account.id} className="group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-hover transition-colors">
+                        <button
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                          onClick={() => {
+                            setDropdownOpen(false)
+                            switchAccount(account.email)
+                          }}
+                        >
+                          <Avatar className="h-8 w-8 shrink-0 opacity-70">
+                            <AvatarImage src={account.avatarUrl ?? undefined} alt="" />
+                            <AvatarFallback className="text-xs">
+                              {getInitials(account.fullName ?? undefined, account.email)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1 text-left">
+                            <p className="text-sm font-light truncate">{account.fullName || account.email}</p>
+                            {account.fullName && (
+                              <p className="text-[11px] text-muted truncate">{account.email}</p>
+                            )}
+                          </div>
+                        </button>
+                        <button
+                          className="shrink-0 opacity-0 group-hover:opacity-100 text-muted hover:text-foreground transition-all p-0.5"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeKnownAccount(account.id)
+                            // Force re-render by toggling dropdown
+                            setDropdownOpen(false)
+                            requestAnimationFrame(() => setDropdownOpen(true))
+                          }}
+                          title={t('auth.removeAccount')}
+                        >
+                          <Icon name="close" size="sm" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="h-px bg-border my-1" />
+                  </>
+                )}
+
+                {/* Add another account */}
+                <button
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-light',
+                    'hover:bg-surface-hover transition-colors'
+                  )}
+                  onClick={() => {
+                    setDropdownOpen(false)
+                    addAccount()
+                  }}
+                >
+                  <Icon name="person_add" size="md" className="text-muted" />
+                  {t('auth.addAnotherAccount')}
+                </button>
+
+                <div className="h-px bg-border my-1" />
+
+                {/* Profile */}
+                <button
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-light',
+                    'hover:bg-surface-hover transition-colors'
+                  )}
+                  onClick={() => {
+                    navigate('/profile')
+                    setDropdownOpen(false)
+                  }}
+                >
+                  <Icon name="person" size="md" className="text-muted" />
+                  {t('nav.profile')}
+                </button>
+
+                <div className="h-px bg-border my-1" />
+
+                {/* Logout */}
+                <button
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-light text-error',
+                    'hover:bg-error/10 transition-colors'
+                  )}
+                  onClick={handleSignOut}
+                >
+                  <Icon name="logout" size="md" />
+                  {t('auth.logout')}
+                </button>
               </div>
-
-              {/* Menu items */}
-              <button
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-light',
-                  'hover:bg-surface-hover transition-colors'
-                )}
-                onClick={() => {
-                  navigate('/profile')
-                  setDropdownOpen(false)
-                }}
-              >
-                <Icon name="person" size="md" className="text-muted" />
-                {t('nav.profile')}
-              </button>
-
-              <div className="h-px bg-border my-1" />
-
-              <button
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-light text-error',
-                  'hover:bg-error/10 transition-colors'
-                )}
-                onClick={handleSignOut}
-              >
-                <Icon name="logout" size="md" />
-                {t('auth.logout')}
-              </button>
-            </div>
-          )}
+            )
+          })()}
         </div>
       </div>
     </header>

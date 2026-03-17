@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -39,10 +39,15 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { signInWithGoogle, signInWithEmail, isAuthenticated, isLoading } = useAuth()
+  const [searchParams] = useSearchParams()
   const [isSigningIn, setIsSigningIn] = React.useState(false)
   const [isGoogleSigningIn, setIsGoogleSigningIn] = React.useState(false)
   const [isDevSigningIn, setIsDevSigningIn] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+
+  // Read account-switch query params
+  const loginHint = searchParams.get('hint') || undefined
+  const promptParam = searchParams.get('prompt') || undefined
 
   const {
     register,
@@ -84,7 +89,10 @@ export function LoginPage() {
     setError(null)
 
     try {
-      await signInWithGoogle()
+      await signInWithGoogle({
+        loginHint,
+        prompt: promptParam,
+      })
       // Redirect happens automatically via OAuth callback
     } catch (err) {
       console.error('Sign in error:', err)
@@ -92,6 +100,15 @@ export function LoginPage() {
       setIsGoogleSigningIn(false)
     }
   }
+
+  // Auto-trigger Google sign-in when coming from account switch
+  const autoTriggered = React.useRef(false)
+  React.useEffect(() => {
+    if ((loginHint || promptParam) && !autoTriggered.current && !isLoading && !isAuthenticated) {
+      autoTriggered.current = true
+      handleGoogleSignIn()
+    }
+  }, [loginHint, promptParam, isLoading, isAuthenticated]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quick dev login with test credentials
   const handleDevLogin = async () => {

@@ -63,6 +63,11 @@ export const en = {
       passwordUpdated: 'Password updated!',
       redirectingToDashboard: 'Redirecting you to the dashboard...',
 
+      // Account switcher
+      otherAccounts: 'Other accounts',
+      addAnotherAccount: 'Add another account',
+      removeAccount: 'Remove account',
+
       // Navigation
       backToLogin: 'Back to login',
       noAccount: "Don't have an account?",

@@ -62,6 +62,11 @@ export const es = {
       passwordUpdated: '¡Contraseña actualizada!',
       redirectingToDashboard: 'Redirigiendo al panel...',
 
+      // Account switcher
+      otherAccounts: 'Otras cuentas',
+      addAnotherAccount: 'Añadir otra cuenta',
+      removeAccount: 'Eliminar cuenta',
+
       // Navigation
       backToLogin: 'Volver al inicio de sesión',
       noAccount: '¿No tienes cuenta?',

@@ -2,6 +2,7 @@ import * as React from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/shared/lib/supabase'
 import { clearQueryCache } from './query-provider'
+import { addKnownAccount } from '@/shared/lib/account-store'
 
 export type UserRole = 'admin' | 'viewer'
 
@@ -23,14 +24,21 @@ interface SignUpOptions {
   password: string
 }
 
+interface SignInWithGoogleOptions {
+  loginHint?: string
+  prompt?: string
+}
+
 interface AuthContextValue extends AuthState {
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: (options?: SignInWithGoogleOptions) => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUp: (options: SignUpOptions) => Promise<void>
   signOut: () => Promise<void>
   resetPasswordForEmail: (email: string) => Promise<void>
   updatePassword: (newPassword: string) => Promise<void>
   refreshSession: () => Promise<void>
+  switchAccount: (email: string) => Promise<void>
+  addAccount: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
@@ -79,6 +87,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         clearQueryCache()
       }
 
+      // Save to known accounts on sign-in
+      if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        const u = session.user
+        addKnownAccount({
+          id: u.id,
+          email: u.email ?? '',
+          fullName: u.user_metadata?.full_name ?? u.user_metadata?.name ?? null,
+          avatarUrl: u.user_metadata?.avatar_url ?? null,
+          provider: u.app_metadata?.provider ?? 'email',
+        })
+      }
+
       currentUserIdRef.current = newUserId
       setState((prev) => ({
         ...prev,
@@ -94,15 +114,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  const signInWithGoogle = React.useCallback(async () => {
+  const signInWithGoogle = React.useCallback(async (options?: SignInWithGoogleOptions) => {
+    const queryParams: Record<string, string> = {
+      access_type: 'offline',
+      prompt: options?.prompt || 'consent',
+    }
+    if (options?.loginHint) {
+      queryParams.login_hint = options.loginHint
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+        queryParams,
       },
     })
 
@@ -183,6 +208,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
+  const switchAccount = React.useCallback(async (email: string) => {
+    clearQueryCache()
+    await supabase.auth.signOut()
+    // Redirect to login with hint so Google pre-selects the account
+    window.location.href = `/login?hint=${encodeURIComponent(email)}`
+  }, [])
+
+  const addAccount = React.useCallback(async () => {
+    clearQueryCache()
+    await supabase.auth.signOut()
+    // Redirect to login forcing account selection
+    window.location.href = '/login?prompt=select_account'
+  }, [])
+
   const refreshSession = React.useCallback(async () => {
     const { data, error } = await supabase.auth.refreshSession()
     if (error) {
@@ -209,6 +248,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       resetPasswordForEmail,
       updatePassword,
       refreshSession,
+      switchAccount,
+      addAccount,
     }),
     [
       state,
@@ -219,6 +260,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       resetPasswordForEmail,
       updatePassword,
       refreshSession,
+      switchAccount,
+      addAccount,
     ]
   )
 
