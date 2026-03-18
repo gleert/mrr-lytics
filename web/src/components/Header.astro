@@ -8,14 +8,13 @@ interface Props {
 
 const { lang = defaultLang } = Astro.props
 const t = useTranslations(lang)
+const homePath = getLocalizedPath('', lang)
 
 const navLinks = [
-  { href: '#features', label: t.header.features },
-  { href: '#pricing', label: t.header.pricing },
-  { href: '#faq', label: t.header.faq },
+  { href: `${homePath}#features`, label: t.header.features },
+  { href: `${homePath}#pricing`, label: t.header.pricing },
+  { href: `${homePath}#faq`, label: t.header.faq },
 ]
-
-const homePath = getLocalizedPath('', lang)
 ---
 
 <header class="fixed top-0 left-0 right-0 z-50 glass">

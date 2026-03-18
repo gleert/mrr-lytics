@@ -392,6 +392,138 @@ export default {
     ],
   },
 
+  // Docs
+  docs: {
+    meta: {
+      title: 'Documentaci\u00f3n - MRRlytics',
+      description: 'Aprende a configurar MRRlytics, conectar tu instalaci\u00f3n WHMCS y sacar el m\u00e1ximo partido a tus analytics.',
+    },
+    hero: {
+      title: 'Documentaci\u00f3n',
+      subtitle: 'Todo lo que necesitas para configurar y aprovechar al m\u00e1ximo MRRlytics.',
+    },
+    nav: {
+      gettingStarted: 'Primeros Pasos',
+      connectWhmcs: 'Conectar WHMCS',
+      whmcsModule: 'M\u00f3dulo WHMCS',
+    },
+    gettingStarted: {
+      meta: {
+        title: 'Primeros Pasos - Docs MRRlytics',
+        description: 'Empieza con MRRlytics en minutos. Crea tu cuenta, configura tu organizaci\u00f3n y conecta tu WHMCS.',
+      },
+      title: 'Primeros Pasos',
+      subtitle: 'Configura MRRlytics en menos de 5 minutos y empieza a monitorizar las m\u00e9tricas de tu negocio de hosting.',
+      steps: [
+        {
+          title: '1. Crea tu cuenta',
+          content: 'Ve a app.mrrlytics.com y reg\u00edstrate con tu cuenta de Google o direcci\u00f3n de email. Tu cuenta es gratuita e incluye un plan free con analytics b\u00e1sicos.',
+        },
+        {
+          title: '2. Configura tu organizaci\u00f3n',
+          content: 'Despu\u00e9s de iniciar sesi\u00f3n por primera vez, MRRlytics crear\u00e1 autom\u00e1ticamente tu organizaci\u00f3n (tenant). Este es tu espacio de trabajo donde viven todas tus instancias WHMCS, miembros del equipo y datos. Puedes renombrarlo desde Ajustes > General.',
+        },
+        {
+          title: '3. A\u00f1ade tu primera instancia WHMCS',
+          content: 'Navega a Ajustes > Instancias y haz clic en "A\u00f1adir Instancia". Necesitar\u00e1s:\n\n- Un nombre para esta instancia (ej. "WHMCS Producci\u00f3n")\n- La URL de tu WHMCS (ej. https://billing.tudominio.com)\n- Credenciales API de WHMCS (Identificador y Secreto)\n\nPara crear credenciales API en WHMCS, ve a Configuraci\u00f3n > Gesti\u00f3n de Personal > Credenciales API y crea una nueva credencial. Recomendamos usar permisos de solo lectura.',
+        },
+        {
+          title: '4. Ejecuta tu primera sincronizaci\u00f3n',
+          content: 'Una vez configurada la instancia, haz clic en "Sincronizar Ahora" para iniciar la importaci\u00f3n de datos. Esto puede tardar unos minutos dependiendo del tama\u00f1o de tu base de datos WHMCS. Cuando termine, tu dashboard mostrar\u00e1 tu MRR, tasa de churn y otras m\u00e9tricas clave.',
+        },
+        {
+          title: '5. Explora tu dashboard',
+          content: 'Tu dashboard ahora muestra m\u00e9tricas en tiempo real incluyendo:\n\n- Ingresos Recurrentes Mensuales (MRR) con tendencia\n- Clientes activos y tasa de churn\n- Desglose de ingresos por producto y categor\u00eda\n- Insights de clientes y productos principales\n\nLos datos se sincronizan autom\u00e1ticamente cada 15 minutos, as\u00ed que tus m\u00e9tricas est\u00e1n siempre actualizadas.',
+        },
+      ],
+      nextSteps: {
+        title: 'Pr\u00f3ximos pasos',
+        items: [
+          'Configura categor\u00edas para agrupar tus productos y mejorar el an\u00e1lisis de ingresos',
+          'Configura webhooks para recibir notificaciones en tiempo real',
+          'Invita a miembros del equipo para colaborar en tus analytics',
+          'Instala el m\u00f3dulo WHMCS para una recolecci\u00f3n de datos mejorada',
+        ],
+      },
+    },
+    connectWhmcs: {
+      meta: {
+        title: 'Conectar WHMCS - Docs MRRlytics',
+        description: 'Aprende a conectar tu instalaci\u00f3n WHMCS a MRRlytics usando credenciales API.',
+      },
+      title: 'Conectar WHMCS',
+      subtitle: 'Gu\u00eda paso a paso para conectar tu instalaci\u00f3n WHMCS a MRRlytics v\u00eda API.',
+      sections: [
+        {
+          title: 'Requisitos previos',
+          content: 'Antes de conectar tu WHMCS, aseg\u00farate de tener:\n\n- Acceso de administrador a tu instalaci\u00f3n WHMCS\n- WHMCS versi\u00f3n 8.0 o superior\n- Acceso API habilitado en WHMCS (Configuraci\u00f3n > Ajustes Generales > Seguridad > Permitir Acceso API)\n- Una cuenta de MRRlytics con una organizaci\u00f3n configurada',
+        },
+        {
+          title: 'Paso 1: Crear credenciales API en WHMCS',
+          content: 'En tu panel de administraci\u00f3n de WHMCS:\n\n1. Ve a Configuraci\u00f3n > Gesti\u00f3n de Personal > Credenciales API\n2. Haz clic en "Generar Nueva Credencial API"\n3. A\u00f1ade una descripci\u00f3n como "Integraci\u00f3n MRRlytics"\n4. Configura los permisos de acceso. MRRlytics necesita acceso de lectura a:\n   - Clientes\n   - Productos/Servicios\n   - Facturas\n   - Dominios\n   - Solicitudes de Cancelaci\u00f3n\n5. Copia el Identificador API y el Secreto API',
+        },
+        {
+          title: 'Paso 2: A\u00f1adir la instancia en MRRlytics',
+          content: 'En tu dashboard de MRRlytics:\n\n1. Navega a Ajustes > Instancias\n2. Haz clic en "A\u00f1adir Instancia"\n3. Rellena el formulario:\n   - Nombre: Un nombre descriptivo para esta instalaci\u00f3n WHMCS\n   - URL WHMCS: La URL completa de tu admin WHMCS (ej. https://billing.ejemplo.com)\n   - Identificador API: Pega desde WHMCS\n   - Secreto API: Pega desde WHMCS\n4. Haz clic en "Guardar"\n\nMRRlytics validar\u00e1 la conexi\u00f3n y confirmar\u00e1 que funciona.',
+        },
+        {
+          title: 'Paso 3: Sincronizaci\u00f3n inicial',
+          content: 'Despu\u00e9s de a\u00f1adir la instancia, inicia tu primera sincronizaci\u00f3n haciendo clic en "Sincronizar Ahora". La sincronizaci\u00f3n inicial importa:\n\n- Todos los clientes activos y sus servicios\n- Cat\u00e1logo de productos y grupos de productos\n- Historial de facturas\n- Registros de dominios\n- Solicitudes de cancelaci\u00f3n\n\nEsto puede tardar entre 2 y 10 minutos dependiendo del tama\u00f1o de tu base de datos.',
+        },
+        {
+          title: 'Frecuencia de sincronizaci\u00f3n',
+          content: 'MRRlytics sincroniza tus datos autom\u00e1ticamente:\n\n- Sincronizaci\u00f3n incremental: Cada 15 minutos (recoge nuevos cambios)\n- Sincronizaci\u00f3n completa: Una vez al d\u00eda a medianoche UTC (recalcula todas las m\u00e9tricas)\n\nTambi\u00e9n puedes ejecutar una sincronizaci\u00f3n manual en cualquier momento desde la p\u00e1gina de Ajustes.',
+        },
+        {
+          title: 'Seguridad',
+          content: 'Tus credenciales API de WHMCS se cifran con AES-256 antes de almacenarse. Nunca son visibles en el dashboard despu\u00e9s de guardarlas. Solo accedemos a tus datos WHMCS a trav\u00e9s de la API oficial con los permisos que otorgaste. Toda la comunicaci\u00f3n usa cifrado TLS 1.3.',
+        },
+        {
+          title: 'Soluci\u00f3n de problemas',
+          content: 'Problemas comunes:\n\n- "Conexi\u00f3n fallida": Verifica que tu URL WHMCS es correcta y accesible desde internet. Aseg\u00farate de que el acceso API est\u00e1 habilitado en la configuraci\u00f3n de WHMCS.\n- "Error de autenticaci\u00f3n": Comprueba tu Identificador API y Secreto. Son sensibles a may\u00fasculas y min\u00fasculas.\n- "Tiempo de espera agotado": Si tu WHMCS tarda en responder, la sincronizaci\u00f3n puede expirar. Int\u00e9ntalo de nuevo o revisa el rendimiento de tu servidor WHMCS.\n- "Sin datos despu\u00e9s de sincronizar": Aseg\u00farate de que tus credenciales API tienen los permisos correctos de lectura para clientes, productos y facturas.',
+        },
+      ],
+    },
+    whmcsModule: {
+      meta: {
+        title: 'M\u00f3dulo WHMCS - Docs MRRlytics',
+        description: 'Instala el m\u00f3dulo MRRlytics para WHMCS para una recolecci\u00f3n de datos mejorada y seguimiento de eventos en tiempo real.',
+      },
+      title: 'M\u00f3dulo WHMCS',
+      subtitle: 'M\u00f3dulo opcional para una recolecci\u00f3n de datos mejorada y notificaciones de eventos en tiempo real.',
+      sections: [
+        {
+          title: 'Descripci\u00f3n general',
+          content: 'El m\u00f3dulo MRRlytics para WHMCS es un addon opcional que mejora tus analytics enviando eventos en tiempo real desde WHMCS a MRRlytics. Mientras que la sincronizaci\u00f3n basada en API se encarga de la importaci\u00f3n de datos principal, el m\u00f3dulo proporciona:\n\n- Notificaciones de eventos en tiempo real (nuevos pedidos, cancelaciones, upgrades)\n- Actualizaciones de datos m\u00e1s r\u00e1pidas sin esperar al siguiente ciclo de sincronizaci\u00f3n\n- Hooks personalizados para integraciones avanzadas',
+        },
+        {
+          title: 'Instalaci\u00f3n',
+          content: '1. Descarga el m\u00f3dulo desde tu dashboard de MRRlytics (Ajustes > Instancias > Descargar M\u00f3dulo)\n2. Extrae el archivo en tu instalaci\u00f3n WHMCS:\n   - Copia la carpeta "mrrlytics" a /modules/addons/\n3. En el admin de WHMCS, ve a Configuraci\u00f3n > M\u00f3dulos Addon\n4. Busca "MRRlytics" y haz clic en "Activar"\n5. Configura el m\u00f3dulo:\n   - URL API: https://api.mrrlytics.com\n   - Clave API: Tu clave API de MRRlytics (disponible en Ajustes > Claves API)\n6. Haz clic en "Guardar Cambios"',
+        },
+        {
+          title: 'Configuraci\u00f3n',
+          content: 'Despu\u00e9s de activar el m\u00f3dulo, puedes configurar qu\u00e9 eventos se env\u00edan a MRRlytics:\n\n- Registro de nuevos clientes\n- Pedidos de servicios/productos\n- Cancelaciones de servicios\n- Creaci\u00f3n y pago de facturas\n- Registros y transferencias de dominios\n- Acciones de upgrade/downgrade\n\nTodos los eventos est\u00e1n habilitados por defecto. Puedes desactivar eventos espec\u00edficos desde la p\u00e1gina de configuraci\u00f3n del m\u00f3dulo.',
+        },
+        {
+          title: 'Configuraci\u00f3n de la clave API',
+          content: 'El m\u00f3dulo WHMCS se autentica usando una clave API:\n\n1. En MRRlytics, ve a Ajustes > Claves API\n2. Haz clic en "Generar Nueva Clave"\n3. Copia la clave (solo se mostrar\u00e1 una vez)\n4. P\u00e9gala en la configuraci\u00f3n del m\u00f3dulo WHMCS\n\nMant\u00e9n tu clave API en secreto. Si se ve comprometida, rev\u00f3cala y genera una nueva desde el dashboard de MRRlytics.',
+        },
+        {
+          title: 'Verificar la instalaci\u00f3n',
+          content: 'Para verificar que el m\u00f3dulo funciona correctamente:\n\n1. En WHMCS, ve a Addons > MRRlytics\n2. Haz clic en "Probar Conexi\u00f3n"\n3. Deber\u00edas ver un mensaje de \u00e9xito confirmando la conexi\u00f3n\n\nTambi\u00e9n puedes revisar los logs del m\u00f3dulo en Utilidades > Logs > Log de M\u00f3dulos en WHMCS.',
+        },
+        {
+          title: 'Actualizar el m\u00f3dulo',
+          content: 'Para actualizar el m\u00f3dulo:\n\n1. Descarga la \u00faltima versi\u00f3n desde tu dashboard de MRRlytics\n2. Reemplaza los archivos en /modules/addons/mrrlytics/\n3. En WHMCS, ve a Configuraci\u00f3n > M\u00f3dulos Addon > MRRlytics\n4. Haz clic en "Guardar" para aplicar actualizaciones de base de datos\n\nLas actualizaciones son retrocompatibles y tu configuraci\u00f3n se mantendr\u00e1.',
+        },
+        {
+          title: 'Desinstalaci\u00f3n',
+          content: 'Para eliminar el m\u00f3dulo:\n\n1. En el admin de WHMCS, ve a Configuraci\u00f3n > M\u00f3dulos Addon\n2. Busca "MRRlytics" y haz clic en "Desactivar"\n3. Elimina la carpeta /modules/addons/mrrlytics/\n\nDesinstalar el m\u00f3dulo no afecta a tu cuenta o datos de MRRlytics. La sincronizaci\u00f3n basada en API seguir\u00e1 funcionando normalmente.',
+        },
+      ],
+    },
+  },
+
   // Footer
   footer: {
     tagline: 'Plataforma de analytics para WHMCS. Rastrea MRR, churn y haz crecer tu negocio de hosting.',

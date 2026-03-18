@@ -1,0 +1,49 @@
+---
+import { type Lang, defaultLang, useTranslations, getLocalizedPath } from '../i18n'
+
+interface Props {
+  lang?: Lang
+  activeSlug?: string
+}
+
+const { lang = defaultLang, activeSlug = '' } = Astro.props
+const t = useTranslations(lang)
+
+const navItems = [
+  { slug: 'getting-started', label: t.docs.nav.gettingStarted },
+  { slug: 'connect-whmcs', label: t.docs.nav.connectWhmcs },
+  { slug: 'whmcs-module', label: t.docs.nav.whmcsModule },
+]
+---
+
+<div class="wrap">
+  <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
+    <!-- Sidebar -->
+    <aside class="lg:w-64 shrink-0">
+      <nav class="lg:sticky lg:top-28">
+        <ul class="flex lg:flex-col gap-2">
+          {navItems.map(item => (
+            <li>
+              <a
+                href={getLocalizedPath(`docs/${item.slug}`, lang)}
+                class:list={[
+                  'block px-4 py-2 rounded-lg text-sm transition-colors',
+                  activeSlug === item.slug
+                    ? 'bg-[var(--color-primary-500)]/10 text-[var(--color-primary-400)] font-medium'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-white/5',
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <div class="flex-1 min-w-0 max-w-3xl">
+      <slot />
+    </div>
+  </div>
+</div>

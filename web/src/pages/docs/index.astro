@@ -1,0 +1,65 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import Header from '../../components/Header.astro'
+import Footer from '../../components/Footer.astro'
+import DocsLayout from '../../components/DocsLayout.astro'
+import { useTranslations } from '../../i18n'
+
+const lang = 'en'
+const t = useTranslations(lang)
+---
+
+<Layout title={t.docs.meta.title} description={t.docs.meta.description} lang={lang}>
+  <Header lang={lang} />
+  <main>
+    <section class="pt-40 pb-12 md:pt-48 md:pb-16">
+      <div class="wrap">
+        <div class="max-w-3xl">
+          <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-4">
+            {t.docs.hero.title}
+          </h1>
+          <p class="text-lg text-[var(--color-text-muted)] leading-relaxed">
+            {t.docs.hero.subtitle}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pb-20 md:pb-28">
+      <div class="wrap">
+        <div class="grid md:grid-cols-3 gap-6">
+          <a href="/docs/getting-started" class="glass-card p-8 group transition-all duration-300 hover:border-[var(--color-primary-500)]/30">
+            <span class="text-xs text-[var(--color-text-muted)] font-mono">01</span>
+            <h3 class="text-lg font-semibold mt-3 mb-2 group-hover:text-[var(--color-primary-400)] transition-colors">
+              {t.docs.nav.gettingStarted}
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
+              {t.docs.gettingStarted.subtitle}
+            </p>
+          </a>
+
+          <a href="/docs/connect-whmcs" class="glass-card p-8 group transition-all duration-300 hover:border-[var(--color-primary-500)]/30">
+            <span class="text-xs text-[var(--color-text-muted)] font-mono">02</span>
+            <h3 class="text-lg font-semibold mt-3 mb-2 group-hover:text-[var(--color-primary-400)] transition-colors">
+              {t.docs.nav.connectWhmcs}
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
+              {t.docs.connectWhmcs.subtitle}
+            </p>
+          </a>
+
+          <a href="/docs/whmcs-module" class="glass-card p-8 group transition-all duration-300 hover:border-[var(--color-primary-500)]/30">
+            <span class="text-xs text-[var(--color-text-muted)] font-mono">03</span>
+            <h3 class="text-lg font-semibold mt-3 mb-2 group-hover:text-[var(--color-primary-400)] transition-colors">
+              {t.docs.nav.whmcsModule}
+            </h3>
+            <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
+              {t.docs.whmcsModule.subtitle}
+            </p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer lang={lang} />
+</Layout>
