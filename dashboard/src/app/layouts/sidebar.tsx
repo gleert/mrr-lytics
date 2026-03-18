@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
-import { useAuth } from '@/app/providers'
+import { useAuth, useTheme } from '@/app/providers'
 
 interface SidebarProps {
   isMobile?: boolean
@@ -123,7 +123,13 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
           <img
             src="/logo-white.svg"
             alt="MRRlytics"
-            className="h-[38px] w-auto"
+            className="h-[38px] w-auto hidden dark:block"
+            draggable={false}
+          />
+          <img
+            src="/logo-purple.svg"
+            alt="MRRlytics"
+            className="h-[38px] w-auto block dark:hidden"
             draggable={false}
           />
         </div>

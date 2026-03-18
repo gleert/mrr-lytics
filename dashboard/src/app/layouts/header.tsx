@@ -130,11 +130,13 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
                   'h-2 w-2 rounded-full',
                   syncStatus.is_syncing 
                     ? 'bg-warning animate-pulse' 
-                    : syncStatus.history[0]?.status === 'completed'
-                      ? 'bg-success'
-                      : syncStatus.history[0]?.status === 'failed'
-                        ? 'bg-error'
-                        : 'bg-muted'
+                    : !syncStatus.last_sync_at
+                      ? 'bg-muted'
+                      : syncStatus.history[0]?.status === 'completed'
+                        ? 'bg-success'
+                        : syncStatus.history[0]?.status === 'failed'
+                          ? 'bg-error'
+                          : 'bg-muted'
                 )}
               />
               <span className="hidden lg:inline">

@@ -6,7 +6,8 @@ export function AuthLayout() {
       <div className="w-full max-w-md px-4">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">
-          <img src="/logo-white.svg" alt="MRRlytics" className="h-10 w-auto" />
+          <img src="/logo-white.svg" alt="MRRlytics" className="h-10 w-auto hidden dark:block" />
+          <img src="/logo-purple.svg" alt="MRRlytics" className="h-10 w-auto block dark:hidden" />
           <p className="mt-3 text-sm text-muted">
             Analytics for your WHMCS business
           </p>

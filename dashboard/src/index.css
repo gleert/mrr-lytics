@@ -185,14 +185,30 @@ body {
   box-shadow: none !important;
 }
 
+.light .connector-dimmed {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
+}
+
 .connector-dimmed h3,
 .connector-dimmed p,
 .connector-dimmed span {
   opacity: 0.45;
 }
 
+.light .connector-dimmed h3,
+.light .connector-dimmed p,
+.light .connector-dimmed span {
+  opacity: 0.5;
+}
+
 .connector-dimmed svg {
   opacity: 0.35;
+}
+
+.light .connector-dimmed svg {
+  opacity: 0.4;
 }
 
 /* ===== Glassmorphism Utilities ===== */
