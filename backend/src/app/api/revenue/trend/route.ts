@@ -65,6 +65,15 @@ export async function GET(request: NextRequest) {
       console.error('Invoices query error:', invoicesError)
     }
 
+    console.log('[revenue/trend] Query params:', {
+      instanceIds,
+      period,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      invoicesFound: invoices?.length ?? 0,
+      invoicesError: invoicesError?.message,
+    })
+
     // Handle case when no data
     if (!invoices || invoices.length === 0) {
       return success({
