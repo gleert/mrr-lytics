@@ -76,3 +76,12 @@ export function useImpersonateTenant(tenantId: string) {
     ),
   })
 }
+
+// --- Delete tenant ---
+export function useDeleteTenant(tenantId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.delete(adminUrl(tenantId, 'delete')),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'tenants'] }),
+  })
+}

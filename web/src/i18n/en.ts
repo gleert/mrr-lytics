@@ -234,6 +234,8 @@ export default {
       messagePlaceholder: 'Tell us more about your needs...',
       submit: 'Send Message',
       sending: 'Sending...',
+      successMessage: 'Your message has been sent! We\'ll get back to you within 24 hours.',
+      errorMessage: 'Something went wrong. Please try again.',
     },
     info: {
       title: 'Other ways to reach us',

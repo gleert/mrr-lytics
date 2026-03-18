@@ -681,11 +681,11 @@ export const en = {
       scenarioRangeLabel: 'MRR range across scenarios',
       // Forecast callout banner
       calloutGainLabel: 'Next period outlook',
-      calloutGainHeadline: 'You could earn up to {{amount}}/mo',
-      calloutGainSub: 'Optimistic scenario at +{{growth}}% growth. Baseline projection: {{baseline}}/mo.',
+      calloutGainHeadline: 'You could bill up to {{amount}}/mo',
+      calloutGainSub: 'Optimistic scenario at +{{growth}}% growth. Baseline billing projection: {{baseline}}/mo.',
       calloutLossLabel: 'Next period outlook',
-      calloutLossHeadline: 'Revenue may drop to {{amount}}/mo',
-      calloutLossSub: 'Pessimistic scenario at -{{growth}}% decline. Baseline projection: {{baseline}}/mo.',
+      calloutLossHeadline: 'Billing may drop to {{amount}}/mo',
+      calloutLossSub: 'Pessimistic scenario at -{{growth}}% decline. Baseline billing projection: {{baseline}}/mo.',
     },
 
     // Domains

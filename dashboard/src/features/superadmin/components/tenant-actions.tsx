@@ -10,6 +10,7 @@ import {
   useSyncTenant,
   useTenantLogs,
   useImpersonateTenant,
+  useDeleteTenant,
   type SyncLog,
 } from '../hooks/use-superadmin-actions'
 
@@ -60,12 +61,15 @@ export function TenantActions({ tenant }: TenantActionsProps) {
   const [showPlanChange, setShowPlanChange] = React.useState(false)
   const [impersonateLink, setImpersonateLink] = React.useState<string | null>(null)
   const [syncResult, setSyncResult] = React.useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
+  const [deleteInput, setDeleteInput] = React.useState('')
 
   const suspend = useSuspendTenant(tenant.id)
   const resume = useResumeTenant(tenant.id)
   const changePlan = useChangePlan(tenant.id)
   const sync = useSyncTenant(tenant.id)
   const impersonate = useImpersonateTenant(tenant.id)
+  const deleteTenant = useDeleteTenant(tenant.id)
   const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useTenantLogs(tenant.id, showLogs)
 
   const isSuspended = tenant.status === 'suspended'
@@ -197,6 +201,17 @@ export function TenantActions({ tenant }: TenantActionsProps) {
           <Icon name="content_copy" size="sm" className="mr-1.5" />
           Copiar ID
         </Button>
+
+        {/* Delete */}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="border-error/30 text-error hover:bg-error/10 ml-auto"
+        >
+          <Icon name="delete_forever" size="sm" className="mr-1.5" />
+          Eliminar tenant
+        </Button>
       </div>
 
       {/* Sync result */}
@@ -278,6 +293,56 @@ export function TenantActions({ tenant }: TenantActionsProps) {
               Cambiando plan...
             </p>
           )}
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && (
+        <div className="rounded-xl border border-error/30 bg-error/5 p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <Icon name="warning" size="lg" className="text-error shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Eliminar tenant permanentemente</p>
+              <p className="text-xs text-muted mt-1">
+                Esta acción eliminará <strong>{tenant.name}</strong> y todos sus datos: instancias WHMCS, métricas, syncs, suscripciones y usuarios. <strong>No se puede deshacer.</strong>
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs text-muted">Escribe <code className="bg-surface px-1 rounded text-error">{tenant.slug}</code> para confirmar:</p>
+            <input
+              value={deleteInput}
+              onChange={e => setDeleteInput(e.target.value)}
+              placeholder={tenant.slug}
+              className="w-full bg-surface-elevated border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-error transition-colors font-mono"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setShowDeleteConfirm(false); setDeleteInput('') }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={async () => {
+                await deleteTenant.mutateAsync()
+                setShowDeleteConfirm(false)
+                setDeleteInput('')
+              }}
+              disabled={deleteInput !== tenant.slug || deleteTenant.isPending}
+              className="bg-error/10 text-error border border-error/30 hover:bg-error/20"
+            >
+              {deleteTenant.isPending ? (
+                <Icon name="sync" size="sm" className="mr-1.5 animate-spin" />
+              ) : (
+                <Icon name="delete_forever" size="sm" className="mr-1.5" />
+              )}
+              Eliminar definitivamente
+            </Button>
+          </div>
         </div>
       )}
 

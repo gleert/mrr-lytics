@@ -37,7 +37,7 @@ const contactInfo = [
         <div class="grid lg:grid-cols-5 gap-12 lg:gap-16">
           <!-- Form -->
           <div class="lg:col-span-3">
-            <form class="glass-card p-8 md:p-10 space-y-6" action="https://formspree.io/f/your-form-id" method="POST">
+            <form id="contact-form" class="glass-card p-8 md:p-10 space-y-6">
               <div class="grid md:grid-cols-2 gap-6">
                 <div>
                   <label for="name" class="block text-sm font-medium mb-2">{t.contact.form.name}</label>
@@ -86,10 +86,24 @@ const contactInfo = [
                   class="form-input resize-none"
                 ></textarea>
               </div>
+
+              <!-- Status messages -->
+              <div id="form-success" class="hidden flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{t.contact.form.successMessage}</span>
+              </div>
+              <div id="form-error" class="hidden flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span id="form-error-text">{t.contact.form.errorMessage}</span>
+              </div>
               
-              <button type="submit" class="btn btn-primary w-full md:w-auto justify-center">
+              <button type="submit" id="submit-btn" class="btn btn-primary w-full md:w-auto justify-center">
                 <span class="dot"></span>
-                <span>{t.contact.form.submit}</span>
+                <span id="submit-text">{t.contact.form.submit}</span>
               </button>
             </form>
           </div>
@@ -147,6 +161,58 @@ const contactInfo = [
   </main>
   <Footer lang={lang} />
 </Layout>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement
+  const submitText = document.getElementById('submit-text') as HTMLSpanElement
+  const successEl = document.getElementById('form-success') as HTMLDivElement
+  const errorEl = document.getElementById('form-error') as HTMLDivElement
+  const errorText = document.getElementById('form-error-text') as HTMLSpanElement
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    successEl.classList.add('hidden')
+    errorEl.classList.add('hidden')
+    submitBtn.disabled = true
+    submitText.textContent = '...'
+
+    const data = {
+      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      subject: (form.elements.namedItem('subject') as HTMLInputElement).value,
+      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+      lang: document.documentElement.lang || 'en',
+    }
+
+    try {
+      const res = await fetch('https://api.mrrlytics.com/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      const json = await res.json()
+
+      if (res.ok && json.success) {
+        successEl.classList.remove('hidden')
+        form.reset()
+      } else {
+        errorText.textContent = json.error || 'Something went wrong. Please try again.'
+        errorEl.classList.remove('hidden')
+      }
+    } catch {
+      errorText.textContent = 'Network error. Please check your connection and try again.'
+      errorEl.classList.remove('hidden')
+    } finally {
+      submitBtn.disabled = false
+      submitText.textContent = submitText.dataset.originalText || 'Send Message'
+    }
+  })
+
+  // Store original button text
+  if (submitText) submitText.dataset.originalText = submitText.textContent || ''
+</script>
 
 <style>
   .form-input {

@@ -234,6 +234,8 @@ export default {
       messagePlaceholder: 'Cuéntanos más sobre tus necesidades...',
       submit: 'Enviar Mensaje',
       sending: 'Enviando...',
+      successMessage: 'Tu mensaje ha sido enviado. Te responderemos en menos de 24 horas.',
+      errorMessage: 'Algo salió mal. Por favor, inténtalo de nuevo.',
     },
     info: {
       title: 'Otras formas de contactarnos',

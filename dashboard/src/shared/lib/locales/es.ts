@@ -635,11 +635,11 @@ export const es = {
       scenarioRangeLabel: 'Rango de MRR entre escenarios',
       // Forecast callout banner
       calloutGainLabel: 'Proyección próximo período',
-      calloutGainHeadline: 'Podrías ganar hasta {{amount}}/mes',
-      calloutGainSub: 'Escenario optimista con +{{growth}}% de crecimiento. Proyección base: {{baseline}}/mes.',
+      calloutGainHeadline: 'Podrías facturar hasta {{amount}}/mes',
+      calloutGainSub: 'Escenario optimista con +{{growth}}% de crecimiento. Facturación base proyectada: {{baseline}}/mes.',
       calloutLossLabel: 'Proyección próximo período',
-      calloutLossHeadline: 'Los ingresos podrían caer a {{amount}}/mes',
-      calloutLossSub: 'Escenario pesimista con -{{growth}}% de caída. Proyección base: {{baseline}}/mes.',
+      calloutLossHeadline: 'La facturación podría caer a {{amount}}/mes',
+      calloutLossSub: 'Escenario pesimista con -{{growth}}% de caída. Facturación base proyectada: {{baseline}}/mes.',
     },
 
     // Domains

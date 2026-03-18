@@ -3,7 +3,7 @@ import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToke
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // Paths that don't require authentication
-const PUBLIC_PATHS = ['/api/health']
+const PUBLIC_PATHS = ['/api/health', '/api/contact']
 
 // Paths that require admin key instead of tenant key
 const ADMIN_PATHS = ['/api/tenants']
@@ -14,10 +14,14 @@ const CRON_PATHS = ['/api/cron']
 // Paths that require JWT auth only (user-specific endpoints)
 const USER_PATHS = ['/api/user', '/api/admin']
 
-// Allowed CORS origins (comma-separated in env)
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174')
-  .split(',')
-  .map(origin => origin.trim())
+// Allowed CORS origins (comma-separated in env) - also allow the marketing site
+const ALLOWED_ORIGINS = [
+  ...(process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174')
+    .split(',')
+    .map(origin => origin.trim()),
+  'https://mrrlytics.com',
+  'https://www.mrrlytics.com',
+]
 
 /**
  * Check if the origin is allowed for CORS
