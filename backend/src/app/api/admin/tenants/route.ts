@@ -44,7 +44,7 @@ export async function GET() {
         .select('id, tenant_id, email, full_name, role, is_active, last_login_at, created_at'),
       supabase
         .from('whmcs_instances')
-        .select('id, tenant_id, name, whmcs_url, is_active'),
+        .select('id, tenant_id, name, whmcs_url, status'),
     ])
 
     const allUsers = usersResult.data || []
@@ -86,7 +86,7 @@ export async function GET() {
           id: i.id,
           name: i.name,
           whmcs_url: i.whmcs_url,
-          is_active: i.is_active,
+          is_active: i.status === 'active',
         })),
       }
     })
