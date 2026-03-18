@@ -57,22 +57,14 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id, total, datepaid')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
+      .lte('datepaid', endDate.toISOString())
       .order('datepaid', { ascending: true })
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
     }
-
-    console.log('[revenue/trend] Query params:', {
-      instanceIds,
-      period,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
-      invoicesFound: invoices?.length ?? 0,
-      invoicesError: invoicesError?.message,
-    })
 
     // Handle case when no data
     if (!invoices || invoices.length === 0) {
@@ -160,7 +152,7 @@ export async function GET(request: NextRequest) {
         const monday = new Date(date.setDate(diff))
         key = monday.toISOString().split('T')[0]
       } else {
-        key = invoice.datepaid
+        key = date.toISOString().split('T')[0]
       }
 
       const current = trendMap.get(key) || { recurring: 0, onetime: 0, total: 0 }
