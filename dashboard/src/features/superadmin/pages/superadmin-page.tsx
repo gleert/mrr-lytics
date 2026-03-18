@@ -4,6 +4,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
 import { useAdminTenants, useIsSuperAdmin, type AdminTenant } from '../hooks/use-superadmin'
 import { Navigate } from 'react-router-dom'
+import { TenantActions } from '../components/tenant-actions'
 
 const PLAN_COLORS: Record<string, string> = {
   free: 'bg-muted/10 text-muted',
@@ -82,6 +83,17 @@ function TenantDetail({ tenant }: { tenant: AdminTenant }) {
           ))}
         </div>
       </div>
+
+      {/* Actions */}
+      <div>
+        <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+          <Icon name="bolt" size="sm" className="text-muted" />
+          Acciones
+        </h4>
+        <TenantActions tenant={tenant} />
+      </div>
+
+      <div className="border-t border-border" />
 
       {/* Members + Instances in two columns */}
       <div className="grid md:grid-cols-2 gap-6">

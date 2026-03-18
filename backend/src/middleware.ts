@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToken, validateJwtEdge, validateJwtAuthOnly } from '@/lib/auth/api-key-edge'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Paths that don't require authentication
 const PUBLIC_PATHS = ['/api/health']
@@ -267,6 +268,32 @@ export async function middleware(request: NextRequest) {
       scopes = apiKey.scopes
       authId = apiKey.id
       authType = 'api_key'
+    }
+
+    // Check if tenant is suspended
+    try {
+      const supabase = createAdminClient()
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('status')
+        .eq('id', tenantId)
+        .single()
+
+      if (tenant?.status === 'suspended') {
+        const response = NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'TENANT_SUSPENDED',
+              message: 'Your account has been suspended. Please contact support.',
+            },
+          },
+          { status: 403 }
+        )
+        return addCorsHeaders(response, origin)
+      }
+    } catch {
+      // If we can't check tenant status, allow the request through
     }
 
     const requestHeaders = new Headers(request.headers)

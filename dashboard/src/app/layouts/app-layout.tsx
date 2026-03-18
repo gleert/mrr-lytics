@@ -1,15 +1,30 @@
 import * as React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Backdrop } from '@/shared/components/ui/backdrop'
 import { TrialBanner } from '@/features/billing'
 import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
+import { ImpersonationBanner } from '@/features/superadmin/components/impersonation-banner'
+import { SuspendedScreen } from '@/features/superadmin/components/suspended-screen'
+import { useFilters } from '@/app/providers'
 
 export function AppLayout() {
   const { isMobile } = useMobile()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const { getCurrentTenant } = useFilters()
+
+  // Check if tenant is suspended
+  const currentTenant = getCurrentTenant()
+  const isSuspended = (currentTenant as { status?: string })?.status === 'suspended'
+
+  // Check impersonation from query param
+  const impersonatingTenantId = React.useMemo(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('impersonating')
+  }, [])
 
   // Close mobile sidebar when switching to desktop
   React.useEffect(() => {
@@ -26,9 +41,25 @@ export function AppLayout() {
     setSidebarOpen(false)
   }
 
+  // Show suspended screen if tenant is suspended
+  if (isSuspended) {
+    return <SuspendedScreen />
+  }
+
+  const handleExitImpersonation = () => {
+    navigate('/')
+    window.location.href = '/'
+  }
+
   return (
     <CommandPaletteProvider>
-      <div className="flex h-screen overflow-hidden">
+      {impersonatingTenantId && (
+        <ImpersonationBanner
+          tenantId={impersonatingTenantId}
+          onExit={handleExitImpersonation}
+        />
+      )}
+      <div className={`flex h-screen overflow-hidden ${impersonatingTenantId ? 'pt-10' : ''}`}>
         {/* Mobile backdrop */}
         {isMobile && (
           <Backdrop open={sidebarOpen} onClose={handleSidebarClose} />

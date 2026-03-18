@@ -10,6 +10,8 @@ type Currency = typeof VALID_CURRENCIES[number]
 
 interface UpdateSettingsBody {
   currency?: Currency
+  name?: string
+  company_name?: string
 }
 
 /**
@@ -46,19 +48,19 @@ export async function PATCH(
       }
     )
 
-    // Check if user has admin role on this tenant
-    const { data: userTenant, error: userTenantError } = await supabase
-      .from('user_tenants')
+    // Check if user has admin role on this tenant (uses users table with tenant_id)
+    const { data: userRecord, error: userTenantError } = await supabase
+      .from('users')
       .select('role')
-      .eq('user_id', authId)
+      .eq('id', authId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (userTenantError || !userTenant) {
+    if (userTenantError || !userRecord) {
       return error(new Error('Tenant not found or access denied'), 404)
     }
 
-    if (userTenant.role !== 'admin') {
+    if (userRecord.role !== 'admin') {
       return error(new Error('Admin role required to update tenant settings'), 403)
     }
 
@@ -74,8 +76,19 @@ export async function PATCH(
 
     // Build update object
     const updates: Record<string, unknown> = {}
-    if (body.currency) {
-      updates.currency = body.currency
+    if (body.currency) updates.currency = body.currency
+    if (body.name !== undefined) updates.name = body.name.trim()
+
+    // Store company_name in the settings JSONB field
+    if (body.company_name !== undefined) {
+      // Get current settings first
+      const { data: currentTenant } = await supabase
+        .from('tenants')
+        .select('settings')
+        .eq('id', tenantId)
+        .single()
+      const currentSettings = (currentTenant?.settings as Record<string, unknown>) || {}
+      updates.settings = { ...currentSettings, company_name: body.company_name.trim() }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -87,7 +100,7 @@ export async function PATCH(
       .from('tenants')
       .update(updates)
       .eq('id', tenantId)
-      .select('id, name, slug, currency')
+      .select('id, name, slug, currency, settings')
       .single()
 
     if (updateError) {
@@ -96,7 +109,10 @@ export async function PATCH(
     }
 
     return success({
-      tenant: updatedTenant,
+      tenant: {
+        ...updatedTenant,
+        company_name: (updatedTenant?.settings as Record<string, unknown>)?.company_name ?? null,
+      },
       message: 'Settings updated successfully',
     })
   } catch (err) {
@@ -134,14 +150,14 @@ export async function GET(
     )
 
     // Check if user has access to this tenant
-    const { data: userTenant, error: userTenantError } = await supabase
-      .from('user_tenants')
+    const { data: userRecord, error: userTenantError } = await supabase
+      .from('users')
       .select('role')
-      .eq('user_id', authId)
+      .eq('id', authId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (userTenantError || !userTenant) {
+    if (userTenantError || !userRecord) {
       return error(new Error('Tenant not found or access denied'), 404)
     }
 
@@ -156,12 +172,15 @@ export async function GET(
       return error(new Error('Tenant not found'), 404)
     }
 
+    const settings = (tenant.settings as Record<string, unknown>) || {}
+
     return success({
       tenant: {
         ...tenant,
         currency: tenant.currency || 'EUR',
+        company_name: settings.company_name ?? null,
       },
-      user_role: userTenant.role,
+      user_role: userRecord.role,
     })
   } catch (err) {
     console.error('Error in GET /api/tenants/:tenantId/settings:', err)
