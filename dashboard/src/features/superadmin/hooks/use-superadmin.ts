@@ -8,7 +8,6 @@ export interface AdminTenantMember {
   email: string | null
   full_name: string | null
   is_active: boolean
-  last_login_at: string | null
 }
 
 export interface AdminTenantInstance {

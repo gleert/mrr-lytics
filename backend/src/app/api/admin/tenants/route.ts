@@ -84,7 +84,6 @@ export async function GET() {
           email: m.email ?? null,
           full_name: m.full_name ?? null,
           is_active: m.is_active,
-          last_login_at: m.last_login_at,
         })),
         instances: instances.map(i => ({
           id: i.id,
