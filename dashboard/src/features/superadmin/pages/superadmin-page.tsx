@@ -142,7 +142,7 @@ function TenantDetail({ tenant }: { tenant: AdminTenant }) {
 }
 
 export function SuperAdminPage() {
-  const { t } = useTranslation()
+  useTranslation()
   const isSuperAdmin = useIsSuperAdmin()
   const { data, isLoading } = useAdminTenants()
   const [search, setSearch] = useState('')
