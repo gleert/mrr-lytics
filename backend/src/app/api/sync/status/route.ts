@@ -62,6 +62,7 @@ export async function GET() {
     return success({
       recent_syncs: logsWithInstanceName,
       last_successful_sync: lastSuccess || null,
+      last_sync_at: lastSuccess?.completed_at || null,
       is_syncing: logsWithInstanceName.some((log) => log.status === 'running') || false,
       history: logsWithInstanceName,
     }, { tenant_id: auth.tenant_id })
