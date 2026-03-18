@@ -29,7 +29,7 @@ export async function GET() {
 
     const supabase = createAdminClient()
 
-    // Fetch all tenants with owner info and stats
+    // Fetch all tenants
     const { data: tenants, error: tenantsError } = await supabase
       .from('tenants')
       .select('id, name, slug, plan, created_at, updated_at')
@@ -40,33 +40,47 @@ export async function GET() {
     // For each tenant get member count, instance count, and user list
     const tenantsWithStats = await Promise.all(
       (tenants || []).map(async (tenant) => {
-        const [membersResult, instancesResult] = await Promise.all([
+        const [tuResult, instancesResult] = await Promise.all([
           supabase
             .from('tenant_users')
-            .select('user_id, role, users(id, email, raw_user_meta_data)', { count: 'exact' })
+            .select('user_id, role')
             .eq('tenant_id', tenant.id),
           supabase
             .from('whmcs_instances')
-            .select('id, name, whmcs_url, is_active', { count: 'exact' })
+            .select('id, name, whmcs_url, is_active')
             .eq('tenant_id', tenant.id),
         ])
 
-        const members = (membersResult.data || []).map((m: {
-          user_id: string
-          role: string
-          users: { id: string; email: string; raw_user_meta_data: Record<string, string> } | null
-        }) => ({
-          user_id: m.user_id,
-          role: m.role,
-          email: m.users?.email ?? null,
-          full_name: m.users?.raw_user_meta_data?.full_name ?? m.users?.raw_user_meta_data?.name ?? null,
-        }))
+        // Get user emails from users table
+        const userIds = (tuResult.data || []).map(m => m.user_id)
+        const userEmailMap: Record<string, { email: string; full_name: string }> = {}
+
+        if (userIds.length > 0) {
+          const { data: usersData } = await supabase
+            .from('users')
+            .select('id, email, full_name')
+            .in('id', userIds)
+
+          if (usersData) {
+            for (const u of usersData) {
+              userEmailMap[u.id] = {
+                email: (u.email as string | null) ?? '',
+                full_name: (u.full_name as string | null) ?? '',
+              }
+            }
+          }
+        }
 
         return {
           ...tenant,
-          member_count: membersResult.count ?? 0,
-          instance_count: instancesResult.count ?? 0,
-          members,
+          member_count: tuResult.data?.length ?? 0,
+          instance_count: instancesResult.data?.length ?? 0,
+          members: (tuResult.data || []).map(m => ({
+            user_id: m.user_id,
+            role: m.role,
+            email: userEmailMap[m.user_id]?.email ?? null,
+            full_name: userEmailMap[m.user_id]?.full_name ?? null,
+          })),
           instances: instancesResult.data || [],
         }
       })
