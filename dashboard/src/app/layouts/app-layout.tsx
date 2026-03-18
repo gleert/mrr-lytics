@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Backdrop } from '@/shared/components/ui/backdrop'
@@ -12,7 +12,6 @@ import { useFilters } from '@/app/providers'
 
 export function AppLayout() {
   const { isMobile } = useMobile()
-  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const { getCurrentTenant } = useFilters()
 
