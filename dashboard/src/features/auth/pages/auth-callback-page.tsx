@@ -44,6 +44,46 @@ export function AuthCallbackPage() {
           }
         }
 
+        // Get session to check invite metadata
+        const { data: { session } } = await supabase.auth.getSession()
+
+        // If this is an invitation callback, call setup to register user in the tenant
+        const type = queryParams.get('type')
+        const inviteTenant = queryParams.get('tenant')
+
+        if ((type === 'invite' || session?.user?.user_metadata?.invited_to_tenant) && session) {
+          const tenantId = inviteTenant || session.user.user_metadata?.invited_to_tenant
+          const role = queryParams.get('role') || session.user.user_metadata?.invited_role || 'member'
+
+          if (tenantId) {
+            try {
+              await fetch(`${import.meta.env.VITE_API_URL}/api/user/accept-invite`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ tenant_id: tenantId, role }),
+              })
+            } catch (e) {
+              console.error('Failed to accept invite:', e)
+            }
+          }
+        } else if (session) {
+          // Normal login - ensure user is set up
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/user/setup`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+            })
+          } catch (e) {
+            console.error('Failed to setup user:', e)
+          }
+        }
+
         // Redirect to dashboard
         navigate('/', { replace: true })
       } catch (err) {

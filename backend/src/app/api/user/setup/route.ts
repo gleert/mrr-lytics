@@ -29,18 +29,28 @@ export async function POST() {
     )
 
     // Check if user already has a tenant (idempotent)
-    const { data: existingTenants } = await supabase
-      .from('user_tenants')
-      .select('tenant_id')
-      .eq('user_id', authId)
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id, tenant_id, role')
+      .eq('id', authId)
+      .single()
 
-    if (existingTenants && existingTenants.length > 0) {
-      // User already set up - return existing data
-      const { data: tenants } = await supabase
-        .rpc('get_user_tenants', { p_user_id: authId })
+    if (existingUser?.tenant_id) {
+      // User already set up - return existing tenant
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('id, name, slug, status, currency, settings')
+        .eq('id', existingUser.tenant_id)
+        .single()
 
       return success({
-        tenants: tenants || [],
+        tenants: tenant ? [{
+          tenant_id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          role: existingUser.role,
+          is_default: true,
+        }] : [],
         already_setup: true,
       })
     }
@@ -105,44 +115,31 @@ export async function POST() {
       return error(new Error('Failed to create user record'), 500)
     }
 
-    // Create user_tenants link
-    const { error: linkError } = await supabase
-      .from('user_tenants')
-      .insert({
-        user_id: authId,
-        tenant_id: tenant.id,
-        role: 'admin',
-        is_default: true,
-      })
-
-    if (linkError) {
-      console.error('Error linking user to tenant:', linkError)
-      // Rollback
-      await supabase.from('users').delete().eq('id', authId)
-      await supabase.from('tenants').delete().eq('id', tenant.id)
-      return error(new Error('Failed to link user to organization'), 500)
-    }
-
     // Assign free plan subscription
     const { data: freePlan } = await supabase
       .from('subscription_plans')
       .select('id')
-      .eq('slug', 'free')
+      .eq('id', 'free')
       .single()
 
     if (freePlan) {
       await supabase
-        .from('tenant_subscriptions')
-        .insert({
+        .from('subscriptions')
+        .upsert({
           tenant_id: tenant.id,
-          plan_id: freePlan.id,
+          plan_id: 'free',
           status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        })
+        }, { onConflict: 'tenant_id' })
     }
 
     return created({
+      tenants: [{
+        tenant_id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        role: 'admin',
+        is_default: true,
+      }],
       tenant: {
         id: tenant.id,
         name: tenant.name,

@@ -11,9 +11,16 @@ interface TeamMember {
   email: string
   full_name: string | null
   role: string
-  is_default: boolean
   joined_at: string
   last_sign_in: string | null
+}
+
+function makeSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 }
 
 /**
@@ -26,93 +33,50 @@ export async function GET() {
     const authId = headersList.get('x-auth-id')
     const tenantId = headersList.get('x-tenant-id')
 
-    if (authType !== 'jwt' || !authId) {
-      return error(new Error('Authentication required'), 401)
-    }
+    if (authType !== 'jwt' || !authId) return error(new Error('Authentication required'), 401)
+    if (!tenantId) return error(new Error('Tenant not found'), 400)
 
-    if (!tenantId) {
-      return error(new Error('Tenant not found'), 400)
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabase = makeSupabase()
 
     // Verify user has access to this tenant
-    const { data: access } = await supabase
-      .from('user_tenants')
+    const { data: currentUser } = await supabase
+      .from('users')
       .select('role')
-      .eq('user_id', authId)
+      .eq('id', authId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (!access) {
-      return error(new Error('Access denied'), 403)
-    }
+    if (!currentUser) return error(new Error('Access denied'), 403)
 
-    // Get all team members for this tenant
+    // Get all users in this tenant
     const { data: members, error: membersError } = await supabase
-      .from('user_tenants')
-      .select(`
-        id,
-        user_id,
-        role,
-        is_default,
-        created_at
-      `)
+      .from('users')
+      .select('id, email, full_name, role, is_active, created_at, last_login_at')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: true })
 
-    if (membersError) {
-      console.error('Error fetching team members:', membersError)
-      return error(new Error('Failed to fetch team members'), 500)
-    }
+    if (membersError) return error(new Error('Failed to fetch team members'), 500)
 
-    // Get user details from auth.users for each member
-    const userIds = members?.map(m => m.user_id) || []
-    
-    // Get user profiles from users table
-    const { data: profiles } = await supabase
-      .from('users')
-      .select('id, email, full_name')
-      .in('id', userIds)
-
-    // Get auth user data for last sign in
+    // Get last sign in from auth.users
     const { data: authUsers } = await supabase.auth.admin.listUsers()
-    const authUserMap = new Map(
-      authUsers?.users?.map(u => [u.id, u]) || []
-    )
+    const authUserMap = new Map(authUsers?.users?.map(u => [u.id, u]) || [])
 
-    const profileMap = new Map(
-      profiles?.map(p => [p.id, p]) || []
-    )
+    const teamMembers: TeamMember[] = (members || []).map(m => ({
+      id: m.id,
+      user_id: m.id,
+      email: m.email || authUserMap.get(m.id)?.email || 'Unknown',
+      full_name: m.full_name || authUserMap.get(m.id)?.user_metadata?.full_name || null,
+      role: m.role,
+      joined_at: m.created_at,
+      last_sign_in: authUserMap.get(m.id)?.last_sign_in_at || m.last_login_at || null,
+    }))
 
-    // Combine data
-    const teamMembers: TeamMember[] = (members || []).map(member => {
-      const profile = profileMap.get(member.user_id)
-      const authUser = authUserMap.get(member.user_id)
-      
-      return {
-        id: member.id,
-        user_id: member.user_id,
-        email: profile?.email || authUser?.email || 'Unknown',
-        full_name: profile?.full_name || authUser?.user_metadata?.full_name || null,
-        role: member.role,
-        is_default: member.is_default,
-        joined_at: member.created_at,
-        last_sign_in: authUser?.last_sign_in_at || null,
-      }
-    })
-
-    // Get subscription limits for team members
     const limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
 
     return success({
       members: teamMembers,
       current_user_id: authId,
-      current_user_role: access.role,
+      current_user_role: currentUser.role,
       limits: {
         current: limitCheck.current,
         max: limitCheck.limit,
@@ -120,17 +84,12 @@ export async function GET() {
       },
     })
   } catch (err) {
-    console.error('Error in GET /api/team:', err)
     return error(err instanceof Error ? err : new Error('Failed to get team members'))
   }
 }
 
 /**
  * POST /api/team - Invite a new team member
- * 
- * Body:
- * - email: string (required)
- * - role: 'admin' | 'member' (default: 'member')
  */
 export async function POST(request: Request) {
   try {
@@ -139,29 +98,20 @@ export async function POST(request: Request) {
     const authId = headersList.get('x-auth-id')
     const tenantId = headersList.get('x-tenant-id')
 
-    if (authType !== 'jwt' || !authId) {
-      return error(new Error('Authentication required'), 401)
-    }
+    if (authType !== 'jwt' || !authId) return error(new Error('Authentication required'), 401)
+    if (!tenantId) return error(new Error('Tenant not found'), 400)
 
-    if (!tenantId) {
-      return error(new Error('Tenant not found'), 400)
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabase = makeSupabase()
 
     // Verify user is admin of this tenant
-    const { data: access } = await supabase
-      .from('user_tenants')
+    const { data: currentUser } = await supabase
+      .from('users')
       .select('role')
-      .eq('user_id', authId)
+      .eq('id', authId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (!access || access.role !== 'admin') {
+    if (!currentUser || currentUser.role !== 'admin') {
       return error(new Error('Only admins can invite team members'), 403)
     }
 
@@ -169,7 +119,7 @@ export async function POST(request: Request) {
     const limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
     if (!limitCheck.allowed) {
       return error(
-        new Error(`Team member limit reached. Your plan allows ${limitCheck.limit} members. Please upgrade to add more.`),
+        new Error(`Team member limit reached. Your plan allows ${limitCheck.limit} members.`),
         403
       )
     }
@@ -177,28 +127,23 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { email, role = 'member' } = body
 
-    if (!email || typeof email !== 'string') {
-      return error(new Error('Email is required'), 400)
-    }
-
-    if (!['admin', 'member'].includes(role)) {
-      return error(new Error('Role must be admin or member'), 400)
-    }
+    if (!email || typeof email !== 'string') return error(new Error('Email is required'), 400)
+    if (!['admin', 'member', 'viewer'].includes(role)) return error(new Error('Invalid role'), 400)
 
     const normalizedEmail = email.toLowerCase().trim()
 
     // Check if user already exists in auth
-    const { data: existingUsers } = await supabase.auth.admin.listUsers()
-    const existingUser = existingUsers?.users?.find(
+    const { data: authUsersData } = await supabase.auth.admin.listUsers()
+    const existingAuthUser = authUsersData?.users?.find(
       u => u.email?.toLowerCase() === normalizedEmail
     )
 
-    if (existingUser) {
+    if (existingAuthUser) {
       // Check if already a member of this tenant
       const { data: existingMember } = await supabase
-        .from('user_tenants')
+        .from('users')
         .select('id')
-        .eq('user_id', existingUser.id)
+        .eq('id', existingAuthUser.id)
         .eq('tenant_id', tenantId)
         .single()
 
@@ -206,43 +151,46 @@ export async function POST(request: Request) {
         return error(new Error('User is already a team member'), 400)
       }
 
-      // Add existing user to tenant
-      const { error: addError } = await supabase
-        .from('user_tenants')
-        .insert({
-          user_id: existingUser.id,
-          tenant_id: tenantId,
-          role,
-          is_default: false,
-        })
+      // Check if user already has a different tenant (they'd need a second users record)
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id, tenant_id')
+        .eq('id', existingAuthUser.id)
+        .single()
 
-      if (addError) {
-        console.error('Error adding existing user to tenant:', addError)
-        return error(new Error('Failed to add team member'), 500)
+      if (existingUser && existingUser.tenant_id) {
+        // User belongs to another tenant - can't add them to two tenants in this schema
+        // Instead, we invite them as a new user with a different approach
+        // For now, update their tenant_id (single-tenant model)
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ tenant_id: tenantId, role })
+          .eq('id', existingAuthUser.id)
+
+        if (updateError) return error(new Error('Failed to add team member'), 500)
+      } else {
+        // Create new user record for this tenant
+        const { error: insertError } = await supabase
+          .from('users')
+          .upsert({
+            id: existingAuthUser.id,
+            tenant_id: tenantId,
+            email: normalizedEmail,
+            full_name: existingAuthUser.user_metadata?.full_name || null,
+            role,
+            is_active: true,
+          }, { onConflict: 'id' })
+
+        if (insertError) return error(new Error('Failed to add team member'), 500)
       }
 
-      // Also add to users table if not exists
-      await supabase
-        .from('users')
-        .upsert({
-          id: existingUser.id,
-          tenant_id: tenantId,
-          email: normalizedEmail,
-          full_name: existingUser.user_metadata?.full_name || null,
-          role,
-        }, { onConflict: 'id' })
-
       return success({
-        message: 'Existing user added to team',
-        member: {
-          user_id: existingUser.id,
-          email: normalizedEmail,
-          role,
-        },
+        message: 'User added to team',
+        member: { user_id: existingAuthUser.id, email: normalizedEmail, role },
       })
     }
 
-    // Invite new user via Supabase Auth
+    // Invite new user via Supabase Auth magic link
     const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
       normalizedEmail,
       {
@@ -250,36 +198,26 @@ export async function POST(request: Request) {
           invited_to_tenant: tenantId,
           invited_role: role,
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/auth/callback?type=invite`,
+        redirectTo: `${process.env.DASHBOARD_URL || 'https://app.mrrlytics.com'}/auth/callback?type=invite&tenant=${tenantId}&role=${role}`,
       }
     )
 
     if (inviteError) {
       console.error('Error inviting user:', inviteError)
-      return error(new Error('Failed to send invitation'), 500)
+      return error(new Error(`Failed to send invitation: ${inviteError.message}`), 500)
     }
 
-    // Pre-create the user_tenants entry for when they accept
-    // Note: The actual user record will be created when they complete signup
-    if (inviteData.user) {
-      await supabase
-        .from('user_tenants')
-        .insert({
-          user_id: inviteData.user.id,
-          tenant_id: tenantId,
-          role,
-          is_default: true, // Make this their default tenant
-        })
-
-      // Create user profile
+    // Pre-create user record so they show up in team immediately
+    if (inviteData?.user) {
       await supabase
         .from('users')
-        .insert({
+        .upsert({
           id: inviteData.user.id,
           tenant_id: tenantId,
           email: normalizedEmail,
           role,
-        })
+          is_active: false, // Not active until they accept
+        }, { onConflict: 'id' })
     }
 
     return success({
