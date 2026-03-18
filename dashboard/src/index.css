@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 /* ===== KORA-inspired Theme ===== */
 @theme {
   /* Primary Purple/Violet Accent */
