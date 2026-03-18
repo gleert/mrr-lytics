@@ -96,7 +96,8 @@ export async function GET(request: NextRequest) {
       .in('instance_id', instanceIds)
       .in('whmcs_id', invoiceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
 
     if (!invoices || invoices.length === 0) {
       return success({

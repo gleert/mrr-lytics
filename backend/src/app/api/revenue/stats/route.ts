@@ -59,8 +59,9 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id, total, subtotal, status, datepaid')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
+      .lte('datepaid', endDate.toISOString())
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -188,8 +189,9 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id, total')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', prevStartDate.toISOString().split('T')[0])
-      .lte('datepaid', prevEndDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', prevStartDate.toISOString())
+      .lte('datepaid', prevEndDate.toISOString())
 
     const prevTotalRevenue = prevInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
 

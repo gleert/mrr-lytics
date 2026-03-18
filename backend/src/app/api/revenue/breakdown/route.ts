@@ -59,8 +59,9 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
+      .lte('datepaid', endDate.toISOString())
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)

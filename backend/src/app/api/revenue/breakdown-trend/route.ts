@@ -69,8 +69,9 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id, total, datepaid')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
+      .lte('datepaid', endDate.toISOString())
       .order('datepaid', { ascending: true })
 
     if (invoicesError) {
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
         monday.setDate(diff)
         return monday.toISOString().split('T')[0]
       }
-      return dateStr
+      return date.toISOString().split('T')[0]
     }
 
     const allGroupNames = new Set<string>()
