@@ -60,6 +60,9 @@ interface FiltersState {
   
   // Period
   period: PeriodPreset
+
+  // Account state
+  isTenantDeleted: boolean
   
   // Actions
   setCurrentInstance: (instance: WhmcsInstance | null) => void
@@ -123,13 +126,18 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
   })
 
   // Auto-provision tenant for new users (no tenants yet)
+  // BUT: skip if the user's account was deleted by superadmin (tenant_deleted flag)
+  const { user } = useAuth()
+  const isTenantDeleted = user?.user_metadata?.tenant_deleted === true
+
   React.useEffect(() => {
     if (
       isAuthenticated &&
       !isLoadingTenants &&
       tenantsResponse &&
       tenantsResponse.tenants.length === 0 &&
-      !isSettingUp
+      !isSettingUp &&
+      !isTenantDeleted // Don't recreate if tenant was deleted
     ) {
       setIsSettingUp(true)
       api.post('/api/user/setup')
@@ -144,7 +152,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
           setIsSettingUp(false)
         })
     }
-  }, [isAuthenticated, isLoadingTenants, tenantsResponse, isSettingUp, queryClient])
+  }, [isAuthenticated, isLoadingTenants, tenantsResponse, isSettingUp, isTenantDeleted, queryClient])
 
   const tenants = tenantsResponse?.tenants || []
   
@@ -238,6 +246,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
       currentInstance,
       isLoadingTenants,
       hasMultipleInstances,
+      isTenantDeleted,
       period,
       setCurrentInstance,
       setPeriod,
@@ -247,7 +256,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
       getCurrentLocale,
       getCurrentTenant,
     }),
-    [tenants, allInstances, currentInstance, isLoadingTenants, hasMultipleInstances, period, setCurrentInstance, setPeriod, getSelectedInstanceIds, getCurrentTenantId, getCurrentCurrency, getCurrentLocale, getCurrentTenant]
+    [tenants, allInstances, currentInstance, isLoadingTenants, hasMultipleInstances, isTenantDeleted, period, setCurrentInstance, setPeriod, getSelectedInstanceIds, getCurrentTenantId, getCurrentCurrency, getCurrentLocale, getCurrentTenant]
   )
 
   return (

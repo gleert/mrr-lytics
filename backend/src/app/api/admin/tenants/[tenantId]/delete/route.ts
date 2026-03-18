@@ -67,7 +67,21 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     }
     await supabase.from('subscriptions').delete().eq('tenant_id', tenantId)
 
-    // 6. Remove users from this tenant (don't delete auth accounts, just unlink)
+    // 6. Get user IDs before unlinking, then mark them in auth metadata
+    const { data: tenantUsers } = await supabase
+      .from('users')
+      .select('id')
+      .eq('tenant_id', tenantId)
+
+    // Mark each user's auth account as "tenant deleted" so they see a proper message
+    // and the auto-setup doesn't recreate a new tenant for them
+    for (const u of tenantUsers || []) {
+      await supabase.auth.admin.updateUserById(u.id, {
+        user_metadata: { tenant_deleted: true, deleted_tenant_id: tenantId },
+      })
+    }
+
+    // Unlink users from tenant
     await supabase
       .from('users')
       .update({ tenant_id: null, is_active: false })

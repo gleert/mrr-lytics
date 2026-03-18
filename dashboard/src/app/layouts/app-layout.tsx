@@ -8,12 +8,13 @@ import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
 import { ImpersonationBanner } from '@/features/superadmin/components/impersonation-banner'
 import { SuspendedScreen } from '@/features/superadmin/components/suspended-screen'
+import { AccountDeletedScreen } from '@/features/superadmin/components/account-deleted-screen'
 import { useFilters } from '@/app/providers'
 
 export function AppLayout() {
   const { isMobile } = useMobile()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
-  const { getCurrentTenant } = useFilters()
+  const { getCurrentTenant, isTenantDeleted } = useFilters()
 
   // Check if tenant is suspended
   const currentTenant = getCurrentTenant()
@@ -55,6 +56,11 @@ export function AppLayout() {
 
   const handleSidebarClose = () => {
     setSidebarOpen(false)
+  }
+
+  // Show account deleted screen
+  if (isTenantDeleted) {
+    return <AccountDeletedScreen />
   }
 
   // Show suspended screen if tenant is suspended
