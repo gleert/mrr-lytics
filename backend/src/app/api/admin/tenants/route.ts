@@ -50,10 +50,6 @@ export async function GET() {
     const allUsers = usersResult.data || []
     const allInstances = instancesResult.data || []
 
-    console.log('[admin/tenants] users:', allUsers.length, 'err:', usersResult.error?.message ?? 'none')
-    console.log('[admin/tenants] instances:', allInstances.length, 'err:', instancesResult.error?.message ?? 'none')
-    console.log('[admin/tenants] tenants:', tenants?.length)
-
     // Group by tenant_id
     const usersByTenant = new Map<string, typeof allUsers>()
     for (const u of allUsers) {
