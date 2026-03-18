@@ -23,13 +23,21 @@ class ApiClient {
   }
 
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
+
+    // If impersonating, use the impersonation token stored in sessionStorage
+    // This avoids touching the superadmin's Supabase session
+    const impersonationToken = sessionStorage.getItem('impersonate_token')
+    if (impersonationToken) {
+      headers['Authorization'] = `Bearer ${impersonationToken}`
+      return headers
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`

@@ -20,10 +20,27 @@ export function AppLayout() {
   const currentTenant = getCurrentTenant()
   const isSuspended = (currentTenant as { status?: string })?.status === 'suspended'
 
-  // Check impersonation from query param
+  // Handle impersonation token from URL → store in sessionStorage, clean URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('impersonate_token')
+    const tenantId = params.get('impersonating')
+
+    if (token && tenantId) {
+      sessionStorage.setItem('impersonate_token', token)
+      sessionStorage.setItem('impersonating_tenant_id', tenantId)
+      // Remove from URL without reload
+      params.delete('impersonate_token')
+      params.delete('impersonating')
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '')
+      window.history.replaceState({}, '', newUrl)
+    }
+  }, [])
+
+  // Check impersonation from sessionStorage
   const impersonatingTenantId = React.useMemo(() => {
     const params = new URLSearchParams(window.location.search)
-    return params.get('impersonating')
+    return params.get('impersonating') || sessionStorage.getItem('impersonating_tenant_id')
   }, [])
 
   // Close mobile sidebar when switching to desktop
@@ -47,7 +64,8 @@ export function AppLayout() {
   }
 
   const handleExitImpersonation = () => {
-    navigate('/')
+    sessionStorage.removeItem('impersonate_token')
+    sessionStorage.removeItem('impersonating_tenant_id')
     window.location.href = '/'
   }
 

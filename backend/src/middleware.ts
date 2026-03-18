@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToken, validateJwtEdge, validateJwtAuthOnly } from '@/lib/auth/api-key-edge'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { jwtVerify } from 'jose'
+
+async function validateImpersonationToken(token: string): Promise<{
+  tenant_id: string
+  impersonated_by: string
+  email: string
+  role: string
+} | null> {
+  try {
+    const secret = new TextEncoder().encode(
+      process.env.ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret'
+    )
+    const { payload } = await jwtVerify(token, secret)
+    if (payload.type !== 'impersonation' || !payload.tenant_id) return null
+    return {
+      tenant_id: payload.tenant_id as string,
+      impersonated_by: payload.impersonated_by as string,
+      email: payload.email as string,
+      role: payload.role as string,
+    }
+  } catch {
+    return null
+  }
+}
 
 // Paths that don't require authentication
 const PUBLIC_PATHS = ['/api/health', '/api/contact']
@@ -257,6 +281,26 @@ export async function middleware(request: NextRequest) {
     let scopes: string[]
     let authId: string
     let authType: 'api_key' | 'jwt'
+
+    // Check if this is an impersonation token first
+    const impersonation = await validateImpersonationToken(token)
+    if (impersonation) {
+      tenantId = impersonation.tenant_id
+      scopes = ['read', 'write', 'sync', 'admin']
+      authId = `impersonation:${impersonation.impersonated_by}`
+      authType = 'jwt'
+
+      const requestHeaders = new Headers(request.headers)
+      requestHeaders.set('x-tenant-id', tenantId)
+      requestHeaders.set('x-tenant-scopes', JSON.stringify(scopes))
+      requestHeaders.set('x-auth-id', authId)
+      requestHeaders.set('x-auth-type', authType)
+      requestHeaders.set('x-impersonating', 'true')
+      requestHeaders.set('x-impersonated-by', impersonation.impersonated_by)
+
+      const response = NextResponse.next({ request: { headers: requestHeaders } })
+      return addCorsHeaders(response, origin)
+    }
 
     if (isJwtToken(token)) {
       // Validate as Supabase JWT

@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { success, error } from '@/utils/api-response'
 import { requireSuperAdmin, getTenant } from '../_superadmin'
+import { SignJWT } from 'jose'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,8 +10,13 @@ interface RouteParams { params: Promise<{ tenantId: string }> }
 
 /**
  * POST /api/admin/tenants/:id/impersonate
- * Generates a short-lived impersonation token for superadmin to view a tenant's dashboard.
- * The token expires in 1 hour and is audited.
+ *
+ * Generates a short-lived impersonation JWT (1 hour) that the dashboard uses
+ * to make API calls as if it were the tenant admin — WITHOUT changing the
+ * superadmin's Supabase session in the browser.
+ *
+ * The token is passed as ?impersonate_token=... and stored in sessionStorage
+ * so the superadmin's localStorage session is untouched.
  */
 export async function POST(_req: NextRequest, { params }: RouteParams) {
   try {
@@ -18,10 +24,10 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
     const { tenantId } = await params
     const { supabase, tenant } = await getTenant(tenantId)
 
-    // Get the admin user of the target tenant to impersonate
+    // Get the admin user of the target tenant
     const { data: adminUser } = await supabase
       .from('users')
-      .select('id, email')
+      .select('id, email, role')
       .eq('tenant_id', tenantId)
       .eq('role', 'admin')
       .limit(1)
@@ -29,30 +35,24 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
 
     if (!adminUser) throw new Error('No admin user found for this tenant')
 
-    // Create a Supabase admin client to generate a magic link / session
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
+    // Generate a signed JWT with tenant context
+    const secret = new TextEncoder().encode(
+      process.env.ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret'
     )
 
-    // Generate a one-time session for the tenant admin user
-    const { data: sessionData, error: sessionError } = await adminSupabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: adminUser.email!,
-      options: {
-        redirectTo: `${process.env.DASHBOARD_URL}/?impersonating=${tenantId}`,
-        data: {
-          impersonated_by: userEmail,
-          impersonation_tenant_id: tenantId,
-          impersonation_tenant_name: tenant.name,
-        },
-      },
+    const token = await new SignJWT({
+      sub: adminUser.id,
+      email: adminUser.email,
+      tenant_id: tenantId,
+      tenant_name: tenant.name,
+      role: 'admin',
+      impersonated_by: userEmail,
+      type: 'impersonation',
     })
-
-    if (sessionError || !sessionData?.properties?.hashed_token) {
-      throw new Error(sessionError?.message ?? 'Failed to generate impersonation link')
-    }
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(secret)
 
     // Log the impersonation event
     await supabase.from('subscription_events').insert({
@@ -68,12 +68,14 @@ export async function POST(_req: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // Build the magic link URL
-    const magicLink = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${sessionData.properties.hashed_token}&type=magiclink&redirect_to=${encodeURIComponent(`${process.env.DASHBOARD_URL}/?impersonating=${tenantId}`)}`
+    const dashboardUrl = process.env.DASHBOARD_URL || 'https://app.mrrlytics.com'
+    const impersonateUrl = `${dashboardUrl}/?impersonate_token=${token}&impersonating=${tenantId}`
 
     return success({
       message: `Impersonation link generated for tenant "${tenant.name}"`,
-      magic_link: magicLink,
+      impersonate_url: impersonateUrl,
+      // Keep magic_link for backwards compat with existing UI
+      magic_link: impersonateUrl,
       tenant_name: tenant.name,
       tenant_id: tenantId,
       impersonated_user: adminUser.email,
