@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
-import { useAuth, useTheme } from '@/app/providers'
+import { useAuth } from '@/app/providers'
 
 interface SidebarProps {
   isMobile?: boolean
