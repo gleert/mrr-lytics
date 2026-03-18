@@ -27,6 +27,11 @@ export interface AdminTenant {
   updated_at: string
   member_count: number
   instance_count: number
+  plan_id: string
+  plan_name: string
+  plan_price: number
+  subscription_status: string | null
+  current_period_end: string | null
   members: AdminTenantMember[]
   instances: AdminTenantInstance[]
 }

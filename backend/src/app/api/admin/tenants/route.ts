@@ -37,18 +37,22 @@ export async function GET() {
 
     if (tenantsError) throw new Error(tenantsError.message)
 
-    // Fetch all users and instances in parallel
-    const [usersResult, instancesResult] = await Promise.all([
+    // Fetch all users, instances and subscriptions in parallel
+    const [usersResult, instancesResult, subscriptionsResult] = await Promise.all([
       supabase
         .from('users')
         .select('id, tenant_id, email, full_name, role, is_active'),
       supabase
         .from('whmcs_instances')
         .select('id, tenant_id, name, whmcs_url, status'),
+      supabase
+        .from('subscriptions')
+        .select('tenant_id, status, plan_id, current_period_end, subscription_plans(name, price_monthly)'),
     ])
 
     const allUsers = usersResult.data || []
     const allInstances = instancesResult.data || []
+    const allSubscriptions = subscriptionsResult.data || []
 
     // Group by tenant_id
     const usersByTenant = new Map<string, typeof allUsers>()
@@ -66,14 +70,28 @@ export async function GET() {
       instancesByTenant.set(i.tenant_id, list)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subscriptionByTenant = new Map<string, any>()
+    for (const s of allSubscriptions) {
+      subscriptionByTenant.set(s.tenant_id, s)
+    }
+
     const tenantsWithStats = (tenants || []).map(tenant => {
       const members = usersByTenant.get(tenant.id) || []
       const instances = instancesByTenant.get(tenant.id) || []
+      const sub = subscriptionByTenant.get(tenant.id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const planData = sub?.subscription_plans as any
 
       return {
         ...tenant,
         member_count: members.length,
         instance_count: instances.length,
+        plan_id: sub?.plan_id ?? 'free',
+        plan_name: planData?.name ?? 'Free',
+        plan_price: planData?.price_monthly ?? 0,
+        subscription_status: sub?.status ?? null,
+        current_period_end: sub?.current_period_end ?? null,
         members: members.map(m => ({
           user_id: m.id,
           role: m.role,

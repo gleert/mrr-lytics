@@ -5,12 +5,19 @@ import { cn } from '@/shared/lib/utils'
 import { useAdminTenants, useIsSuperAdmin, type AdminTenant } from '../hooks/use-superadmin'
 import { Navigate } from 'react-router-dom'
 
+const PLAN_COLORS: Record<string, string> = {
+  free: 'bg-muted/10 text-muted',
+  starter: 'bg-blue-500/10 text-blue-400',
+  pro: 'bg-primary-500/10 text-primary-400',
+  enterprise: 'bg-amber-500/10 text-amber-400',
+}
+
 function TenantRow({ tenant, onClick, isSelected }: {
   tenant: AdminTenant
   onClick: () => void
   isSelected: boolean
 }) {
-  const statusColor = tenant.status === 'active' ? 'text-success' : 'text-muted'
+  const planColor = PLAN_COLORS[tenant.plan_id] ?? 'bg-muted/10 text-muted'
 
   return (
     <button
@@ -26,11 +33,10 @@ function TenantRow({ tenant, onClick, isSelected }: {
         <p className="font-medium text-foreground truncate">{tenant.name}</p>
         <p className="text-xs text-muted truncate">{tenant.slug}</p>
       </div>
-      <div className="flex items-center gap-6 shrink-0">
-        <div className="text-right hidden sm:block">
-          <p className="text-xs text-muted">Estado</p>
-          <p className={cn('text-sm font-medium capitalize', statusColor)}>{tenant.status}</p>
-        </div>
+      <div className="flex items-center gap-4 shrink-0">
+        <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full hidden sm:inline-flex', planColor)}>
+          {tenant.plan_name}
+        </span>
         <div className="text-right hidden sm:block">
           <p className="text-xs text-muted">Usuarios</p>
           <p className="text-sm font-medium text-foreground">{tenant.member_count}</p>
@@ -61,12 +67,14 @@ function TenantDetail({ tenant }: { tenant: AdminTenant }) {
           <p className="text-xs text-muted font-mono mt-0.5">{tenant.id}</p>
         </div>
         <div className="flex gap-3">
-          {[
-            { label: 'Estado', value: tenant.status, icon: 'circle', color: tenant.status === 'active' ? 'text-success' : 'text-muted' },
-            { label: 'Moneda', value: tenant.currency || '—', icon: 'payments', color: 'text-foreground' },
-            { label: 'Miembros', value: tenant.member_count, icon: 'group', color: 'text-foreground' },
-            { label: 'Instancias', value: tenant.instance_count, icon: 'dns', color: 'text-foreground' },
-          ].map(stat => (
+        {[
+          { label: 'Plan', value: tenant.plan_name, icon: 'workspace_premium', color: PLAN_COLORS[tenant.plan_id]?.split(' ')[1] ?? 'text-muted' },
+          { label: 'Precio/mes', value: tenant.plan_price === 0 ? 'Gratis' : `€${tenant.plan_price}`, icon: 'payments', color: 'text-foreground' },
+          { label: 'Estado', value: tenant.status, icon: 'circle', color: tenant.status === 'active' ? 'text-success' : 'text-muted' },
+          { label: 'Moneda', value: tenant.currency || '—', icon: 'paid', color: 'text-foreground' },
+          { label: 'Usuarios', value: tenant.member_count, icon: 'group', color: 'text-foreground' },
+          { label: 'Instancias', value: tenant.instance_count, icon: 'dns', color: 'text-foreground' },
+        ].map(stat => (
             <div key={stat.label} className="rounded-xl border border-border bg-surface-elevated px-4 py-2.5 text-center min-w-[80px]">
               <p className={cn('text-base font-semibold capitalize', stat.color)}>{stat.value}</p>
               <p className="text-xs text-muted">{stat.label}</p>
