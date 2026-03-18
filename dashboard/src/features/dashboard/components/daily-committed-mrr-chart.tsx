@@ -14,6 +14,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { useDailyMRR } from '../hooks/use-metrics'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 const PERIOD_OPTIONS = [30, 60, 90] as const
 type PeriodDays = typeof PERIOD_OPTIONS[number]
@@ -160,17 +161,13 @@ export function DailyCommittedMRRChart() {
                   tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-background)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px',
-                  }}
-                  labelStyle={{ color: 'var(--color-foreground)', marginBottom: 8 }}
-                  labelFormatter={(label) => formatDateLabel(String(label))}
-                  formatter={(value, name) => [
-                    formatCurrency(Number(value) || 0),
-                    name === 'pending_churn' ? t('dashboard.pendingChurn') : name,
-                  ]}
+                  content={
+                    <ChartTooltip
+                      labelFormatter={(label) => formatDateLabel(String(label))}
+                      valueFormatter={(v) => formatCurrency(v)}
+                      showTotal
+                    />
+                  }
                 />
                 <Legend
                   verticalAlign="bottom"

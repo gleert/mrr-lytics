@@ -4,6 +4,7 @@ import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
 import { useAuth } from '@/app/providers'
+import { useIsSuperAdmin } from '@/features/superadmin'
 
 interface SidebarProps {
   isMobile?: boolean
@@ -47,6 +48,7 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
   const { t } = useTranslation()
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const isSuperAdmin = useIsSuperAdmin()
 
   const isAdmin = user?.role === 'admin'
 
@@ -185,6 +187,33 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
 
       {/* Bottom navigation */}
       <nav className="space-y-1 px-4 py-4">
+        {/* Superadmin link - only visible for superadmins */}
+        {isSuperAdmin && (() => {
+          const isActive = location.pathname.startsWith('/superadmin')
+          return (
+            <NavLink
+              to="/superadmin"
+              onClick={handleNavClick}
+              className={cn(
+                'group relative flex items-center gap-4 rounded-xl px-4 py-3 text-base font-normal transition-all duration-200',
+                isActive
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'text-muted hover:text-foreground hover:bg-surface-hover'
+              )}
+            >
+              <Icon
+                name="admin_panel_settings"
+                size="lg"
+                filled={isActive}
+                className={cn(
+                  'shrink-0 transition-colors',
+                  isActive ? 'text-amber-400' : 'text-muted group-hover:text-foreground'
+                )}
+              />
+              <span className="truncate">Superadmin</span>
+            </NavLink>
+          )
+        })()}
         {bottomItems.map(renderNavItem)}
         
         {/* Logout button */}

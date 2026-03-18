@@ -20,6 +20,7 @@ import { BillingPage } from '@/features/billing'
 import { ProfilePage } from '@/features/profile'
 import { ConnectorsPage } from '@/features/connectors'
 import { ReportsPage } from '@/features/reports'
+import { SuperAdminPage } from '@/features/superadmin'
 
 export function AppRoutes() {
   return (
@@ -52,6 +53,7 @@ export function AppRoutes() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/superadmin" element={<SuperAdminPage />} />
       </Route>
 
       {/* Catch all - redirect to dashboard */}

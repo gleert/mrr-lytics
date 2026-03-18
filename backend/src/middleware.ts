@@ -11,7 +11,7 @@ const ADMIN_PATHS = ['/api/tenants']
 const CRON_PATHS = ['/api/cron']
 
 // Paths that require JWT auth only (user-specific endpoints)
-const USER_PATHS = ['/api/user']
+const USER_PATHS = ['/api/user', '/api/admin']
 
 // Allowed CORS origins (comma-separated in env)
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174')

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { formatCurrency } from '@/shared/lib/utils'
 import type { RevenueByProduct } from '@/shared/types'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 interface TopProductsChartProps {
   data: RevenueByProduct[]
@@ -103,17 +104,12 @@ export function TopProductsChart({ data, loading }: TopProductsChartProps) {
                 width={100}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-                formatter={(value, _, props) => [
-                  formatCurrency(value as number),
-                  `MRR (${props.payload.active_count} services)`,
-                ]}
-                labelFormatter={(label) => chartData.find(d => d.name === label)?.product_name || label}
+                content={
+                  <ChartTooltip
+                    labelFormatter={(label) => chartData.find(d => d.name === label)?.product_name || label}
+                    valueFormatter={(v) => formatCurrency(v)}
+                  />
+                }
               />
               <Bar dataKey="mrr" radius={[0, 4, 4, 0]}>
                 {chartData.map((_, index) => (

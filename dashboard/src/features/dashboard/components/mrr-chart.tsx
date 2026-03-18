@@ -10,6 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { formatCurrency } from '@/shared/lib/utils'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 interface MRRChartProps {
   data: Array<{ date: string; mrr: number }>
@@ -70,14 +71,11 @@ export function MRRChart({ data, loading }: MRRChartProps) {
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-                labelStyle={{ color: 'var(--color-foreground)' }}
-                formatter={(value) => [formatCurrency(value as number), 'MRR']}
+                content={
+                  <ChartTooltip
+                    valueFormatter={(v) => formatCurrency(v)}
+                  />
+                }
               />
               <Line
                 type="monotone"

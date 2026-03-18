@@ -15,6 +15,7 @@ import {
 import { Icon } from '@/shared/components/ui/icon'
 import { useMRRTrend } from '../hooks/use-metrics'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 export function MRRTrendChart() {
   const { t } = useTranslation()
@@ -263,17 +264,13 @@ export function MRRTrendChart() {
                   tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-background)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px',
-                  }}
-                  labelStyle={{ color: 'var(--color-foreground)', marginBottom: 8 }}
-                  labelFormatter={(label) => formatMonth(String(label))}
-                  formatter={(value, name) => [
-                    formatCurrency(Number(value) || 0),
-                    name === 'total' ? t('dashboard.committedMrr') : name,
-                  ]}
+                  content={
+                    <ChartTooltip
+                      labelFormatter={formatMonth}
+                      valueFormatter={(v) => formatCurrency(v)}
+                      showTotal
+                    />
+                  }
                 />
                 <Legend
                   verticalAlign="bottom"
