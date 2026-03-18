@@ -10,12 +10,7 @@ function TenantRow({ tenant, onClick, isSelected }: {
   onClick: () => void
   isSelected: boolean
 }) {
-  const planColor = {
-    free: 'text-muted',
-    starter: 'text-blue-400',
-    pro: 'text-primary-400',
-    enterprise: 'text-amber-400',
-  }[tenant.plan] ?? 'text-muted'
+  const statusColor = tenant.status === 'active' ? 'text-success' : 'text-muted'
 
   return (
     <button
@@ -33,8 +28,8 @@ function TenantRow({ tenant, onClick, isSelected }: {
       </div>
       <div className="flex items-center gap-6 shrink-0">
         <div className="text-right hidden sm:block">
-          <p className="text-xs text-muted">Plan</p>
-          <p className={cn('text-sm font-medium capitalize', planColor)}>{tenant.plan}</p>
+          <p className="text-xs text-muted">Estado</p>
+          <p className={cn('text-sm font-medium capitalize', statusColor)}>{tenant.status}</p>
         </div>
         <div className="text-right hidden sm:block">
           <p className="text-xs text-muted">Usuarios</p>
@@ -68,7 +63,7 @@ function TenantDetail({ tenant }: { tenant: AdminTenant }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Plan', value: tenant.plan, icon: 'workspace_premium' },
+          { label: 'Estado', value: tenant.status, icon: 'workspace_premium' },
           { label: 'Miembros', value: tenant.member_count, icon: 'group' },
           { label: 'Instancias', value: tenant.instance_count, icon: 'dns' },
         ].map(stat => (
@@ -98,14 +93,20 @@ function TenantDetail({ tenant }: { tenant: AdminTenant }) {
                   )}
                   <p className="text-xs text-muted truncate">{member.email ?? member.user_id}</p>
                 </div>
-                <span className={cn(
-                  'text-xs font-medium px-2 py-0.5 rounded-full shrink-0',
-                  member.role === 'admin'
-                    ? 'bg-primary-500/10 text-primary-400'
-                    : 'bg-muted/10 text-muted'
-                )}>
-                  {member.role}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={cn(
+                    'w-1.5 h-1.5 rounded-full',
+                    member.is_active ? 'bg-success' : 'bg-muted'
+                  )} />
+                  <span className={cn(
+                    'text-xs font-medium px-2 py-0.5 rounded-full',
+                    member.role === 'admin'
+                      ? 'bg-primary-500/10 text-primary-400'
+                      : 'bg-muted/10 text-muted'
+                  )}>
+                    {member.role}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

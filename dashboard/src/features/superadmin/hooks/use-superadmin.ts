@@ -7,6 +7,8 @@ export interface AdminTenantMember {
   role: string
   email: string | null
   full_name: string | null
+  is_active: boolean
+  last_login_at: string | null
 }
 
 export interface AdminTenantInstance {
@@ -20,7 +22,8 @@ export interface AdminTenant {
   id: string
   name: string
   slug: string
-  plan: string
+  status: string
+  currency: string
   created_at: string
   updated_at: string
   member_count: number

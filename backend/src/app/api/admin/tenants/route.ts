@@ -17,7 +17,7 @@ function isSuperAdmin(email: string | null): boolean {
 }
 
 /**
- * GET /api/admin/tenants - List all tenants (superadmin only)
+ * GET /api/admin/tenants - List all tenants with their users and instances (superadmin only)
  */
 export async function GET() {
   try {
@@ -32,59 +32,64 @@ export async function GET() {
     // Fetch all tenants
     const { data: tenants, error: tenantsError } = await supabase
       .from('tenants')
-      .select('id, name, slug, plan, created_at, updated_at')
+      .select('id, name, slug, status, currency, created_at, updated_at')
       .order('created_at', { ascending: false })
 
     if (tenantsError) throw new Error(tenantsError.message)
 
-    // For each tenant get member count, instance count, and user list
-    const tenantsWithStats = await Promise.all(
-      (tenants || []).map(async (tenant) => {
-        const [tuResult, instancesResult] = await Promise.all([
-          supabase
-            .from('tenant_users')
-            .select('user_id, role')
-            .eq('tenant_id', tenant.id),
-          supabase
-            .from('whmcs_instances')
-            .select('id, name, whmcs_url, is_active')
-            .eq('tenant_id', tenant.id),
-        ])
+    // Fetch all users and instances in parallel
+    const [usersResult, instancesResult] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, tenant_id, email, full_name, role, is_active, last_login_at, created_at'),
+      supabase
+        .from('whmcs_instances')
+        .select('id, tenant_id, name, whmcs_url, is_active'),
+    ])
 
-        // Get user emails from users table
-        const userIds = (tuResult.data || []).map(m => m.user_id)
-        const userEmailMap: Record<string, { email: string; full_name: string }> = {}
+    const allUsers = usersResult.data || []
+    const allInstances = instancesResult.data || []
 
-        if (userIds.length > 0) {
-          const { data: usersData } = await supabase
-            .from('users')
-            .select('id, email, full_name')
-            .in('id', userIds)
+    // Group by tenant_id
+    const usersByTenant = new Map<string, typeof allUsers>()
+    for (const u of allUsers) {
+      if (!u.tenant_id) continue
+      const list = usersByTenant.get(u.tenant_id) || []
+      list.push(u)
+      usersByTenant.set(u.tenant_id, list)
+    }
 
-          if (usersData) {
-            for (const u of usersData) {
-              userEmailMap[u.id] = {
-                email: (u.email as string | null) ?? '',
-                full_name: (u.full_name as string | null) ?? '',
-              }
-            }
-          }
-        }
+    const instancesByTenant = new Map<string, typeof allInstances>()
+    for (const i of allInstances) {
+      const list = instancesByTenant.get(i.tenant_id) || []
+      list.push(i)
+      instancesByTenant.set(i.tenant_id, list)
+    }
 
-        return {
-          ...tenant,
-          member_count: tuResult.data?.length ?? 0,
-          instance_count: instancesResult.data?.length ?? 0,
-          members: (tuResult.data || []).map(m => ({
-            user_id: m.user_id,
-            role: m.role,
-            email: userEmailMap[m.user_id]?.email ?? null,
-            full_name: userEmailMap[m.user_id]?.full_name ?? null,
-          })),
-          instances: instancesResult.data || [],
-        }
-      })
-    )
+    const tenantsWithStats = (tenants || []).map(tenant => {
+      const members = usersByTenant.get(tenant.id) || []
+      const instances = instancesByTenant.get(tenant.id) || []
+
+      return {
+        ...tenant,
+        member_count: members.length,
+        instance_count: instances.length,
+        members: members.map(m => ({
+          user_id: m.id,
+          role: m.role,
+          email: m.email ?? null,
+          full_name: m.full_name ?? null,
+          is_active: m.is_active,
+          last_login_at: m.last_login_at,
+        })),
+        instances: instances.map(i => ({
+          id: i.id,
+          name: i.name,
+          whmcs_url: i.whmcs_url,
+          is_active: i.is_active,
+        })),
+      }
+    })
 
     return success({
       tenants: tenantsWithStats,
