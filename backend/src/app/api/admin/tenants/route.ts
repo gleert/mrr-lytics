@@ -41,7 +41,7 @@ export async function GET() {
     const [usersResult, instancesResult] = await Promise.all([
       supabase
         .from('users')
-        .select('id, tenant_id, email, full_name, role, is_active, last_login_at, created_at'),
+        .select('id, tenant_id, email, full_name, role, is_active'),
       supabase
         .from('whmcs_instances')
         .select('id, tenant_id, name, whmcs_url, status'),
@@ -50,8 +50,9 @@ export async function GET() {
     const allUsers = usersResult.data || []
     const allInstances = instancesResult.data || []
 
-    console.log('[admin/tenants] users:', allUsers.length, usersResult.error?.message)
-    console.log('[admin/tenants] instances:', allInstances.length, instancesResult.error?.message)
+    console.log('[admin/tenants] users:', allUsers.length, 'err:', usersResult.error?.message ?? 'none')
+    console.log('[admin/tenants] instances:', allInstances.length, 'err:', instancesResult.error?.message ?? 'none')
+    console.log('[admin/tenants] tenants:', tenants?.length)
 
     // Group by tenant_id
     const usersByTenant = new Map<string, typeof allUsers>()
