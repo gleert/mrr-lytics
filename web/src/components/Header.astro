@@ -70,13 +70,13 @@ const navLinks = [
     </nav>
   </div>
 
-  <!-- Mobile menu -->
-  <div id="mobile-menu" class="md:hidden border-t border-[var(--color-border)] overflow-hidden transition-all duration-300 ease-in-out" style="max-height: 0; opacity: 0;">
-    <div class="wrap py-4 flex flex-col gap-4">
-      <ul class="flex flex-col gap-3">
+  <!-- Mobile menu (fullscreen overlay) -->
+  <div id="mobile-menu" class="md:hidden fixed inset-0 top-16 z-40 glass flex flex-col transition-all duration-300 ease-in-out" style="opacity: 0; pointer-events: none;">
+    <div class="wrap py-6 flex flex-col gap-5 flex-1">
+      <ul class="flex flex-col gap-1">
         {navLinks.map(link => (
           <li>
-            <a href={link.href} class="block text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors py-2">
+            <a href={link.href} class="block text-base text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors py-3">
               {link.label}
             </a>
           </li>
@@ -84,7 +84,7 @@ const navLinks = [
       </ul>
       <div class="h-px bg-[var(--color-border)]"></div>
       <div class="flex items-center justify-between">
-        <a href="https://app.mrrlytics.com/login" class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+        <a href="https://app.mrrlytics.com/login" class="text-base text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
           {t.header.signIn}
         </a>
         <LanguageSwitcher lang={lang} />
@@ -104,8 +104,8 @@ const navLinks = [
     function openMenu() {
       if (!menu) return
       isOpen = true
-      menu.style.maxHeight = menu.scrollHeight + 'px'
       menu.style.opacity = '1'
+      menu.style.pointerEvents = 'auto'
       iconOpen?.classList.add('hidden')
       iconClose?.classList.remove('hidden')
     }
@@ -113,8 +113,8 @@ const navLinks = [
     function closeMenu() {
       if (!menu) return
       isOpen = false
-      menu.style.maxHeight = '0'
       menu.style.opacity = '0'
+      menu.style.pointerEvents = 'none'
       iconOpen?.classList.remove('hidden')
       iconClose?.classList.add('hidden')
     }
