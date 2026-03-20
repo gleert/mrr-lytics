@@ -71,22 +71,33 @@ const navLinks = [
   </div>
 
   <!-- Mobile menu (fullscreen overlay) -->
-  <div id="mobile-menu" class="md:hidden fixed inset-0 top-16 z-40 glass flex flex-col transition-all duration-300 ease-in-out" style="opacity: 0; pointer-events: none;">
-    <div class="wrap py-6 flex flex-col gap-5 flex-1">
-      <ul class="flex flex-col gap-1">
+  <div
+    id="mobile-menu"
+    class="md:hidden fixed inset-0 top-16 z-40 flex flex-col transition-all duration-300 ease-in-out"
+    style="background: rgba(10, 10, 13, 0.97); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); opacity: 0; pointer-events: none;"
+  >
+    <div class="wrap py-8 flex flex-col gap-6 flex-1">
+      <ul class="flex flex-col gap-0">
         {navLinks.map(link => (
           <li>
-            <a href={link.href} class="block text-base text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors py-3">
+            <a href={link.href} class="block text-lg font-medium text-[var(--color-text)] hover:text-[var(--color-primary-400)] transition-colors py-4 border-b border-[var(--color-border)]">
               {link.label}
             </a>
           </li>
         ))}
       </ul>
-      <div class="h-px bg-[var(--color-border)]"></div>
-      <div class="flex items-center justify-between">
-        <a href="https://app.mrrlytics.com/login" class="text-base text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+
+      <div class="flex flex-col gap-4 mt-2">
+        <a href="https://app.mrrlytics.com/login" class="btn btn-secondary w-full justify-center text-base py-3">
           {t.header.signIn}
         </a>
+        <a href="https://app.mrrlytics.com/register" class="btn btn-primary w-full justify-center text-base py-3">
+          <span class="dot"></span>
+          <span>{t.header.getStarted}</span>
+        </a>
+      </div>
+
+      <div class="mt-auto pb-6 flex justify-center">
         <LanguageSwitcher lang={lang} />
       </div>
     </div>
