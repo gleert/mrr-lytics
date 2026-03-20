@@ -19,13 +19,13 @@ const navLinks = [
 
 <header class="fixed top-0 left-0 right-0 z-50 glass">
   <div class="wrap">
-    <nav class="flex items-center justify-between h-20">
+    <nav class="flex items-center justify-between h-16 md:h-20">
       <!-- Logo -->
       <a href={homePath} class="flex items-center">
-        <img src="/logo-white.svg" alt="MRRlytics" class="h-[34px] w-auto" />
+        <img src="/logo-white.svg" alt="MRRlytics" class="h-7 md:h-[34px] w-auto" />
       </a>
 
-      <!-- Center nav -->
+      <!-- Center nav (desktop) -->
       <ul class="hidden md:flex items-center gap-8">
         {navLinks.map(link => (
           <li>
@@ -36,8 +36,8 @@ const navLinks = [
         ))}
       </ul>
 
-      <!-- Right side -->
-      <div class="flex items-center gap-5">
+      <!-- Right side (desktop) -->
+      <div class="hidden md:flex items-center gap-5">
         <LanguageSwitcher lang={lang} />
         <a href="https://app.mrrlytics.com/login" class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
           {t.header.signIn}
@@ -47,6 +47,85 @@ const navLinks = [
           <span>{t.header.getStarted}</span>
         </a>
       </div>
+
+      <!-- Mobile: CTA + hamburger -->
+      <div class="flex md:hidden items-center gap-3">
+        <a href="https://app.mrrlytics.com/register" class="btn btn-primary !py-2 !px-4 !text-xs">
+          <span class="dot"></span>
+          <span>{t.header.getStarted}</span>
+        </a>
+        <button
+          id="mobile-menu-toggle"
+          class="flex items-center justify-center w-10 h-10 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          aria-label="Menu"
+        >
+          <svg id="menu-icon-open" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </nav>
   </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="md:hidden border-t border-[var(--color-border)] overflow-hidden transition-all duration-300 ease-in-out" style="max-height: 0; opacity: 0;">
+    <div class="wrap py-4 flex flex-col gap-4">
+      <ul class="flex flex-col gap-3">
+        {navLinks.map(link => (
+          <li>
+            <a href={link.href} class="block text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors py-2">
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="h-px bg-[var(--color-border)]"></div>
+      <div class="flex items-center justify-between">
+        <a href="https://app.mrrlytics.com/login" class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+          {t.header.signIn}
+        </a>
+        <LanguageSwitcher lang={lang} />
+      </div>
+    </div>
+  </div>
 </header>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const toggle = document.getElementById('mobile-menu-toggle')
+    const menu = document.getElementById('mobile-menu') as HTMLElement | null
+    const iconOpen = document.getElementById('menu-icon-open')
+    const iconClose = document.getElementById('menu-icon-close')
+    let isOpen = false
+
+    function openMenu() {
+      if (!menu) return
+      isOpen = true
+      menu.style.maxHeight = menu.scrollHeight + 'px'
+      menu.style.opacity = '1'
+      iconOpen?.classList.add('hidden')
+      iconClose?.classList.remove('hidden')
+    }
+
+    function closeMenu() {
+      if (!menu) return
+      isOpen = false
+      menu.style.maxHeight = '0'
+      menu.style.opacity = '0'
+      iconOpen?.classList.remove('hidden')
+      iconClose?.classList.add('hidden')
+    }
+
+    toggle?.addEventListener('click', () => {
+      isOpen ? closeMenu() : openMenu()
+    })
+
+    // Close menu when clicking a link
+    menu?.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => closeMenu())
+    })
+  })
+</script>
