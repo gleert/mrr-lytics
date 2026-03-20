@@ -60,14 +60,51 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get top invoice items by amount
+    // Step 1: Get paid invoices within the period (ordered by most recent)
+    const { data: invoices, error: invoicesError } = await supabase
+      .from('whmcs_invoices')
+      .select('whmcs_id, instance_id, invoicenum, datepaid, status')
+      .in('instance_id', instanceIds)
+      .eq('status', 'Paid')
+      .not('datepaid', 'is', null)
+      .gte('datepaid', startDate.toISOString())
+      .order('datepaid', { ascending: false })
+      .limit(500)
+
+    if (invoicesError) {
+      console.error('Invoices query error:', invoicesError)
+      return success({
+        transactions: [],
+        total_amount: 0,
+        period_days: 30,
+      }, { instance_ids: instanceIds })
+    }
+
+    if (!invoices || invoices.length === 0) {
+      return success({
+        transactions: [],
+        total_amount: 0,
+        period_days: 30,
+      }, { instance_ids: instanceIds })
+    }
+
+    // Create invoice lookup
+    const invoiceMap = new Map<string, { invoicenum: string; datepaid: string }>()
+    const invoiceWhmcsIds = invoices.map(inv => {
+      const key = `${inv.instance_id}:${inv.whmcs_id}`
+      invoiceMap.set(key, { invoicenum: inv.invoicenum, datepaid: inv.datepaid })
+      return inv.whmcs_id
+    })
+
+    // Step 2: Get invoice items for those paid invoices, sorted by amount
     const { data: items, error: itemsError } = await supabase
       .from('whmcs_invoice_items')
       .select('id, instance_id, invoice_id, client_id, description, amount, relid')
       .in('instance_id', instanceIds)
+      .in('invoice_id', [...new Set(invoiceWhmcsIds)])
       .gt('amount', 0)
       .order('amount', { ascending: false })
-      .limit(100) // Fetch more to filter by paid status
+      .limit(limit)
 
     if (itemsError) {
       console.error('Items query error:', itemsError)
@@ -86,42 +123,7 @@ export async function GET(request: NextRequest) {
       }, { instance_ids: instanceIds })
     }
 
-    // Get invoice IDs to check status
-    const invoiceIds = [...new Set(items.map(i => i.invoice_id))]
-
-    // Fetch invoices to filter by paid status and date
-    const { data: invoices } = await supabase
-      .from('whmcs_invoices')
-      .select('whmcs_id, instance_id, invoicenum, datepaid, status')
-      .in('instance_id', instanceIds)
-      .in('whmcs_id', invoiceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', startDate.toISOString())
-
-    if (!invoices || invoices.length === 0) {
-      return success({
-        transactions: [],
-        total_amount: 0,
-        period_days: 30,
-      }, { instance_ids: instanceIds })
-    }
-
-    // Create invoice lookup
-    const invoiceMap = new Map<string, { invoicenum: string; datepaid: string }>()
-    invoices.forEach(inv => {
-      const key = `${inv.instance_id}:${inv.whmcs_id}`
-      invoiceMap.set(key, { invoicenum: inv.invoicenum, datepaid: inv.datepaid })
-    })
-
-    // Filter items by paid invoices
-    const paidItems = items.filter(item => {
-      const key = `${item.instance_id}:${item.invoice_id}`
-      return invoiceMap.has(key)
-    })
-
-    // Get top N items
-    const topItems = paidItems.slice(0, limit)
+    const topItems = items
 
     // Get client and product info
     const clientIds = [...new Set(topItems.map(i => i.client_id))]
