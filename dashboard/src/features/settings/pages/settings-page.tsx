@@ -45,21 +45,22 @@ export function SettingsPage() {
         <p className="text-muted">{t('settings.subtitle')}</p>
       </div>
 
-      {/* Tab bar - same style as Products page */}
-      <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border w-fit max-w-full overflow-x-auto">
+      {/* Tab bar */}
+      <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border w-fit max-w-full">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
+            title={t(tab.labelKey)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
+              'flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
               activeTab === tab.id
                 ? 'bg-primary-500 text-white'
                 : 'text-muted hover:text-foreground hover:bg-surface-hover'
             )}
           >
             <Icon name={tab.icon} size="sm" />
-            {t(tab.labelKey)}
+            <span className="hidden sm:inline">{t(tab.labelKey)}</span>
           </button>
         ))}
       </div>
