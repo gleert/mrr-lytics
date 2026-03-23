@@ -54,7 +54,7 @@ export function DashboardPage() {
           </h1>
           <p className="text-muted">
             {companyName
-              ? t('dashboard.welcomeSubtitleCompany', { company: companyName, defaultValue: `Here's an overview of ${companyName}'s business metrics` })
+              ? t('dashboard.welcomeSubtitleCompany', { company: companyName })
               : t('dashboard.welcomeSubtitle')}
           </p>
         </div>
