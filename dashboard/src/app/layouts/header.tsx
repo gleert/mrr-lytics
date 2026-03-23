@@ -73,9 +73,9 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="glass flex h-16 items-center gap-4 px-4 lg:px-6 border-b border-border bg-surface/80 dark:bg-surface/60 relative z-50">
+    <header className="glass flex h-14 sm:h-16 items-center gap-2 sm:gap-4 px-3 sm:px-4 lg:px-6 border-b border-border bg-surface/80 dark:bg-surface/60 relative z-50">
       {/* Left side */}
-      <div className="flex flex-1 min-w-0 items-center gap-3">
+      <div className="flex flex-1 min-w-0 items-center gap-2 sm:gap-3">
         {/* Hamburger menu (mobile) */}
         {isMobile && (
           <Button
@@ -119,7 +119,7 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
       </div>
 
       {/* Right side */}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {/* Sync status and button */}
         {!isMobile && syncStatus && (
           <div className="flex items-center gap-2 mr-1">

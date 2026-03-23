@@ -136,7 +136,7 @@ export function RevenuePage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <KPICard
           title={t('revenue.totalRevenue')}
           value={stats?.total_revenue ?? 0}
@@ -173,7 +173,7 @@ export function RevenuePage() {
           accentColor="warning"
           changePercent={stats?.recurring_pct_change}
         />
-        <div className="col-span-2 lg:col-span-1">
+        <div className="sm:col-span-2 lg:col-span-1">
           <KPICard
             title={t('revenue.invoicesCount')}
             value={stats?.invoices_count ?? 0}
