@@ -8,6 +8,7 @@ import { useTheme, useAuth } from '@/app/providers'
 import { useLocation } from 'react-router-dom'
 import { cn, formatRelativeTime } from '@/shared/lib/utils'
 import { useSyncStatus, useTriggerSync } from '@/features/sync/hooks/use-sync'
+import { useToast } from '@/shared/components/ui/toast'
 import { useCommandPalette } from '@/shared/components/command-palette'
 import { getKnownAccounts, removeKnownAccount } from '@/shared/lib/account-store'
 
@@ -46,8 +47,17 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   }, [location.pathname, t])
 
   // Sync status and trigger
+  const toast = useToast()
   const { data: syncStatus } = useSyncStatus()
   const { mutate: triggerSync, isPending: isSyncing } = useTriggerSync()
+
+  const handleSync = () => {
+    toast.info(t('sync.syncing'))
+    triggerSync(undefined, {
+      onSuccess: () => toast.success(t('sync.completed')),
+      onError: () => toast.error(t('sync.failed')),
+    })
+  }
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -186,7 +196,7 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => triggerSync()}
+          onClick={handleSync}
           disabled={isSyncing || syncStatus?.is_syncing}
           className="rounded-xl text-muted hover:text-foreground"
           title={t('sync.triggerSync')}
