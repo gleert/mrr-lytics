@@ -1,12 +1,17 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { useTopClients } from '../hooks/use-client-stats'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { cn } from '@/shared/lib/utils'
+
+type SortMode = 'mrr' | 'revenue'
 
 export function TopClientsBlock() {
   const { t } = useTranslation()
-  const { data, isLoading } = useTopClients(4)
+  const [sortMode, setSortMode] = useState<SortMode>('mrr')
+  const { data, isLoading } = useTopClients(4, sortMode)
   const { formatCurrency } = useCurrency()
 
   if (isLoading) {
@@ -18,7 +23,6 @@ export function TopClientsBlock() {
   }
 
   const clients = data?.clients || []
-  const totalRevenue = data?.total_revenue || 0
 
   if (clients.length === 0) {
     return (
@@ -31,11 +35,45 @@ export function TopClientsBlock() {
     )
   }
 
-  const maxRevenue = clients[0]?.revenue_in_period || 1
+  const isMrr = sortMode === 'mrr'
+  const getValue = (client: typeof clients[0]) =>
+    isMrr ? client.current_mrr : client.revenue_in_period
+  const maxValue = getValue(clients[0]) || 1
+  const totalLabel = isMrr
+    ? formatCurrency(data?.total_mrr ?? 0, { maximumFractionDigits: 0 })
+    : formatCurrency(data?.total_revenue ?? 0, { maximumFractionDigits: 0 })
 
   return (
-    <div className="rounded-xl overflow-hidden p-8 bg-gradient-to-br from-violet-600 to-violet-700">
-      <div className="flex flex-col lg:flex-row gap-8">
+    <div className="rounded-xl overflow-hidden bg-gradient-to-br from-violet-600 to-violet-700">
+      {/* Toggle */}
+      <div className="flex items-center justify-end px-5 pt-4 sm:px-8 sm:pt-6">
+        <div className="flex gap-1 p-0.5 rounded-lg bg-white/15">
+          <button
+            onClick={() => setSortMode('mrr')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              sortMode === 'mrr'
+                ? 'bg-white text-violet-700'
+                : 'text-white/70 hover:text-white'
+            )}
+          >
+            {t('clients.topClients.byMrr')}
+          </button>
+          <button
+            onClick={() => setSortMode('revenue')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              sortMode === 'revenue'
+                ? 'bg-white text-violet-700'
+                : 'text-white/70 hover:text-white'
+            )}
+          >
+            {t('clients.topClients.byRevenue')}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 p-5 sm:p-8 pt-3 sm:pt-4">
         {/* Left — headline */}
         <div className="lg:w-2/5 flex flex-col justify-center">
           <div className="space-y-3">
@@ -49,7 +87,7 @@ export function TopClientsBlock() {
               {clients[0]?.name || '—'}
             </p>
             <p className="text-lg font-light text-white/80">
-              {formatCurrency(totalRevenue, { maximumFractionDigits: 0 })} {t('clients.topClients.subtitle')}
+              {totalLabel} {t('clients.topClients.subtitle')}
             </p>
           </div>
         </div>
@@ -58,7 +96,8 @@ export function TopClientsBlock() {
         <div className="lg:w-3/5 flex items-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
             {clients.map((client, index) => {
-              const barWidth = Math.round((client.revenue_in_period / maxRevenue) * 100)
+              const value = getValue(client)
+              const barWidth = Math.round((value / maxValue) * 100)
               return (
                 <div
                   key={client.client_id}
@@ -77,21 +116,30 @@ export function TopClientsBlock() {
                       </span>
                     </div>
                     <span className="font-bold text-violet-700 tabular-nums shrink-0">
-                      {formatCurrency(client.revenue_in_period, { maximumFractionDigits: 0 })}
+                      {formatCurrency(value, { maximumFractionDigits: 0 })}
+                      {isMrr && <span className="text-xs font-normal text-violet-500">/mo</span>}
                     </span>
                   </div>
-                  {/* Revenue bar */}
+                  {/* Value bar */}
                   <div className="h-1 bg-violet-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-violet-400 rounded-full transition-all duration-500"
                       style={{ width: `${barWidth}%` }}
                     />
                   </div>
-                  {/* MRR sub-line */}
-                  {client.current_mrr > 0 && (
-                    <p className="text-xs text-violet-500">
-                      {t('clients.topClients.mrr')}: {formatCurrency(client.current_mrr, { maximumFractionDigits: 0 })}/mo
-                    </p>
+                  {/* Secondary metric */}
+                  {isMrr ? (
+                    client.revenue_in_period > 0 && (
+                      <p className="text-xs text-violet-500">
+                        {t('clients.topClients.periodRevenue')}: {formatCurrency(client.revenue_in_period, { maximumFractionDigits: 0 })}
+                      </p>
+                    )
+                  ) : (
+                    client.current_mrr > 0 && (
+                      <p className="text-xs text-violet-500">
+                        {t('clients.topClients.mrr')}: {formatCurrency(client.current_mrr, { maximumFractionDigits: 0 })}/mo
+                      </p>
+                    )
                   )}
                 </div>
               )

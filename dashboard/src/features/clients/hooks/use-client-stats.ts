@@ -49,16 +49,18 @@ export interface TopClient {
 export interface TopClientsResponse {
   clients: TopClient[]
   total_revenue: number
+  total_mrr?: number
+  sort_by?: string
 }
 
-export function useTopClients(limit = 6) {
+export function useTopClients(limit = 6, sortBy: 'revenue' | 'mrr' = 'revenue') {
   const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
   const instanceKey = currentInstance?.instance_id || 'all'
 
   return useQuery({
-    queryKey: ['clients', 'top-clients', instanceKey, period, limit],
+    queryKey: ['clients', 'top-clients', instanceKey, period, limit, sortBy],
     queryFn: async () => {
-      const params: Record<string, string> = { period, limit: String(limit) }
+      const params: Record<string, string> = { period, limit: String(limit), sort_by: sortBy }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) params.instance_ids = instanceIds.join(',')
       const response = await api.get<{ success: boolean; data: TopClientsResponse }>('/api/clients/top-clients', params)

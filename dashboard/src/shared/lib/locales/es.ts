@@ -877,9 +877,12 @@ export const es = {
       showingPage: 'Página {{page}} de {{total}}',
       topClients: {
         title: 'Top Clientes',
-        subtitle: 'ingresos combinados de los principales clientes en este período',
+        subtitle: 'combinados de los principales clientes en este período',
         noData: 'Sin datos de ingresos de clientes para este período',
         mrr: 'MRR',
+        byMrr: 'Por MRR',
+        byRevenue: 'Por Ingresos',
+        periodRevenue: 'Ingresos del período',
       },
       trendTitle: 'Movimiento de Clientes',
       trendDesc: 'Nuevos registros y bajas de clientes durante el período seleccionado',

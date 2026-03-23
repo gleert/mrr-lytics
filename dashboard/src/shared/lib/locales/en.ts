@@ -924,9 +924,12 @@ export const en = {
       showingPage: 'Page {{page}} of {{total}}',
       topClients: {
         title: 'Top Clients',
-        subtitle: 'combined revenue from top clients in this period',
+        subtitle: 'combined from top clients in this period',
         noData: 'No client revenue data for this period',
         mrr: 'MRR',
+        byMrr: 'By MRR',
+        byRevenue: 'By Revenue',
+        periodRevenue: 'Period revenue',
       },
       trendTitle: 'Client Movement',
       trendDesc: 'New registrations and churned clients over the selected period',
