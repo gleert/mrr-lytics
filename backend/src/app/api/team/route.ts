@@ -131,9 +131,13 @@ export async function POST(request: Request) {
     if (!['admin', 'member', 'viewer'].includes(role)) return error(new Error('Invalid role'), 400)
 
     const normalizedEmail = email.toLowerCase().trim()
+    console.log('[team/invite] Inviting:', normalizedEmail, 'to tenant:', tenantId, 'as:', role)
 
     // Check if user already exists in auth
-    const { data: authUsersData } = await supabase.auth.admin.listUsers()
+    const { data: authUsersData, error: listError } = await supabase.auth.admin.listUsers()
+    if (listError) {
+      console.error('[team/invite] listUsers error:', listError)
+    }
     const existingAuthUser = authUsersData?.users?.find(
       u => u.email?.toLowerCase() === normalizedEmail
     )
@@ -233,8 +237,9 @@ export async function POST(request: Request) {
       role,
     })
   } catch (err) {
-    console.error('Error in POST /api/team:', err instanceof Error ? err.message : err)
-    const message = err instanceof Error ? err.message : 'Failed to invite team member'
-    return error(new Error(message))
+    const message = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack : undefined
+    console.error('Error in POST /api/team:', { message, stack })
+    return error(new Error(`Failed to add team member: ${message}`))
   }
 }
