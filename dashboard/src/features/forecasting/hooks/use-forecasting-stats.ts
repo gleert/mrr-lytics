@@ -36,6 +36,17 @@ export interface ForecastingStats {
   period_days: number
   period_revenue: number
   bucket_type: 'daily' | 'weekly' | 'monthly'
+  // ARPU
+  active_clients: number
+  current_arpu: number
+  projected_arpu: number
+  // Growth acceleration
+  growth_acceleration: 'accelerating' | 'stable' | 'decelerating'
+  // Milestone
+  next_milestone: number | null
+  months_to_milestone: number | null
+  // MRR delta
+  mrr_delta: number
   // Breakdown data
   revenue_trend: RevenueTrendPoint[]
   billing_cycle_breakdown: BillingCycleBreakdown[]

@@ -681,7 +681,27 @@ export const es = {
       currentMrr: 'MRR Actual',
       projectedMrr: 'MRR Proyectado',
       projectedGrowth: 'Crecimiento Proyectado',
+      mrrDelta: 'Cambio Esperado',
       projectedArr: 'ARR Proyectado',
+      currentArpu: 'ARPU Actual',
+      projectedArpu: 'ARPU Proyectado',
+      // Growth acceleration
+      growthAcceleration: 'Momento de Crecimiento',
+      acceleration: {
+        accelerating: 'Acelerando',
+        stable: 'Estable',
+        decelerating: 'Desacelerando',
+      },
+      accelerationDesc: {
+        accelerating: 'El crecimiento de ingresos se está acelerando. La segunda mitad del período muestra un rendimiento más fuerte.',
+        stable: 'El crecimiento de ingresos es constante. El rendimiento es consistente en todo el período analizado.',
+        decelerating: 'El crecimiento de ingresos se está desacelerando. La segunda mitad del período muestra un rendimiento más débil.',
+      },
+      // Milestone
+      nextMilestone: 'Próximo Hito',
+      milestoneDesc: 'Al ritmo actual de crecimiento, lo alcanzarás en aproximadamente {{months}} meses',
+      milestoneNegativeGrowth: 'El crecimiento debe ser positivo para proyectar hitos',
+      milestoneReached: 'Has alcanzado todos los hitos proyectados',
       confidenceLevel: 'Nivel de Confianza',
       confidenceHigh: 'Alta Confianza',
       confidenceMedium: 'Confianza Media',
@@ -717,6 +737,7 @@ export const es = {
       services: 'servicios',
       projectionLabel: 'Proyección',
       noData: 'No hay datos disponibles',
+      noDataHint: 'Prueba seleccionando un período más largo o espera más sincronizaciones',
       // Scenario comparison
       scenarioTitle: 'Comparación de Escenarios',
       scenarioDesc: 'Proyecciones de ingresos bajo diferentes supuestos de crecimiento',

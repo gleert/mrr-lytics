@@ -21,6 +21,7 @@ import { useForecastingStats } from '../hooks/use-forecasting-stats'
 import { useCurrency } from '@/shared/hooks/use-currency'
 import { ForecastCallout } from '../components/forecast-callout'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
+import { ChartSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 const BILLING_CYCLE_COLORS = [
   '#7C3AED', // Purple
@@ -46,6 +47,8 @@ export function ForecastingPage() {
     }
   }
 
+  // Calculate billing cycle percentages
+  const totalCycleMrr = stats?.billing_cycle_breakdown?.reduce((sum, item) => sum + item.mrr, 0) || 0
 
   return (
     <NoInstancesGuard>
@@ -70,7 +73,7 @@ export function ForecastingPage() {
           <h2 className="text-xl font-semibold text-foreground">{t('forecasting.mrrProjectionsTitle')}</h2>
           <p className="text-muted">{t('forecasting.mrrProjectionsDesc')}</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <KPICard
             title={t('forecasting.currentMrr')}
             value={stats?.current_mrr ?? 0}
@@ -87,26 +90,32 @@ export function ForecastingPage() {
             icon={<Icon name="trending_up" size="2xl" />}
             accentColor="success"
           />
-          <div className="col-span-2 lg:col-span-1">
-            <KPICard
-              title={t('forecasting.projectedGrowth')}
-              value={stats?.projected_growth ?? 0}
-              format="percent"
-              loading={isLoading}
-              icon={<Icon name="show_chart" size="2xl" />}
-              accentColor={(stats?.projected_growth ?? 0) >= 0 ? 'success' : 'error'}
-            />
-          </div>
+          <KPICard
+            title={t('forecasting.mrrDelta')}
+            value={stats?.mrr_delta ?? 0}
+            format="currency"
+            loading={isLoading}
+            icon={<Icon name={(stats?.mrr_delta ?? 0) >= 0 ? 'arrow_upward' : 'arrow_downward'} size="2xl" />}
+            accentColor={(stats?.mrr_delta ?? 0) >= 0 ? 'success' : 'error'}
+          />
+          <KPICard
+            title={t('forecasting.projectedGrowth')}
+            value={stats?.projected_growth ?? 0}
+            format="percent"
+            loading={isLoading}
+            icon={<Icon name="show_chart" size="2xl" />}
+            accentColor={(stats?.projected_growth ?? 0) >= 0 ? 'success' : 'error'}
+          />
         </div>
       </div>
 
-      {/* Annual Projections Section */}
+      {/* Annual Projections + ARPU Section */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('forecasting.annualProjectionsTitle')}</h2>
           <p className="text-muted">{t('forecasting.annualProjectionsDesc')}</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <KPICard
             title={t('forecasting.projectedArr')}
             value={stats?.projected_arr ?? 0}
@@ -123,8 +132,107 @@ export function ForecastingPage() {
             icon={<Icon name="verified" size="2xl" />}
             accentColor={(stats?.confidence_level ?? 0) >= 70 ? 'success' : (stats?.confidence_level ?? 0) >= 50 ? 'warning' : 'error'}
           />
+          <KPICard
+            title={t('forecasting.currentArpu')}
+            value={stats?.current_arpu ?? 0}
+            format="currency"
+            loading={isLoading}
+            icon={<Icon name="person" size="2xl" />}
+            accentColor="primary"
+          />
+          <KPICard
+            title={t('forecasting.projectedArpu')}
+            value={stats?.projected_arpu ?? 0}
+            format="currency"
+            loading={isLoading}
+            icon={<Icon name="person_add" size="2xl" />}
+            accentColor="success"
+          />
         </div>
       </div>
+
+      {/* Growth Acceleration + Milestone */}
+      {!isLoading && stats && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Growth Acceleration */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
+                stats.growth_acceleration === 'accelerating' ? 'bg-emerald-500/10' :
+                stats.growth_acceleration === 'decelerating' ? 'bg-red-500/10' : 'bg-blue-500/10'
+              }`}>
+                <Icon
+                  name={
+                    stats.growth_acceleration === 'accelerating' ? 'rocket_launch' :
+                    stats.growth_acceleration === 'decelerating' ? 'trending_down' : 'trending_flat'
+                  }
+                  size="md"
+                  className={
+                    stats.growth_acceleration === 'accelerating' ? 'text-emerald-400' :
+                    stats.growth_acceleration === 'decelerating' ? 'text-red-400' : 'text-blue-400'
+                  }
+                />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">{t('forecasting.growthAcceleration')}</h3>
+                <p className={`text-lg font-semibold ${
+                  stats.growth_acceleration === 'accelerating' ? 'text-emerald-400' :
+                  stats.growth_acceleration === 'decelerating' ? 'text-red-400' : 'text-blue-400'
+                }`}>
+                  {t(`forecasting.acceleration.${stats.growth_acceleration}`)}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              {t(`forecasting.accelerationDesc.${stats.growth_acceleration}`)}
+            </p>
+          </div>
+
+          {/* Milestone */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/10 shrink-0">
+                <Icon name="flag" size="md" className="text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">{t('forecasting.nextMilestone')}</h3>
+                {stats.next_milestone && stats.months_to_milestone ? (
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(stats.next_milestone, { maximumFractionDigits: 0 })}
+                  </p>
+                ) : (
+                  <p className="text-lg font-semibold text-muted">—</p>
+                )}
+              </div>
+            </div>
+            {stats.next_milestone && stats.months_to_milestone ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted">
+                  {t('forecasting.milestoneDesc', { months: stats.months_to_milestone })}
+                </p>
+                {/* Progress bar to milestone */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 rounded-full bg-surface-elevated overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-500"
+                      style={{ width: `${Math.min((stats.current_mrr / stats.next_milestone) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted font-medium">
+                    {Math.round((stats.current_mrr / stats.next_milestone) * 100)}%
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted">
+                {stats.projected_growth <= 0
+                  ? t('forecasting.milestoneNegativeGrowth')
+                  : t('forecasting.milestoneReached')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Forecast Breakdown Section */}
       <div className="space-y-4">
@@ -145,13 +253,12 @@ export function ForecastingPage() {
             </div>
             <div className="p-4">
               {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <Icon name="sync" size="xl" className="animate-spin text-muted" />
-                </div>
+                <ChartSkeleton height={260} />
               ) : !stats?.revenue_trend?.length ? (
-                <div className="flex flex-col items-center justify-center h-64 text-muted">
-                  <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />
-                  <p>{t('forecasting.noData')}</p>
+                <div className="flex flex-col items-center justify-center h-64 text-muted gap-1">
+                  <Icon name="bar_chart" size="xl" className="mb-1 opacity-50" />
+                  <p className="font-medium">{t('forecasting.noData')}</p>
+                  <p className="text-xs">{t('forecasting.noDataHint')}</p>
                 </div>
               ) : (
                 <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
@@ -171,16 +278,12 @@ export function ForecastingPage() {
                         tickLine={false}
                         axisLine={{ stroke: 'var(--color-border)' }}
                         tickFormatter={(value) => {
-                          // Format date based on bucket type
                           if (stats.bucket_type === 'monthly') {
                             const [year, month] = value.split('-')
                             return `${month}/${year.slice(2)}`
-                          } else if (stats.bucket_type === 'weekly') {
-                            const d = new Date(value)
-                            return `${d.getDate()}/${d.getMonth() + 1}`
                           }
                           const d = new Date(value)
-                          return `${d.getDate()}/${d.getMonth() + 1}`
+                          return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
                         }}
                       />
                       <YAxis
@@ -196,34 +299,43 @@ export function ForecastingPage() {
                           />
                         }
                       />
-                      <Legend />
+                      <Legend
+                        formatter={(value) => (
+                          <span className="text-sm">
+                            {value === 'projected' ? t('forecasting.projectionLabel') : value}
+                          </span>
+                        )}
+                      />
                       {/* Reference line at the projection point */}
                       {stats.revenue_trend.length > 1 && (
                         <ReferenceLine
                           x={stats.revenue_trend[stats.revenue_trend.length - 2].date}
                           stroke="var(--color-muted)"
                           strokeDasharray="5 5"
-                          label={{ 
-                            value: t('forecasting.projectionLabel'), 
+                          label={{
+                            value: t('forecasting.projectionLabel'),
                             position: 'top',
                             fill: 'var(--color-muted)',
                             fontSize: 10
                           }}
                         />
                       )}
-                      <Bar 
-                        dataKey="revenue" 
+                      <Bar
+                        dataKey="revenue"
                         name={t('forecasting.revenue')}
                         radius={[4, 4, 0, 0]}
                       >
                         {stats.revenue_trend.map((_, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={index === stats.revenue_trend.length - 1 
-                              ? 'var(--color-primary-400)' 
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={index === stats.revenue_trend.length - 1
+                              ? '#7C3AED'
                               : '#10B981'
                             }
-                            opacity={index === stats.revenue_trend.length - 1 ? 0.6 : 1}
+                            opacity={index === stats.revenue_trend.length - 1 ? 0.5 : 1}
+                            strokeWidth={index === stats.revenue_trend.length - 1 ? 2 : 0}
+                            stroke={index === stats.revenue_trend.length - 1 ? '#7C3AED' : 'none'}
+                            strokeDasharray={index === stats.revenue_trend.length - 1 ? '4 2' : ''}
                           />
                         ))}
                       </Bar>
@@ -253,13 +365,12 @@ export function ForecastingPage() {
             </div>
             <div className="p-4">
               {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <Icon name="sync" size="xl" className="animate-spin text-muted" />
-                </div>
+                <ChartSkeleton height={260} />
               ) : !stats?.billing_cycle_breakdown?.length ? (
-                <div className="flex flex-col items-center justify-center h-64 text-muted">
-                  <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />
-                  <p>{t('forecasting.noData')}</p>
+                <div className="flex flex-col items-center justify-center h-64 text-muted gap-1">
+                  <Icon name="bar_chart" size="xl" className="mb-1 opacity-50" />
+                  <p className="font-medium">{t('forecasting.noData')}</p>
+                  <p className="text-xs">{t('forecasting.noDataHint')}</p>
                 </div>
               ) : (
                 <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
@@ -296,15 +407,15 @@ export function ForecastingPage() {
                           />
                         }
                       />
-                      <Bar 
-                        dataKey="mrr" 
+                      <Bar
+                        dataKey="mrr"
                         name={t('forecasting.mrrLabel')}
                         radius={[0, 4, 4, 0]}
                       >
                         {stats.billing_cycle_breakdown.map((_, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={BILLING_CYCLE_COLORS[index % BILLING_CYCLE_COLORS.length]} 
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={BILLING_CYCLE_COLORS[index % BILLING_CYCLE_COLORS.length]}
                           />
                         ))}
                       </Bar>
@@ -313,23 +424,28 @@ export function ForecastingPage() {
                 </div>
               )}
             </div>
-            {/* Services count summary */}
+            {/* Services count summary with percentages */}
             {stats?.billing_cycle_breakdown && stats.billing_cycle_breakdown.length > 0 && (
               <div className="px-4 pb-4">
                 <div className="flex flex-wrap gap-2">
-                  {stats.billing_cycle_breakdown.map((item, index) => (
-                    <div 
-                      key={item.name}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-elevated text-xs"
-                    >
-                      <span 
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: BILLING_CYCLE_COLORS[index % BILLING_CYCLE_COLORS.length] }}
-                      />
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-muted">{item.count} {t('forecasting.services')}</span>
-                    </div>
-                  ))}
+                  {stats.billing_cycle_breakdown.map((item, index) => {
+                    const pct = totalCycleMrr > 0 ? (item.mrr / totalCycleMrr) * 100 : 0
+                    return (
+                      <div
+                        key={item.name}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-elevated text-xs"
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: BILLING_CYCLE_COLORS[index % BILLING_CYCLE_COLORS.length] }}
+                        />
+                        <span className="font-medium">{item.name}</span>
+                        <span className="text-muted">{item.count} {t('forecasting.services')}</span>
+                        <span className="text-muted">·</span>
+                        <span className="font-medium">{pct.toFixed(1)}%</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -345,13 +461,12 @@ export function ForecastingPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <Icon name="sync" size="xl" className="animate-spin text-muted" />
-          </div>
+          <ChartSkeleton height={200} />
         ) : !stats?.scenarios ? (
-          <div className="flex flex-col items-center justify-center h-48 text-muted">
-            <Icon name="analytics" size="xl" className="mb-2 opacity-50" />
-            <p>{t('forecasting.noData')}</p>
+          <div className="flex flex-col items-center justify-center h-48 text-muted gap-1">
+            <Icon name="analytics" size="xl" className="mb-1 opacity-50" />
+            <p className="font-medium">{t('forecasting.noData')}</p>
+            <p className="text-xs">{t('forecasting.noDataHint')}</p>
           </div>
         ) : (() => {
           const { pessimistic, baseline, optimistic } = stats.scenarios
@@ -440,6 +555,23 @@ export function ForecastingPage() {
           )
         })()}
       </div>
+
+      {/* How it works */}
+      {!isLoading && stats && (
+        <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-500/10 shrink-0">
+              <Icon name="help" size="md" className="text-primary-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-1">{t('forecasting.howItWorks')}</h3>
+              <p className="text-xs text-muted leading-relaxed">
+                {t('forecasting.howItWorksDescPeriod', { period: `${stats.period_days} ${t('forecasting.days')}` })}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </NoInstancesGuard>
   )

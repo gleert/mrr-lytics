@@ -727,7 +727,27 @@ export const en = {
       currentMrr: 'Current MRR',
       projectedMrr: 'Projected MRR',
       projectedGrowth: 'Projected Growth',
+      mrrDelta: 'Expected Change',
       projectedArr: 'Projected ARR',
+      currentArpu: 'Current ARPU',
+      projectedArpu: 'Projected ARPU',
+      // Growth acceleration
+      growthAcceleration: 'Growth Momentum',
+      acceleration: {
+        accelerating: 'Accelerating',
+        stable: 'Stable',
+        decelerating: 'Decelerating',
+      },
+      accelerationDesc: {
+        accelerating: 'Revenue growth is speeding up. The second half of the period shows stronger performance than the first half.',
+        stable: 'Revenue growth is steady. Performance is consistent across the analyzed period.',
+        decelerating: 'Revenue growth is slowing down. The second half of the period shows weaker performance than the first half.',
+      },
+      // Milestone
+      nextMilestone: 'Next Milestone',
+      milestoneDesc: 'At current growth rate, you\'ll reach this in approximately {{months}} months',
+      milestoneNegativeGrowth: 'Growth must be positive to project milestones',
+      milestoneReached: 'You\'ve reached all projected milestones',
       confidenceLevel: 'Confidence Level',
       confidenceHigh: 'High Confidence',
       confidenceMedium: 'Medium Confidence',
@@ -763,6 +783,7 @@ export const en = {
       services: 'services',
       projectionLabel: 'Projection',
       noData: 'No data available',
+      noDataHint: 'Try selecting a longer period or wait for more syncs',
       // Scenario comparison
       scenarioTitle: 'Scenario Comparison',
       scenarioDesc: 'Revenue projections under different growth assumptions',

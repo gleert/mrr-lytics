@@ -275,6 +275,54 @@ export async function GET(request: NextRequest) {
       },
     }
 
+    // Get active clients count for ARPU calculation
+    const { count: activeClients } = await supabase
+      .from('whmcs_clients')
+      .select('*', { count: 'exact', head: true })
+      .in('instance_id', instanceIds)
+      .eq('status', 'Active')
+
+    const activeClientsCount = activeClients || 0
+    const currentArpu = activeClientsCount > 0 ? currentMRR / activeClientsCount : 0
+    const projectedArpu = activeClientsCount > 0 ? projectedMRR / activeClientsCount : 0
+
+    // Calculate growth acceleration (is growth speeding up or slowing down?)
+    let growthAcceleration: 'accelerating' | 'stable' | 'decelerating' = 'stable'
+    if (revenueValues.length >= 4) {
+      const midpoint = Math.floor(revenueValues.length / 2)
+      const firstHalf = revenueValues.slice(0, midpoint)
+      const secondHalf = revenueValues.slice(midpoint)
+
+      const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
+      const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+
+      if (avgFirst > 0) {
+        const halfGrowth = ((avgSecond - avgFirst) / avgFirst) * 100
+        if (halfGrowth > 3) growthAcceleration = 'accelerating'
+        else if (halfGrowth < -3) growthAcceleration = 'decelerating'
+      }
+    }
+
+    // Calculate months to next milestone
+    const milestones = [1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000]
+    let nextMilestone: number | null = null
+    let monthsToMilestone: number | null = null
+
+    if (growthRate > 0 && currentMRR > 0) {
+      nextMilestone = milestones.find(m => m > currentMRR) || null
+      if (nextMilestone) {
+        // months = ln(target/current) / ln(1 + monthlyGrowthRate)
+        const monthlyGrowthDecimal = growthRate / 100
+        if (monthlyGrowthDecimal > 0) {
+          monthsToMilestone = Math.ceil(
+            Math.log(nextMilestone / currentMRR) / Math.log(1 + monthlyGrowthDecimal)
+          )
+          // Cap at reasonable value
+          if (monthsToMilestone > 120) monthsToMilestone = null
+        }
+      }
+    }
+
     // Calculate total revenue in period
     const periodRevenue = revenueValues.reduce((sum, val) => sum + val, 0)
 
@@ -334,6 +382,17 @@ export async function GET(request: NextRequest) {
       period_days: days,
       period_revenue: Math.round(periodRevenue * 100) / 100,
       bucket_type: bucketFormat,
+      // ARPU
+      active_clients: activeClientsCount,
+      current_arpu: Math.round(currentArpu * 100) / 100,
+      projected_arpu: Math.round(projectedArpu * 100) / 100,
+      // Growth acceleration
+      growth_acceleration: growthAcceleration,
+      // Milestone
+      next_milestone: nextMilestone,
+      months_to_milestone: monthsToMilestone,
+      // MRR delta
+      mrr_delta: Math.round((projectedMRR - currentMRR) * 100) / 100,
       // Breakdown data
       revenue_trend: revenueTrend,
       billing_cycle_breakdown: billingCycleData,
