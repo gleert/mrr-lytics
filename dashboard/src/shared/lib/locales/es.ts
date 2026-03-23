@@ -273,6 +273,7 @@ export const es = {
       goodAfternoon: 'Buenas tardes, {{name}}',
       goodEvening: 'Buenas noches, {{name}}',
       welcomeSubtitle: 'Aquí tienes un resumen de las métricas de tu negocio',
+      welcomeSubtitleCompany: 'Aquí tienes un resumen de las métricas de {{company}}',
       mrr: 'Ingreso Mensual Recurrente',
       arr: 'Ingreso Anual Recurrente',
       churnRate: 'Tasa de Abandono',
