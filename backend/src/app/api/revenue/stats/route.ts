@@ -82,6 +82,8 @@ export async function GET(request: NextRequest) {
         onetime_change: 0,
         recurring_pct_change: 0,
         invoices_count: 0,
+        avg_invoice_amount: 0,
+        top_product: null,
         period: {
           type: period,
           start_date: startDate.toISOString(),
@@ -251,6 +253,37 @@ export async function GET(request: NextRequest) {
     // For recurring %, report absolute point difference (e.g. 72% → 75% = +3)
     const recurringPctChange = Math.round((recurringPercentage - prevRecurringPercentage) * 100) / 100
 
+    // Calculate average invoice amount
+    const invoicesCount = invoices?.length || 0
+    const avgInvoiceAmount = invoicesCount > 0 ? totalRevenue / invoicesCount : 0
+
+    // Find top product by revenue (from invoice items already loaded)
+    const productRevenue = new Map<string, number>()
+    if (invoiceWhmcsIds.length > 0) {
+      const BATCH_SIZE2 = 500
+      for (let i = 0; i < invoiceWhmcsIds.length; i += BATCH_SIZE2) {
+        const batch = invoiceWhmcsIds.slice(i, i + BATCH_SIZE2)
+        const { data: batchItems } = await supabase
+          .from('whmcs_invoice_items')
+          .select('description, amount')
+          .in('instance_id', instanceIds)
+          .in('invoice_id', batch)
+
+        batchItems?.forEach(item => {
+          const desc = item.description || 'Other'
+          const amount = Number(item.amount) || 0
+          productRevenue.set(desc, (productRevenue.get(desc) || 0) + amount)
+        })
+      }
+    }
+
+    // Get top product name
+    let topProduct: { name: string; revenue: number } | null = null
+    if (productRevenue.size > 0) {
+      const sorted = Array.from(productRevenue.entries()).sort((a, b) => b[1] - a[1])
+      topProduct = { name: sorted[0][0], revenue: sorted[0][1] }
+    }
+
     return success({
       total_revenue: Math.round(totalRevenue * 100) / 100,
       recurring_revenue: Math.round(recurringRevenue * 100) / 100,
@@ -262,7 +295,9 @@ export async function GET(request: NextRequest) {
       recurring_change: recurringChange,
       onetime_change: onetimeChange,
       recurring_pct_change: recurringPctChange,
-      invoices_count: invoices?.length || 0,
+      invoices_count: invoicesCount,
+      avg_invoice_amount: Math.round(avgInvoiceAmount * 100) / 100,
+      top_product: topProduct,
       period: {
         type: period,
         start_date: startDate.toISOString(),

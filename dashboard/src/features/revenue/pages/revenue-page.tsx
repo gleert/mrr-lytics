@@ -12,6 +12,7 @@ import {
   ComposedChart,
 } from 'recharts'
 import { Icon } from '@/shared/components/ui/icon'
+import { ChartSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { KPICard } from '@/features/dashboard/components/kpi-card'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
 import { TopTransactionsBlock } from '../components/top-transactions-block'
@@ -135,8 +136,8 @@ export function RevenuePage() {
         <DashboardFilters />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+      {/* KPI Cards - Row 1: Revenue breakdown */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('revenue.totalRevenue')}
           value={stats?.total_revenue ?? 0}
@@ -173,15 +174,52 @@ export function RevenuePage() {
           accentColor="warning"
           changePercent={stats?.recurring_pct_change}
         />
-        <div className="sm:col-span-2 lg:col-span-1">
-          <KPICard
-            title={t('revenue.invoicesCount')}
-            value={stats?.invoices_count ?? 0}
-            format="number"
-            loading={isLoading}
-            icon={<Icon name="receipt_long" size="2xl" />}
-            accentColor="primary"
-          />
+      </div>
+
+      {/* KPI Cards - Row 2: Invoice metrics */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <KPICard
+          title={t('revenue.invoicesCount')}
+          value={stats?.invoices_count ?? 0}
+          format="number"
+          loading={isLoading}
+          icon={<Icon name="receipt_long" size="2xl" />}
+          accentColor="primary"
+        />
+        <KPICard
+          title={t('revenue.avgInvoice')}
+          value={stats?.avg_invoice_amount ?? 0}
+          format="currency"
+          loading={isLoading}
+          icon={<Icon name="calculate" size="2xl" />}
+          accentColor="info"
+        />
+        <div className="col-span-2 lg:col-span-1">
+          {!isLoading && stats?.top_product ? (
+            <div className="rounded-xl border border-border bg-surface p-4 sm:p-6 h-full">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-amber-500/10 shrink-0">
+                  <Icon name="star" size="xl" className="text-amber-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-muted">{t('revenue.topProduct')}</p>
+                  <p className="text-sm sm:text-base font-semibold truncate mt-1">{stats.top_product.name}</p>
+                  <p className="text-xs text-muted mt-1">
+                    {formatCurrencyCompact(stats.top_product.revenue)} {t('revenue.inPeriod')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <KPICard
+              title={t('revenue.topProduct')}
+              value={0}
+              format="currency"
+              loading={isLoading}
+              icon={<Icon name="star" size="2xl" />}
+              accentColor="warning"
+            />
+          )}
         </div>
       </div>
 
@@ -237,13 +275,12 @@ export function RevenuePage() {
 
         <div className="p-4">
           {trendLoading ? (
-            <div className="flex items-center justify-center h-72">
-              <Icon name="sync" size="xl" className="animate-spin text-muted" />
-            </div>
+            <ChartSkeleton height={300} />
           ) : chartData.length === 0 || groups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-72 text-muted">
-              <Icon name="show_chart" size="xl" className="mb-2 opacity-50" />
-              <p>{t('revenue.noData')}</p>
+            <div className="flex flex-col items-center justify-center h-72 text-muted gap-1">
+              <Icon name="show_chart" size="xl" className="mb-1 opacity-50" />
+              <p className="font-medium">{t('revenue.noData')}</p>
+              <p className="text-xs">{t('revenue.noDataHint')}</p>
             </div>
           ) : (
             <>

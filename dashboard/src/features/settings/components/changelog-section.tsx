@@ -24,6 +24,35 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v160.revenueAvgInvoice' },
+      { type: 'feature', text: 'changelog.entries.v160.revenueTopProduct' },
+      { type: 'feature', text: 'changelog.entries.v160.revenueTrendChart' },
+      { type: 'improvement', text: 'changelog.entries.v160.revenueSkeletons' },
+      { type: 'improvement', text: 'changelog.entries.v160.revenueEmptyStates' },
+      { type: 'improvement', text: 'changelog.entries.v160.revenueKpiGrid' },
+    ],
+  },
+  {
+    version: '1.5.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v150.forecastMrrDelta' },
+      { type: 'feature', text: 'changelog.entries.v150.forecastMilestone' },
+      { type: 'feature', text: 'changelog.entries.v150.forecastArpu' },
+      { type: 'feature', text: 'changelog.entries.v150.forecastAcceleration' },
+      { type: 'feature', text: 'changelog.entries.v150.forecastHowItWorks' },
+      { type: 'improvement', text: 'changelog.entries.v150.forecastBillingPct' },
+      { type: 'improvement', text: 'changelog.entries.v150.forecastProjectedBar' },
+      { type: 'improvement', text: 'changelog.entries.v150.forecastSkeletons' },
+      { type: 'improvement', text: 'changelog.entries.v150.syncI18n' },
+      { type: 'improvement', text: 'changelog.entries.v150.dateLocale' },
+      { type: 'improvement', text: 'changelog.entries.v150.alertsRedesign' },
+    ],
+  },
+  {
     version: '1.4.0',
     date: '2026-03-23',
     changes: [

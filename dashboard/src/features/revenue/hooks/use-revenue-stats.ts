@@ -14,6 +14,8 @@ export interface RevenueStats {
   onetime_change: number
   recurring_pct_change: number
   invoices_count: number
+  avg_invoice_amount: number
+  top_product: { name: string; revenue: number } | null
   period: {
     type: string
     start_date: string

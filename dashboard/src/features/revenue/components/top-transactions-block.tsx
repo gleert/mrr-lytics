@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { useTopTransactions } from '../hooks/use-revenue-stats'
 import { useCurrency } from '@/shared/hooks/use-currency'
 
@@ -10,10 +11,8 @@ export function TopTransactionsBlock() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-surface border border-border p-6">
-        <div className="flex items-center justify-center h-32">
-          <Icon name="sync" size="xl" className="animate-spin text-muted" />
-        </div>
+      <div className="rounded-xl bg-surface border border-border p-5">
+        <TableSkeleton rows={5} />
       </div>
     )
   }

@@ -272,7 +272,11 @@ export const en = {
       byCategory: 'By Category',
       bySource: 'By Source',
       byType: 'By Type',
+      avgInvoice: 'Avg per Invoice',
+      topProduct: 'Top Product',
+      inPeriod: 'in period',
       noData: 'No revenue data available',
+      noDataHint: 'Make sure your WHMCS instance is synced and has paid invoices',
       // Top Transactions
       topTransactions: {
         title: 'Top Transactions',
@@ -668,6 +672,27 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v160: {
+          revenueAvgInvoice: 'Average invoice amount KPI in revenue page',
+          revenueTopProduct: 'Top product by revenue with name and amount',
+          revenueTrendChart: 'Recurring vs one-time temporal trend chart',
+          revenueSkeletons: 'Skeleton loading for revenue charts and tables',
+          revenueEmptyStates: 'Better empty states with action hints',
+          revenueKpiGrid: 'Revenue KPIs reorganized into responsive 2-row layout',
+        },
+        v150: {
+          forecastMrrDelta: 'MRR delta KPI showing expected change',
+          forecastMilestone: 'Next MRR milestone tracker with progress bar',
+          forecastArpu: 'Current and projected ARPU metrics',
+          forecastAcceleration: 'Growth momentum indicator (accelerating/stable/decelerating)',
+          forecastHowItWorks: '"How it works" explanation block for forecasting',
+          forecastBillingPct: 'Percentage of MRR by billing cycle',
+          forecastProjectedBar: 'Clearer projected bar in revenue trend chart',
+          forecastSkeletons: 'Skeleton loading for forecast charts',
+          syncI18n: 'Complete i18n for sync page',
+          dateLocale: 'Locale-aware date formatting across all components',
+          alertsRedesign: 'Redesigned alerts page with available alert types',
+        },
         v140: {
           changelog: 'Added changelog section in settings',
           codeSplitting: 'Route-level code splitting for faster initial load',

@@ -230,7 +230,11 @@ export const es = {
       byCategory: 'Por Categoría',
       bySource: 'Por Fuente',
       byType: 'Por Tipo',
+      avgInvoice: 'Promedio por Factura',
+      topProduct: 'Producto Top',
+      inPeriod: 'en el período',
       noData: 'No hay datos de ingresos disponibles',
+      noDataHint: 'Asegúrate de que tu instancia WHMCS está sincronizada y tiene facturas pagadas',
       // Top Transactions
       topTransactions: {
         title: 'Top Transacciones',
@@ -622,6 +626,27 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v160: {
+          revenueAvgInvoice: 'KPI de importe medio por factura en página de ingresos',
+          revenueTopProduct: 'Producto top por ingresos con nombre e importe',
+          revenueTrendChart: 'Gráfico temporal de ingresos recurrentes vs únicos',
+          revenueSkeletons: 'Skeleton loading para gráficos y tablas de ingresos',
+          revenueEmptyStates: 'Mejores estados vacíos con sugerencias de acción',
+          revenueKpiGrid: 'KPIs de ingresos reorganizados en 2 filas responsive',
+        },
+        v150: {
+          forecastMrrDelta: 'KPI de delta MRR mostrando el cambio esperado',
+          forecastMilestone: 'Tracker de próximo hito MRR con barra de progreso',
+          forecastArpu: 'Métricas de ARPU actual y proyectado',
+          forecastAcceleration: 'Indicador de momento de crecimiento',
+          forecastHowItWorks: 'Bloque explicativo "Cómo funciona" para pronósticos',
+          forecastBillingPct: 'Porcentaje de MRR por ciclo de facturación',
+          forecastProjectedBar: 'Barra proyectada más clara en gráfico de tendencia',
+          forecastSkeletons: 'Skeleton loading para gráficos de pronósticos',
+          syncI18n: 'i18n completo para página de sincronización',
+          dateLocale: 'Formato de fecha adaptado al idioma del navegador',
+          alertsRedesign: 'Página de alertas rediseñada con tipos disponibles',
+        },
         v140: {
           changelog: 'Sección de novedades en configuración',
           codeSplitting: 'Carga diferida por ruta para inicio más rápido',
