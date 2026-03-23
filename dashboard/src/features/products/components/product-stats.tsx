@@ -145,6 +145,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + '…' : v}
                     />
                     <Tooltip
+                      cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
                       content={
                         <ChartTooltip
                           valueFormatter={(v, key) =>
@@ -225,6 +226,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + '…' : v}
                     />
                     <Tooltip
+                      cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
                       content={
                         <ChartTooltip
                           valueFormatter={(v, key) =>
