@@ -231,6 +231,21 @@ export const en = {
       noGroups: 'No product groups synced yet',
       noSearchResults: 'No products match your search',
       noCategories: 'Create categories first',
+      stats: {
+        totalProducts: 'Total Products',
+        totalGroups: 'Product Groups',
+        categorized: 'Categorized',
+        totalMrr: 'Total MRR',
+        topByMrr: 'Top Products by MRR',
+        topByMrrDesc: 'Products generating the most monthly recurring revenue',
+        mrrByCategory: 'MRR by Category',
+        mrrByCategoryDesc: 'Revenue distribution across categories or product groups',
+        byPayType: 'By Payment Type',
+        byType: 'By Product Type',
+        noData: 'No data available',
+        categoriesActive: '{{pct}}% of MRR is categorized',
+        categoriesInactive: 'Set up categories to group your products for better insights',
+      },
     },
 
     // Revenue

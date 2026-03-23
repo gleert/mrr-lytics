@@ -20,6 +20,7 @@ import {
   type ProductGroup,
 } from '../hooks/use-products'
 import { ProductRow } from '../components/product-row'
+import { ProductStats } from '../components/product-stats'
 
 type ViewMode = 'groups' | 'products'
 
@@ -159,6 +160,13 @@ export function ProductsPage() {
         </div>
         <DashboardFilters showPeriod={false} />
       </div>
+
+      {/* Product Statistics */}
+      <ProductStats
+        products={productsData?.products || []}
+        productGroups={productsData?.product_groups || []}
+        isLoading={isLoading}
+      />
 
       {/* Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
