@@ -14,17 +14,19 @@ interface ProductRowProps {
   onCreateCategory?: () => void
   isUpdating?: boolean
   showTypeColumns?: boolean
+  showCategoryColumn?: boolean
 }
 
-export function ProductRow({ 
-  item, 
-  type, 
-  categories, 
+export function ProductRow({
+  item,
+  type,
+  categories,
   onCategoryChange,
   onUseGroupCategory,
   onCreateCategory,
   isUpdating,
   showTypeColumns = true,
+  showCategoryColumn = true,
 }: ProductRowProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = React.useState(false)
@@ -137,7 +139,8 @@ export function ProductRow({
         </>
       )}
 
-      {/* Category */}
+      {/* Category (admin only) */}
+      {showCategoryColumn && (
       <td className="px-4 py-3">
         <div className="relative" ref={dropdownRef}>
           <button
@@ -263,6 +266,7 @@ export function ProductRow({
           )}
         </div>
       </td>
+      )}
     </tr>
   )
 }

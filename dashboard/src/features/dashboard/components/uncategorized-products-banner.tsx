@@ -2,12 +2,16 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '@/shared/components/ui/icon'
 import { useProducts } from '@/features/products/hooks/use-products'
+import { useFilters } from '@/app/providers'
 
 export function UncategorizedProductsBanner() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { userRole } = useFilters()
   const { data, isLoading } = useProducts()
 
+  // Only admins see this actionable banner
+  if (userRole !== 'admin') return null
   if (isLoading || !data) return null
 
   const uncategorized = data.products.filter(

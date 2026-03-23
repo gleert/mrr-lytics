@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
+import { useFilters } from '@/app/providers'
 import { 
   useCategories, 
   useCreateCategory,
@@ -26,6 +27,8 @@ type ViewMode = 'groups' | 'products'
 
 export function ProductsPage() {
   const { t } = useTranslation()
+  const { userRole } = useFilters()
+  const isAdmin = userRole === 'admin'
   const [viewMode, setViewMode] = React.useState<ViewMode>('groups')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [showHidden, setShowHidden] = React.useState(false)
@@ -278,9 +281,11 @@ export function ProductsPage() {
                         </th>
                       </>
                     )}
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider w-48">
-                      {t('products.category')}
-                    </th>
+                    {isAdmin && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider w-48">
+                        {t('products.category')}
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -293,10 +298,10 @@ export function ProductsPage() {
                         item={item}
                         type={isProductView ? 'product' : 'product_group'}
                         categories={categories || []}
-                        onCategoryChange={(categoryId) => 
+                        onCategoryChange={(categoryId) =>
                           handleCategoryChange(
-                            item, 
-                            isProductView ? 'product' : 'product_group', 
+                            item,
+                            isProductView ? 'product' : 'product_group',
                             categoryId
                           )
                         }
@@ -304,6 +309,7 @@ export function ProductsPage() {
                         onCreateCategory={() => setIsCategoryFormOpen(true)}
                         isUpdating={updatingItems.has(itemKey)}
                         showTypeColumns={isProductView}
+                        showCategoryColumn={isAdmin}
                       />
                     )
                   })}

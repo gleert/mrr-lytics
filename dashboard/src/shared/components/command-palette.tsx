@@ -2,7 +2,7 @@ import * as React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Icon } from './ui/icon'
-import { useTheme, useAuth } from '@/app/providers'
+import { useTheme, useAuth, useFilters } from '@/app/providers'
 import { cn } from '@/shared/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -19,6 +19,7 @@ interface CommandItem {
   keywords?: string[]
   to?: string
   onSelect?: () => void
+  adminOnly?: boolean
   /** Filled at runtime from t() */
   _label?: string
 }
@@ -38,10 +39,10 @@ const buildRegistry = (extra: {
   { id: 'page-clients',      kind: 'page', icon: 'group',        labelKey: 'nav.clients',      to: '/clients',       keywords: ['customers', 'clientes', 'users', 'churn'] },
   { id: 'page-products',     kind: 'page', icon: 'inventory_2',  labelKey: 'nav.products',     to: '/products',      keywords: ['services', 'servicios', 'productos', 'categories'] },
   { id: 'page-domains',      kind: 'page', icon: 'language',     labelKey: 'nav.domains',      to: '/domains',       keywords: ['dns', 'tld', 'dominios', 'expiring'] },
-  { id: 'page-connectors',   kind: 'page', icon: 'cable',        labelKey: 'nav.connectors',   to: '/connectors',    keywords: ['webhooks', 'slack', 'email', 'integrations', 'conectores'] },
+  { id: 'page-connectors',   kind: 'page', icon: 'cable',        labelKey: 'nav.connectors',   to: '/connectors',    keywords: ['webhooks', 'slack', 'email', 'integrations', 'conectores'], adminOnly: true },
   { id: 'page-reports',      kind: 'page', icon: 'description',  labelKey: 'nav.reports',      to: '/reports',       keywords: ['export', 'csv', 'excel', 'informes', 'download'] },
-  { id: 'page-settings',     kind: 'page', icon: 'settings',     labelKey: 'nav.settings',     to: '/settings',      keywords: ['config', 'preferences', 'configuración', 'whmcs', 'instances'] },
-  { id: 'page-billing',      kind: 'page', icon: 'credit_card',  labelKey: 'nav.billing',      to: '/settings/billing', keywords: ['plan', 'subscription', 'facturación', 'upgrade'] },
+  { id: 'page-settings',     kind: 'page', icon: 'settings',     labelKey: 'nav.settings',     to: '/settings',      keywords: ['config', 'preferences', 'configuración', 'whmcs', 'instances'], adminOnly: true },
+  { id: 'page-billing',      kind: 'page', icon: 'credit_card',  labelKey: 'nav.billing',      to: '/settings/billing', keywords: ['plan', 'subscription', 'facturación', 'upgrade'], adminOnly: true },
   { id: 'page-profile',      kind: 'page', icon: 'person',       labelKey: 'nav.profile',      to: '/profile',       keywords: ['account', 'perfil', 'user', 'password'] },
 
   // Actions
@@ -145,6 +146,7 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
   const location = useLocation()
   const { setTheme, resolvedTheme } = useTheme()
   const { signOut } = useAuth()
+  const { userRole } = useFilters()
 
   const [query, setQuery] = React.useState('')
   const [activeIdx, setActiveIdx] = React.useState(0)
@@ -163,8 +165,11 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
         try { await signOut() } catch {}
       },
     })
-    return items.map(item => ({ ...item, _label: t(item.labelKey) }))
-  }, [t, resolvedTheme, setTheme, signOut, onClose])
+    const isAdmin = userRole === 'admin'
+    return items
+      .filter(item => !item.adminOnly || isAdmin)
+      .map(item => ({ ...item, _label: t(item.labelKey) }))
+  }, [t, resolvedTheme, setTheme, signOut, onClose, userRole])
 
   const filtered = React.useMemo(() => filterItems(allItems, query), [allItems, query])
 

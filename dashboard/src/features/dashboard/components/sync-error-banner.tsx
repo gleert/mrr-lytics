@@ -6,7 +6,10 @@ import { useFilters } from '@/app/providers'
 export function SyncErrorBanner() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { allInstances } = useFilters()
+  const { allInstances, userRole } = useFilters()
+
+  // Only admins see sync error actions
+  if (userRole !== 'admin') return null
 
   const errorInstances = allInstances.filter(i => i.status === 'error')
 
