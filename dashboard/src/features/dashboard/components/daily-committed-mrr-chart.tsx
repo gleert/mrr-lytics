@@ -114,9 +114,10 @@ export function DailyCommittedMRRChart() {
         {isLoading ? (
           <ChartSkeleton height={320} />
         ) : !chartData.length ? (
-          <div className="flex flex-col items-center justify-center h-80 text-muted">
-            <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />
-            <p>{t('dashboard.noData')}</p>
+          <div className="flex flex-col items-center justify-center h-80 text-muted gap-1">
+            <Icon name="bar_chart" size="xl" className="mb-1 opacity-50" />
+            <p className="font-medium">{t('dashboard.noData')}</p>
+            <p className="text-xs">{t('dashboard.noDataChart')}</p>
           </div>
         ) : (
           <div className="h-[280px] sm:h-[320px] lg:h-[350px]" role="img" aria-label={t('dashboard.dailyMRRChart')}>

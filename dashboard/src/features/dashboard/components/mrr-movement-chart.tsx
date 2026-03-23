@@ -39,65 +39,65 @@ export function MRRMovementChart() {
 
   return (
     <div className={cn(
-      "rounded-xl overflow-hidden p-8",
+      "rounded-xl overflow-hidden p-5 sm:p-8",
       isPositive ? "bg-primary-600" : "bg-red-600"
     )}>
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-5 sm:gap-8">
         {/* Left side - Main info (50%) */}
         <div className="lg:w-1/2 flex flex-col justify-center">
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-baseline gap-3">
-              <span className="text-5xl font-black text-white">
+              <span className="text-3xl sm:text-5xl font-black text-white">
                 {formatCurrencyWithSign(latestMonth.net_change)}
               </span>
             </div>
-            <p className="text-2xl font-light text-white">
-              {isPositive 
-                ? t('dashboard.mrrMovement.growthMessage') 
+            <p className="text-lg sm:text-2xl font-light text-white">
+              {isPositive
+                ? t('dashboard.mrrMovement.growthMessage')
                 : t('dashboard.mrrMovement.declineMessage')
               }
             </p>
-            <p className="text-white/60 text-base">{currentMonthLabel}</p>
+            <p className="text-white/60 text-sm sm:text-base">{currentMonthLabel}</p>
           </div>
         </div>
-        
+
         {/* Right side - Movement pills (50%) */}
         <div className="lg:w-1/2 flex items-center">
-          <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
             {/* New MRR */}
-            <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <Icon name="add_circle" size="sm" />
-                <span className="text-sm">{t('dashboard.mrrMovement.newMrr')}</span>
+                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.newMrr')}</span>
               </div>
-              <span className="font-bold">+{formatAmount(latestMonth.new_mrr)}</span>
+              <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.new_mrr)}</span>
             </div>
 
             {/* Expansion */}
-            <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <Icon name="trending_up" size="sm" />
-                <span className="text-sm">{t('dashboard.mrrMovement.expansion')}</span>
+                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.expansion')}</span>
               </div>
-              <span className="font-bold">+{formatAmount(latestMonth.expansion_mrr)}</span>
+              <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.expansion_mrr)}</span>
             </div>
 
             {/* Contraction */}
-            <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <Icon name="trending_down" size="sm" />
-                <span className="text-sm">{t('dashboard.mrrMovement.contraction')}</span>
+                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.contraction')}</span>
               </div>
-              <span className="font-bold">-{formatAmount(latestMonth.contraction_mrr)}</span>
+              <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.contraction_mrr)}</span>
             </div>
 
             {/* Churned */}
-            <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-2">
                 <Icon name="remove_circle" size="sm" />
-                <span className="text-sm">{t('dashboard.mrrMovement.churned')}</span>
+                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.churned')}</span>
               </div>
-              <span className="font-bold">-{formatAmount(latestMonth.churned_mrr)}</span>
+              <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.churned_mrr)}</span>
             </div>
           </div>
         </div>

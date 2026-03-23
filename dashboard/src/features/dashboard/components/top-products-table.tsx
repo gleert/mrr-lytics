@@ -35,9 +35,10 @@ export function TopProductsTable() {
         {isLoading ? (
           <TableSkeleton rows={5} />
         ) : !data?.products?.length ? (
-          <div className="flex flex-col items-center justify-center h-48 text-muted">
-            <Icon name="inventory_2" size="xl" className="mb-2 opacity-50" />
-            <p>{t('dashboard.noData')}</p>
+          <div className="flex flex-col items-center justify-center h-48 text-muted gap-1">
+            <Icon name="inventory_2" size="xl" className="mb-1 opacity-50" />
+            <p className="font-medium">{t('dashboard.noData')}</p>
+            <p className="text-xs">{t('dashboard.noDataProducts')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

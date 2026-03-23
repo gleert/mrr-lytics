@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDebounce } from '@/shared/hooks'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   BarChart,
@@ -59,6 +60,7 @@ export function DomainsPage() {
   const [statusFilter, setStatusFilter] = useState('Active')
   const [tldFilter, setTldFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [sortField, setSortField] = useState('domain')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
@@ -69,7 +71,7 @@ export function DomainsPage() {
   const { data: domainsData, isLoading: listLoading } = useDomainsList({
     status: statusFilter,
     tld: tldFilter,
-    search: searchQuery,
+    search: debouncedSearch,
     sort: sortField,
     order: sortOrder,
     page: currentPage,

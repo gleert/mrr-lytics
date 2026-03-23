@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Backdrop } from '@/shared/components/ui/backdrop'
@@ -16,6 +16,13 @@ export function AppLayout() {
   const { isMobile } = useMobile()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const { getCurrentTenant, isTenantDeleted } = useFilters()
+  const location = useLocation()
+  const mainRef = React.useRef<HTMLElement>(null)
+
+  // Scroll to top on route change
+  React.useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [location.pathname])
 
   // Check if tenant is suspended
   const currentTenant = getCurrentTenant()
@@ -103,7 +110,7 @@ export function AppLayout() {
             onMenuClick={handleMenuClick}
           />
           <TrialBanner />
-          <main className="flex-1 overflow-auto p-4 lg:p-6">
+          <main ref={mainRef} className="flex-1 overflow-auto p-4 lg:p-6">
             <ErrorBoundary>
             <Outlet />
             </ErrorBoundary>

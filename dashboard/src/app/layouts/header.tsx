@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar'
 import { useTheme, useAuth } from '@/app/providers'
+import { useLocation } from 'react-router-dom'
 import { cn, formatRelativeTime } from '@/shared/lib/utils'
 import { useSyncStatus, useTriggerSync } from '@/features/sync/hooks/use-sync'
 import { useCommandPalette } from '@/shared/components/command-palette'
@@ -23,7 +24,27 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const { open: openCommandPalette } = useCommandPalette()
-  
+  const location = useLocation()
+
+  // Page title for mobile header
+  const pageTitle = React.useMemo(() => {
+    const titles: Record<string, string> = {
+      '/': t('nav.dashboard'),
+      '/revenue': t('nav.revenue'),
+      '/forecasting': t('nav.forecasting'),
+      '/clients': t('nav.clients'),
+      '/products': t('nav.products'),
+      '/domains': t('nav.domains'),
+      '/connectors': t('nav.connectors'),
+      '/reports': t('nav.reports'),
+      '/settings': t('nav.settings'),
+      '/settings/billing': t('nav.billing'),
+      '/profile': t('nav.profile'),
+      '/superadmin': 'Superadmin',
+    }
+    return titles[location.pathname] || ''
+  }, [location.pathname, t])
+
   // Sync status and trigger
   const { data: syncStatus } = useSyncStatus()
   const { mutate: triggerSync, isPending: isSyncing } = useTriggerSync()
@@ -87,6 +108,16 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
             <Icon name="menu" size="lg" />
           </Button>
         )}
+
+        {/* Page title (mobile only) */}
+        {isMobile && pageTitle && (
+          <span className="text-sm font-medium text-foreground truncate">
+            {pageTitle}
+          </span>
+        )}
+
+        {/* Spacer on mobile to push right items */}
+        {isMobile && <div className="flex-1" />}
 
         {/* Command palette trigger */}
         {isMobile ? (

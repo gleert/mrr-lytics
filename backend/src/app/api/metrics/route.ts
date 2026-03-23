@@ -6,6 +6,7 @@ import { calculateMrrMultiInstance, calculateChurnMultiInstance, calculateRevenu
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import { cached } from '@/lib/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,10 +56,17 @@ export async function GET(request: NextRequest) {
     const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
 
     // Try to get metrics from metrics_daily first (fast path)
-    const dailyMetrics = await getMetricsFromDaily(instanceIds)
-    
+    const cacheKey = `metrics:${instanceIds.sort().join(',')}:${period}`
+    const dailyMetrics = await cached(
+      `daily:${cacheKey}`, 120, // 2 min TTL
+      () => getMetricsFromDaily(instanceIds)
+    )
+
     // Get previous period metrics for comparison (same period last month)
-    const previousMetrics = await getPreviousPeriodMetrics(instanceIds, days)
+    const previousMetrics = await cached(
+      `prev:${cacheKey}`, 300, // 5 min TTL
+      () => getPreviousPeriodMetrics(instanceIds, days)
+    )
     
     // Calculate percentage changes
     const calculateChange = (current: number, previous: number): number | undefined => {

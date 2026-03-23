@@ -340,6 +340,9 @@ export const en = {
       days: 'days',
       pendingChurn: 'Pending Churn',
       noData: 'No data available',
+      noDataSync: 'Run a sync to populate your dashboard with data',
+      noDataProducts: 'No products found. Data will appear after your first sync',
+      noDataChart: 'Not enough data to display the chart yet',
       dailyMrrLegend: 'The stacked areas show MRR by category. The dashed line indicates revenue from services scheduled for cancellation.',
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Revenue Analytics',

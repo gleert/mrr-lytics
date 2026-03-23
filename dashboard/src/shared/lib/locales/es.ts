@@ -294,6 +294,9 @@ export const es = {
       days: 'días',
       pendingChurn: 'Bajas Pendientes',
       noData: 'No hay datos disponibles',
+      noDataSync: 'Ejecuta una sincronización para ver datos en tu dashboard',
+      noDataProducts: 'No se encontraron productos. Los datos aparecerán tras la primera sincronización',
+      noDataChart: 'Aún no hay suficientes datos para mostrar el gráfico',
       dailyMrrLegend: 'Las áreas apiladas muestran el MRR por categoría. La línea punteada indica ingresos de servicios programados para cancelación.',
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Analíticas de Ingresos',
