@@ -14,6 +14,9 @@ import { DashboardFilters } from '../components/dashboard-filters'
 import { ForecastCTA } from '../components/forecast-cta'
 import { UncategorizedProductsBanner } from '../components/uncategorized-products-banner'
 import { SyncErrorBanner } from '../components/sync-error-banner'
+import { QuickInsights } from '../components/quick-insights'
+import { HealthScore } from '../components/health-score'
+import { QuickLinks } from '../components/quick-links'
 import { useMetrics, usePendingCancellations } from '../hooks/use-metrics'
 import { useSyncStatus } from '@/features/sync/hooks/use-sync'
 import { useAuth, useFilters } from '@/app/providers'
@@ -52,10 +55,13 @@ export function DashboardPage() {
 
   const hasPendingCancellations = !cancellationsLoading && cancellationsData && cancellationsData.count > 0
 
+  // Stale data warning (>30 min)
+  const isDataStale = dataUpdatedAt > 0 && (Date.now() - dataUpdatedAt) > 30 * 60 * 1000
+
   // Get user's first name for greeting
-  const userName = user?.user_metadata?.full_name?.split(' ')[0] || 
-                   user?.user_metadata?.name?.split(' ')[0] || 
-                   user?.email?.split('@')[0] || 
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] ||
+                   user?.user_metadata?.name?.split(' ')[0] ||
+                   user?.email?.split('@')[0] ||
                    ''
 
   // Get company name if defined
@@ -64,8 +70,8 @@ export function DashboardPage() {
 
   // Get current hour to determine greeting
   const hour = new Date().getHours()
-  const greetingKey = hour < 12 ? 'dashboard.goodMorning' : 
-                      hour < 18 ? 'dashboard.goodAfternoon' : 
+  const greetingKey = hour < 12 ? 'dashboard.goodMorning' :
+                      hour < 18 ? 'dashboard.goodAfternoon' :
                       'dashboard.goodEvening'
 
   return (
@@ -106,13 +112,27 @@ export function DashboardPage() {
         </div>
       </div>
 
+      {/* Stale data warning (#6) */}
+      {isDataStale && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
+          <Icon name="schedule" size="sm" className="text-amber-400 shrink-0" />
+          <span className="text-sm text-amber-400">{t('dashboard.staleWarning')}</span>
+          <button onClick={handleRefresh} className="text-sm font-medium text-amber-400 underline underline-offset-2 hover:text-amber-300 ml-auto shrink-0">
+            {t('common.refresh')}
+          </button>
+        </div>
+      )}
+
       {/* Sync error warning */}
       <SyncErrorBanner />
 
       {/* Uncategorized products warning */}
       <UncategorizedProductsBanner />
 
-      {/* Main KPI Cards */}
+      {/* Quick Links (#7) */}
+      <QuickLinks />
+
+      {/* Main KPI Cards — Row 1: Core metrics */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('dashboard.mrr')}
@@ -147,11 +167,51 @@ export function DashboardPage() {
           format="percent"
           loading={metricsLoading}
           icon={<Icon name="trending_down" size="2xl" />}
-          accentColor="warning"
+          accentColor={(metrics?.churn.churn_rate ?? 0) > 5 ? 'error' : 'warning'}
         />
       </div>
 
-      {/* Forecast CTA */}
+      {/* KPI Cards — Row 2: Services, Domains, Invoices (#1, #2, #3) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <KPICard
+          title={t('dashboard.activeServices')}
+          value={metrics?.mrr.active_services ?? 0}
+          loading={metricsLoading}
+          icon={<Icon name="dns" size="2xl" />}
+          accentColor="primary"
+        />
+        <KPICard
+          title={t('dashboard.domains')}
+          value={metrics?.domains?.total ?? 0}
+          loading={metricsLoading}
+          icon={<Icon name="language" size="2xl" />}
+          accentColor="info"
+        />
+        <KPICard
+          title={t('dashboard.unpaidInvoices')}
+          value={metrics?.invoices.unpaid_count ?? 0}
+          loading={metricsLoading}
+          icon={<Icon name="receipt_long" size="2xl" />}
+          accentColor={(metrics?.invoices.unpaid_count ?? 0) > 0 ? 'warning' : 'success'}
+        />
+        <KPICard
+          title={t('dashboard.overdueInvoices')}
+          value={metrics?.invoices.overdue_count ?? 0}
+          loading={metricsLoading}
+          icon={<Icon name="warning" size="2xl" />}
+          accentColor={(metrics?.invoices.overdue_count ?? 0) > 0 ? 'error' : 'success'}
+        />
+      </div>
+
+      {/* Health Score + Quick Insights (#5, #12) */}
+      {!metricsLoading && metrics && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <HealthScore metrics={metrics} />
+          <QuickInsights metrics={metrics} />
+        </div>
+      )}
+
+      {/* Forecast CTA (#8 - moved after KPIs, before charts) */}
       <ForecastCTA />
 
       {/* Revenue Analytics Section */}
@@ -161,7 +221,7 @@ export function DashboardPage() {
           <p className="text-muted">{t('dashboard.revenueAnalyticsDesc')}</p>
         </div>
 
-        {/* Revenue Breakdown */}
+        {/* Revenue Breakdown (#9 - already uses BarSkeleton) */}
         <RevenueBreakdownBar />
 
         {/* MRR Trend + Daily Committed MRR side by side */}
@@ -208,7 +268,7 @@ export function DashboardPage() {
         )}
       </div>
 
-      {/* Recent Syncs Section */}
+      {/* Recent Syncs Section (#8 - stays at bottom) */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('dashboard.recentSyncsSection.title')}</h2>

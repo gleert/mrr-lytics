@@ -95,13 +95,22 @@ export interface InvoiceSummary {
   revenue_last_30_days: number
 }
 
+// Domain summary
+export interface DomainSummary {
+  total: number
+  active: number
+  expiring_30d: number
+}
+
 // Combined metrics from /api/metrics
 export interface AllMetrics {
   mrr: MRRMetrics
   churn: ChurnMetrics
   revenue_by_product: RevenueByProduct[]
   clients: ClientSummary
-  invoices: InvoiceSummary
+  invoices: InvoiceSummary & { overdue_count?: number; amount_overdue?: number }
+  domains?: DomainSummary
+  arpu?: number
 }
 
 export interface SyncStatus {
