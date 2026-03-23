@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { Icon } from '@/shared/components/ui/icon'
 import type { ClientStats } from '@/shared/types'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 interface ClientTrendChartsProps {
   stats: ClientStats
@@ -50,16 +51,8 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
     width: 28,
   }
 
-  const sharedTooltipProps = {
-    contentStyle: {
-      backgroundColor: 'var(--color-background)',
-      border: '1px solid var(--color-border)',
-      borderRadius: '8px',
-      fontSize: 12,
-    },
-    labelStyle: { color: 'var(--color-foreground)' },
-    cursor: { fill: 'var(--color-border)', opacity: 0.3 },
-  }
+  // sharedTooltipProps kept for cursor only — content is overridden per chart
+  const sharedTooltipCursor = { fill: 'var(--color-border)', opacity: 0.3 }
 
   const renderChart = (
     data: ClientStats['new_clients_trend'],
@@ -99,8 +92,8 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
             />
             <YAxis {...sharedYAxisProps} />
             <Tooltip
-              {...sharedTooltipProps}
-              formatter={(value) => [Number(value) || 0, tooltipLabel]}
+              cursor={sharedTooltipCursor}
+              content={<ChartTooltip />}
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {data.map((_, i) => (

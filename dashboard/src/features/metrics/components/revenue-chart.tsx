@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 import { formatCurrency } from '@/shared/lib/utils'
 
 interface RevenueChartProps {
@@ -87,13 +88,12 @@ export function RevenueChart({ data, loading }: RevenueChartProps) {
                 width={120}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value) => [formatCurrency(value as number), 'MRR']}
-                labelFormatter={(label) => chartData.find(d => d.name === label)?.product_name || label}
+                content={
+                  <ChartTooltip
+                    labelFormatter={(label) => chartData.find(d => d.name === label)?.product_name || label}
+                    valueFormatter={(v) => formatCurrency(v)}
+                  />
+                }
               />
               <Bar dataKey="mrr" radius={[0, 4, 4, 0]}>
                 {chartData.map((_, index) => (

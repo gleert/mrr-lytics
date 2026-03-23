@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 interface ChurnChartProps {
   data: Array<{ date: string; rate: number; churned: number }>
@@ -83,15 +84,11 @@ export function ChurnChart({ data, loading }: ChurnChartProps) {
                 tickFormatter={(value) => `${value}%`}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--color-background)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                formatter={(value, name) => [
-                  name === 'rate' ? `${(value as number).toFixed(2)}%` : value as number,
-                  name === 'rate' ? 'Churn Rate' : 'Churned',
-                ]}
+                content={
+                  <ChartTooltip
+                    valueFormatter={(v, key) => key === 'rate' ? `${v.toFixed(2)}%` : String(Math.round(v))}
+                  />
+                }
               />
               <Area
                 type="monotone"

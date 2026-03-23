@@ -20,6 +20,7 @@ import { DashboardFilters } from '@/features/dashboard/components/dashboard-filt
 import { useForecastingStats } from '../hooks/use-forecasting-stats'
 import { useCurrency } from '@/shared/hooks/use-currency'
 import { ForecastCallout } from '../components/forecast-callout'
+import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 const BILLING_CYCLE_COLORS = [
   '#7C3AED', // Purple
@@ -187,16 +188,11 @@ export function ForecastingPage() {
                         tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'var(--color-background)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: '8px',
-                        }}
-                        labelStyle={{ color: 'var(--color-foreground)' }}
-                        formatter={(value) => [
-                          formatCurrency(Number(value) || 0),
-                          t('forecasting.revenue')
-                        ]}
+                        content={
+                          <ChartTooltip
+                            valueFormatter={(v) => formatCurrency(v)}
+                          />
+                        }
                       />
                       <Legend />
                       {/* Reference line at the projection point */}
@@ -292,21 +288,11 @@ export function ForecastingPage() {
                         width={70}
                       />
                       <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'var(--color-background)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: '8px',
-                        }}
-                        labelStyle={{ color: 'var(--color-foreground)' }}
-                        formatter={(value, name) => {
-                          if (name === 'mrr') {
-                            return [
-                              formatCurrency(Number(value) || 0),
-                              t('forecasting.mrrLabel')
-                            ]
-                          }
-                          return [value, name]
-                        }}
+                        content={
+                          <ChartTooltip
+                            valueFormatter={(v, key) => key === 'mrr' ? formatCurrency(v) : String(v)}
+                          />
+                        }
                       />
                       <Bar 
                         dataKey="mrr" 
