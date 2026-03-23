@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@/shared/components/ui/icon'
+import { Button } from '@/shared/components/ui/button'
 import { KPICard } from '../components/kpi-card'
 import { RecentActivity } from '../components/recent-activity'
 import { DailyCommittedMRRChart } from '../components/daily-committed-mrr-chart'
@@ -21,9 +23,19 @@ export function DashboardPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const { getCurrentTenant } = useFilters()
-  const { data: metrics, isLoading: metricsLoading } = useMetrics()
+  const queryClient = useQueryClient()
+  const { data: metrics, isLoading: metricsLoading, isFetching: metricsFetching } = useMetrics()
   const { data: syncStatus, isLoading: syncLoading } = useSyncStatus()
   const { data: cancellationsData, isLoading: cancellationsLoading } = usePendingCancellations(10)
+
+  const isRefreshing = metricsFetching && !metricsLoading
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['metrics'] })
+    queryClient.invalidateQueries({ queryKey: ['sync'] })
+    queryClient.invalidateQueries({ queryKey: ['revenue'] })
+    queryClient.invalidateQueries({ queryKey: ['cancellations'] })
+  }
 
   const hasPendingCancellations = !cancellationsLoading && cancellationsData && cancellationsData.count > 0
 
@@ -58,7 +70,22 @@ export function DashboardPage() {
               : t('dashboard.welcomeSubtitle')}
           </p>
         </div>
-        <DashboardFilters showPeriod={false} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title={t('common.refresh')}
+          >
+            <Icon
+              name="refresh"
+              size="lg"
+              className={isRefreshing ? 'animate-spin' : ''}
+            />
+          </Button>
+          <DashboardFilters showPeriod={false} />
+        </div>
       </div>
 
       {/* Sync error warning */}

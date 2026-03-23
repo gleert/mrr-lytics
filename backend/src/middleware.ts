@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToken, validateJwtEdge, validateJwtAuthOnly } from '@/lib/auth/api-key-edge'
+import { timingSafeEqual } from '@/utils/crypto-edge'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { jwtVerify } from 'jose'
 
@@ -125,7 +126,7 @@ export async function middleware(request: NextRequest) {
   // Handle cron paths
   if (CRON_PATHS.some((path) => pathname.startsWith(path))) {
     const cronSecret = process.env.CRON_SECRET
-    if (!cronSecret || token !== cronSecret) {
+    if (!cronSecret || !timingSafeEqual(token, cronSecret)) {
       const response = NextResponse.json(
         {
           success: false,

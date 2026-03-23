@@ -1108,5 +1108,13 @@ export const es = {
       weakPassword: 'La contraseña es muy débil.',
       invalidResetLink: 'Este enlace de recuperación es inválido o ha expirado.',
     },
+
+    // Error Boundary
+    errorBoundary: {
+      title: 'Algo salió mal',
+      description: 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+      details: 'Detalles del error',
+      reload: 'Recargar página',
+    },
   },
 }

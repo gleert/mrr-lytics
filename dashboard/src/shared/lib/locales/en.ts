@@ -1155,5 +1155,13 @@ export const en = {
       weakPassword: 'Password is too weak.',
       invalidResetLink: 'This password reset link is invalid or has expired.',
     },
+
+    // Error Boundary
+    errorBoundary: {
+      title: 'Something went wrong',
+      description: 'An unexpected error occurred. Please try again.',
+      details: 'Error details',
+      reload: 'Reload page',
+    },
   },
 }

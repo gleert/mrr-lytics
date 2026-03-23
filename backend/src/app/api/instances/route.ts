@@ -3,8 +3,18 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
 import { checkSubscriptionLimit, SubscriptionLimitError } from '@/lib/subscription'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
+
+const createInstanceSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less').trim(),
+  whmcs_url: z.string().url('Must be a valid URL').max(500),
+  api_token: z.string().min(1, 'API token is required').max(500),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color').optional(),
+  sync_enabled: z.boolean().optional().default(true),
+  sync_interval_hours: z.number().int().min(1).max(168).optional().default(24),
+})
 
 /**
  * GET /api/instances - Get all WHMCS instances for the current user's tenant
@@ -75,16 +85,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, whmcs_url, api_token, color, sync_enabled = true, sync_interval_hours = 24 } = body
+    const parsed = createInstanceSchema.safeParse(body)
 
-    // Validate required fields
-    if (!name || !whmcs_url) {
-      return error(new Error('Name and WHMCS URL are required'), 400)
+    if (!parsed.success) {
+      return error(new Error(parsed.error.issues.map((e: { message: string }) => e.message).join(', ')), 400)
     }
 
-    if (!api_token) {
-      return error(new Error('API token is required'), 400)
-    }
+    const { name, whmcs_url, api_token, color, sync_enabled, sync_interval_hours } = parsed.data
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

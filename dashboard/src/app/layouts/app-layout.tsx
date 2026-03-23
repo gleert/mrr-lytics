@@ -7,6 +7,7 @@ import { TrialBanner } from '@/features/billing'
 import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
 import { ImpersonationBanner } from '@/features/superadmin/components/impersonation-banner'
+import { ErrorBoundary } from '@/shared/components/error-boundary'
 import { SuspendedScreen } from '@/features/superadmin/components/suspended-screen'
 import { AccountDeletedScreen } from '@/features/superadmin/components/account-deleted-screen'
 import { useFilters } from '@/app/providers'
@@ -103,7 +104,9 @@ export function AppLayout() {
           />
           <TrialBanner />
           <main className="flex-1 overflow-auto p-4 lg:p-6">
+            <ErrorBoundary>
             <Outlet />
+            </ErrorBoundary>
             {/* Logo watermark */}
             <div className="flex justify-center pt-12 pb-4 pointer-events-none select-none">
               <img

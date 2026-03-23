@@ -73,8 +73,9 @@ export async function GET(request: NextRequest) {
       if (!isNaN(searchNum)) {
         query = query.eq('whmcs_id', searchNum)
       } else {
-        // Search by name or company
-        query = query.or(`firstname.ilike.%${search}%,lastname.ilike.%${search}%,companyname.ilike.%${search}%`)
+        // Escape LIKE special characters to prevent pattern injection
+        const escaped = search.replace(/[%_\\]/g, '\\$&')
+        query = query.or(`firstname.ilike.%${escaped}%,lastname.ilike.%${escaped}%,companyname.ilike.%${escaped}%`)
       }
     }
 

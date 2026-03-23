@@ -2,8 +2,19 @@ import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
+
+const updateInstanceSchema = z.object({
+  name: z.string().min(1).max(100).trim().optional(),
+  whmcs_url: z.string().url('Must be a valid URL').max(500).optional(),
+  api_token: z.string().min(1).max(500).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color').optional(),
+  sync_enabled: z.boolean().optional(),
+  sync_interval_hours: z.number().int().min(1).max(168).optional(),
+  status: z.enum(['active', 'paused']).optional(),
+}).refine(data => Object.keys(data).length > 0, { message: 'At least one field is required' })
 
 interface RouteParams {
   params: Promise<{ instanceId: string }>
@@ -67,19 +78,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const allowedFields = ['name', 'whmcs_url', 'color', 'sync_enabled', 'sync_interval_hours', 'status']
-    
-    // Filter only allowed fields
-    const updates: Record<string, unknown> = {}
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updates[field] = body[field]
-      }
+    const parsed = updateInstanceSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return error(new Error(parsed.error.issues.map((e: { message: string }) => e.message).join(', ')), 400)
     }
 
+    const { api_token, ...validFields } = parsed.data
+    const updates: Record<string, unknown> = { ...validFields }
+
     // Handle api_token separately (maps to whmcs_api_secret)
-    if (body.api_token) {
-      updates.whmcs_api_secret = body.api_token
+    if (api_token) {
+      updates.whmcs_api_secret = api_token
     }
 
     // Update slug if name changed
@@ -88,10 +98,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return error(new Error('No valid fields to update'), 400)
     }
 
     const supabase = createClient(
