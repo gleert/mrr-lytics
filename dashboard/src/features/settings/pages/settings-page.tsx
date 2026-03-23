@@ -7,8 +7,9 @@ import { InstancesSection } from '../components/instances-section'
 import { CategoriesSection } from '../components/categories-section'
 import { TeamSection } from '../components/team-section'
 import { BillingSection } from '../components/billing-section'
+import { ChangelogSection } from '../components/changelog-section'
 
-type SettingsTab = 'general' | 'workspace' | 'team' | 'billing'
+type SettingsTab = 'general' | 'workspace' | 'team' | 'billing' | 'changelog'
 
 const STORAGE_KEY = 'mrrlytics-settings-tab'
 
@@ -17,6 +18,7 @@ const TABS: { id: SettingsTab; icon: string; labelKey: string }[] = [
   { id: 'workspace', icon: 'dns',         labelKey: 'settings.tabWorkspace' },
   { id: 'team',      icon: 'group',       labelKey: 'settings.tabTeam'      },
   { id: 'billing',   icon: 'credit_card', labelKey: 'settings.tabBilling'   },
+  { id: 'changelog', icon: 'new_releases', labelKey: 'settings.tabChangelog' },
 ]
 
 export function SettingsPage() {
@@ -44,13 +46,13 @@ export function SettingsPage() {
       </div>
 
       {/* Tab bar - same style as Products page */}
-      <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border w-fit">
+      <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border w-fit max-w-full overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
               activeTab === tab.id
                 ? 'bg-primary-500 text-white'
                 : 'text-muted hover:text-foreground hover:bg-surface-hover'
@@ -75,6 +77,8 @@ export function SettingsPage() {
       {activeTab === 'team' && <TeamSection />}
 
       {activeTab === 'billing' && <BillingSection />}
+
+      {activeTab === 'changelog' && <ChangelogSection />}
     </div>
   )
 }

@@ -13,25 +13,25 @@ export function TopProductsTable() {
   return (
     <div className="rounded-xl border border-border bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Icon name="inventory_2" size="lg" className="text-primary-400" />
-          <div>
-            <h2 className="text-lg font-medium">{t('dashboard.topProducts.title')}</h2>
-            <p className="text-sm text-muted">{t('dashboard.topProducts.desc')}</p>
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Icon name="inventory_2" size="lg" className="text-primary-400 shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-medium">{t('dashboard.topProducts.title')}</h2>
+            <p className="text-xs sm:text-sm text-muted truncate">{t('dashboard.topProducts.desc')}</p>
           </div>
         </div>
-        <Link 
-          to="/products" 
-          className="flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+        <Link
+          to="/products"
+          className="flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300 transition-colors shrink-0 ml-2"
         >
-          {t('dashboard.topProducts.viewAll')}
+          <span className="hidden sm:inline">{t('dashboard.topProducts.viewAll')}</span>
           <Icon name="arrow_forward" size="sm" />
         </Link>
       </div>
 
-      {/* Table */}
-      <div className="p-4">
+      {/* Content */}
+      <div className="p-3 sm:p-4">
         {isLoading ? (
           <TableSkeleton rows={5} />
         ) : !data?.products?.length ? (
@@ -41,62 +41,96 @@ export function TopProductsTable() {
             <p className="text-xs">{t('dashboard.noDataProducts')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px]">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="py-3 px-2 text-left text-sm font-medium text-muted">
-                  {t('dashboard.topProducts.name')}
-                </th>
-                <th className="py-3 px-2 text-right text-sm font-medium text-muted">
-                  {t('dashboard.topProducts.activeServices')}
-                </th>
-                <th className="py-3 px-2 text-right text-sm font-medium text-muted">
-                  {t('dashboard.topProducts.mrr')}
-                </th>
-                <th className="py-3 px-2 text-right text-sm font-medium text-muted">
-                  {t('dashboard.topProducts.percentage')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile card layout */}
+            <div className="space-y-2 sm:hidden">
               {data.products.map((product, index) => (
-                <tr 
-                  key={product.id} 
-                  className="border-b border-border/50 last:border-0 hover:bg-surface-hover transition-colors"
+                <div
+                  key={product.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-surface-hover transition-colors"
                 >
-                  <td className="py-3 px-2">
-                    <div className="flex items-center gap-3">
-                      <span                         className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/10 text-primary-400 text-xs font-bold">
-                        {index + 1}
-                      </span>
-                      <span className="font-medium truncate max-w-[200px]">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-2 text-right text-muted">
-                    {product.active_services}
-                  </td>
-                  <td className="py-3 px-2 text-right font-medium">
-                    {formatCurrency(product.mrr)}
-                  </td>
-                  <td className="py-3 px-2 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="w-16 h-2 rounded-full bg-white/10 overflow-hidden">
-                        <div 
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/10 text-primary-400 text-xs font-bold shrink-0">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div
                           className="h-full rounded-full bg-primary-500"
                           style={{ width: `${Math.min(product.percentage, 100)}%` }}
                         />
                       </div>
-                      <span className="text-sm text-muted w-12 text-right">
+                      <span className="text-xs text-muted w-10 text-right">
                         {product.percentage.toFixed(1)}%
                       </span>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                  <span className="font-medium text-sm shrink-0">
+                    {formatCurrency(product.mrr)}
+                  </span>
+                </div>
               ))}
-            </tbody>
-          </table>
-          </div>
+            </div>
+
+            {/* Desktop table layout */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-3 px-2 text-left text-sm font-medium text-muted">
+                      {t('dashboard.topProducts.name')}
+                    </th>
+                    <th className="py-3 px-2 text-right text-sm font-medium text-muted">
+                      {t('dashboard.topProducts.activeServices')}
+                    </th>
+                    <th className="py-3 px-2 text-right text-sm font-medium text-muted">
+                      {t('dashboard.topProducts.mrr')}
+                    </th>
+                    <th className="py-3 px-2 text-right text-sm font-medium text-muted">
+                      {t('dashboard.topProducts.percentage')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.products.map((product, index) => (
+                    <tr
+                      key={product.id}
+                      className="border-b border-border/50 last:border-0 hover:bg-surface-hover transition-colors"
+                    >
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/10 text-primary-400 text-xs font-bold">
+                            {index + 1}
+                          </span>
+                          <span className="font-medium truncate max-w-[200px]">{product.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-right text-muted">
+                        {product.active_services}
+                      </td>
+                      <td className="py-3 px-2 text-right font-medium">
+                        {formatCurrency(product.mrr)}
+                      </td>
+                      <td className="py-3 px-2 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-2 rounded-full bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-primary-500"
+                              style={{ width: `${Math.min(product.percentage, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted w-12 text-right">
+                            {product.percentage.toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
