@@ -687,6 +687,21 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v180: {
+          productStats: 'Product statistics section with KPIs and charts',
+          productTopMrr: 'Top products by MRR chart',
+          productMrrCategory: 'MRR distribution by category/group chart',
+          productDistribution: 'Product distribution by payment and product type',
+        },
+        v170: {
+          clientRetention: 'Client retention rate, age, and health insights',
+          clientNetGrowth: 'Net client growth metric (new minus churned)',
+          clientConcentration: 'Revenue concentration from top 5 clients',
+          clientNetTrend: 'Combined new vs churned chart with net growth line',
+          topClientsMrrToggle: 'Toggle top clients between MRR and revenue ranking',
+          clientSkeletons: 'Skeleton loading for client charts and top block',
+          clientEmptyStates: 'Improved empty states with helpful hints',
+        },
         v160: {
           revenueAvgInvoice: 'Average invoice amount KPI in revenue page',
           revenueTopProduct: 'Top product by revenue with name and amount',

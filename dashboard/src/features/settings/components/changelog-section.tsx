@@ -24,6 +24,29 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v180.productStats' },
+      { type: 'feature', text: 'changelog.entries.v180.productTopMrr' },
+      { type: 'feature', text: 'changelog.entries.v180.productMrrCategory' },
+      { type: 'feature', text: 'changelog.entries.v180.productDistribution' },
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v170.clientRetention' },
+      { type: 'feature', text: 'changelog.entries.v170.clientNetGrowth' },
+      { type: 'feature', text: 'changelog.entries.v170.clientConcentration' },
+      { type: 'feature', text: 'changelog.entries.v170.clientNetTrend' },
+      { type: 'feature', text: 'changelog.entries.v170.topClientsMrrToggle' },
+      { type: 'improvement', text: 'changelog.entries.v170.clientSkeletons' },
+      { type: 'improvement', text: 'changelog.entries.v170.clientEmptyStates' },
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-03-23',
     changes: [

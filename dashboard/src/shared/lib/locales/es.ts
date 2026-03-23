@@ -641,6 +641,21 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v180: {
+          productStats: 'Sección de estadísticas de productos con KPIs y gráficos',
+          productTopMrr: 'Gráfico de top productos por MRR',
+          productMrrCategory: 'Distribución de MRR por categoría/grupo',
+          productDistribution: 'Distribución de productos por tipo de pago y producto',
+        },
+        v170: {
+          clientRetention: 'Tasa de retención, antigüedad e insights de salud',
+          clientNetGrowth: 'Crecimiento neto de clientes (nuevos menos perdidos)',
+          clientConcentration: 'Concentración de ingresos en los 5 principales clientes',
+          clientNetTrend: 'Gráfico combinado nuevos vs perdidos con línea de crecimiento neto',
+          topClientsMrrToggle: 'Toggle de top clientes entre ranking por MRR e ingresos',
+          clientSkeletons: 'Skeleton loading para gráficos y bloque de top clientes',
+          clientEmptyStates: 'Estados vacíos mejorados con sugerencias útiles',
+        },
         v160: {
           revenueAvgInvoice: 'KPI de importe medio por factura en página de ingresos',
           revenueTopProduct: 'Producto top por ingresos con nombre e importe',
