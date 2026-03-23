@@ -21,6 +21,7 @@ export const es = {
       back: 'Atrás',
       next: 'Siguiente',
       previous: 'Anterior',
+      vsPreviousPeriod: 'vs período anterior',
     },
 
     // Auth
