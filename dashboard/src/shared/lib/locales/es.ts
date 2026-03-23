@@ -364,6 +364,11 @@ export const es = {
         noCancellations: 'No hay cancelaciones pendientes',
       },
       // Recent Syncs Section
+      syncErrorBanner: {
+        title: 'La sincronización falló en {{count}} instancia(s)',
+        desc: 'Los datos mostrados podrían estar desactualizados. Revisa la configuración de tu instancia o reintenta la sincronización.',
+        cta: 'Ver ajustes',
+      },
       uncategorizedBanner: {
         title: '{{count}} producto(s) sin categoría',
         desc: 'Los productos sin categoría quedan excluidos de los reportes de ingresos y analíticas. Asígnales una categoría para obtener informes precisos.',

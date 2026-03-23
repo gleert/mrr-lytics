@@ -44,6 +44,7 @@ export interface TenantWithInstances {
   role: 'admin' | 'viewer'
   is_default: boolean
   currency: Currency
+  company_name: string | null
   instances: WhmcsInstance[]
 }
 

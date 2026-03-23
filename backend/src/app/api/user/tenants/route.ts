@@ -70,6 +70,17 @@ export async function GET() {
       })
     }
 
+    // Get tenant settings (company_name) for all tenants at once
+    const tenantIds = tenants.map((t: { tenant_id: string }) => t.tenant_id)
+    const { data: tenantSettings } = await supabase
+      .from('tenants')
+      .select('id, settings')
+      .in('id', tenantIds)
+
+    const settingsMap = new Map(
+      (tenantSettings || []).map(t => [t.id, t.settings as Record<string, unknown>])
+    )
+
     // For each tenant, get its instances
     const tenantsWithInstances: TenantWithInstances[] = await Promise.all(
       tenants.map(async (tenant: { tenant_id: string; tenant_name: string; tenant_slug: string; role: string; is_default: boolean; currency: string }) => {
@@ -79,14 +90,17 @@ export async function GET() {
             p_tenant_id: tenant.tenant_id 
           })
 
+        const settings = settingsMap.get(tenant.tenant_id) || {}
+
         if (instancesError) {
           console.error(`Error fetching instances for tenant ${tenant.tenant_id}:`, instancesError)
-          return { ...tenant, currency: tenant.currency || 'EUR', instances: [] }
+          return { ...tenant, currency: tenant.currency || 'EUR', company_name: settings.company_name ?? null, instances: [] }
         }
 
         return {
           ...tenant,
           currency: tenant.currency || 'EUR',
+          company_name: settings.company_name ?? null,
           instances: instances || [],
         }
       })

@@ -315,6 +315,7 @@ export const en = {
       goodAfternoon: 'Good afternoon, {{name}}',
       goodEvening: 'Good evening, {{name}}',
       welcomeSubtitle: "Here's an overview of your business metrics",
+      welcomeSubtitleCompany: "Here's an overview of {{company}}'s business metrics",
       mrr: 'Monthly Recurring Revenue',
       arr: 'Annual Recurring Revenue',
       churnRate: 'Churn Rate',
@@ -410,6 +411,11 @@ export const en = {
         noCancellations: 'No pending cancellations',
       },
       // Recent Syncs Section
+      syncErrorBanner: {
+        title: 'Sync failed for {{count}} instance(s)',
+        desc: 'Data shown may be outdated. Check your instance settings or retry the sync.',
+        cta: 'View settings',
+      },
       uncategorizedBanner: {
         title: '{{count}} product(s) without a category',
         desc: 'Uncategorized products are excluded from revenue breakdowns and analytics. Assign them a category to get accurate reports.',
