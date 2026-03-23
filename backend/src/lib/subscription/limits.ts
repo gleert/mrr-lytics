@@ -136,9 +136,10 @@ async function checkLimitAgainstPlan(
 
     case 'team_members': {
       const { count } = await supabase
-        .from('user_tenants')
+        .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('tenant_id', tenantId)
+        .eq('is_active', true)
       current = count ?? 0
       break
     }
