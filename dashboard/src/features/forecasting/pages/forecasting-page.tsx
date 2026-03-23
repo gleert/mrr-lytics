@@ -70,7 +70,7 @@ export function ForecastingPage() {
           <h2 className="text-xl font-semibold text-foreground">{t('forecasting.mrrProjectionsTitle')}</h2>
           <p className="text-muted">{t('forecasting.mrrProjectionsDesc')}</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           <KPICard
             title={t('forecasting.currentMrr')}
             value={stats?.current_mrr ?? 0}
@@ -87,14 +87,16 @@ export function ForecastingPage() {
             icon={<Icon name="trending_up" size="2xl" />}
             accentColor="success"
           />
-          <KPICard
-            title={t('forecasting.projectedGrowth')}
-            value={stats?.projected_growth ?? 0}
-            format="percent"
-            loading={isLoading}
-            icon={<Icon name="show_chart" size="2xl" />}
-            accentColor={(stats?.projected_growth ?? 0) >= 0 ? 'success' : 'error'}
-          />
+          <div className="col-span-2 lg:col-span-1">
+            <KPICard
+              title={t('forecasting.projectedGrowth')}
+              value={stats?.projected_growth ?? 0}
+              format="percent"
+              loading={isLoading}
+              icon={<Icon name="show_chart" size="2xl" />}
+              accentColor={(stats?.projected_growth ?? 0) >= 0 ? 'success' : 'error'}
+            />
+          </div>
         </div>
       </div>
 
@@ -265,7 +267,7 @@ export function ForecastingPage() {
                     <BarChart
                       data={stats.billing_cycle_breakdown}
                       layout="vertical"
-                      margin={{ top: 10, right: 30, left: 80, bottom: 10 }}
+                      margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
                     >
                       <CartesianGrid
                         strokeDasharray="3 3"
@@ -365,19 +367,19 @@ export function ForecastingPage() {
           ]
 
           return (
-            <div className="rounded-xl border border-border bg-surface p-6 space-y-8">
+            <div className="rounded-xl border border-border bg-surface p-4 sm:p-6 space-y-6 sm:space-y-8">
               {/* Three columns: name + MRR + growth */}
-              <div className="grid grid-cols-3">
+              <div className="grid grid-cols-3 gap-2">
                 {scenarios.map(({ key, label, data, dotColor, growthColor }) => (
-                  <div key={key} className="flex flex-col items-center gap-1 text-center">
+                  <div key={key} className="flex flex-col items-center gap-0.5 sm:gap-1 text-center min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                      <p className="text-xs text-muted uppercase tracking-wide">{label}</p>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+                      <p className="text-[10px] sm:text-xs text-muted uppercase tracking-wide truncate">{label}</p>
                     </div>
-                    <p className="text-2xl font-semibold tabular-nums">
+                    <p className="text-lg sm:text-2xl font-semibold tabular-nums truncate w-full">
                       {formatCurrency(data.mrr, { maximumFractionDigits: 0 })}
                     </p>
-                    <p className={`text-sm font-medium tabular-nums ${growthColor}`}>
+                    <p className={`text-xs sm:text-sm font-medium tabular-nums ${growthColor}`}>
                       {data.growth >= 0 ? '+' : ''}{data.growth.toFixed(1)}%
                     </p>
                   </div>

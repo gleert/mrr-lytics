@@ -83,13 +83,13 @@ export function KPICard({
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-12 w-12 rounded-xl" />
+            <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl" />
           </div>
-          <Skeleton className="mt-4 h-9 w-32" />
-          <Skeleton className="mt-3 h-4 w-24" />
+          <Skeleton className="mt-3 sm:mt-4 h-7 sm:h-9 w-32" />
+          <Skeleton className="mt-2 sm:mt-3 h-4 w-24" />
         </CardContent>
       </Card>
     )
@@ -97,12 +97,12 @@ export function KPICard({
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted">{title}</p>
           {icon && (
             <div className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl',
+              'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl',
               colors.bg,
               colors.text
             )}>
@@ -111,10 +111,10 @@ export function KPICard({
           )}
         </div>
 
-        <p className="mt-4 text-3xl font-semibold tracking-tight">{formattedValue}</p>
+        <p className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-semibold tracking-tight truncate">{formattedValue}</p>
 
         {changePercent !== undefined && (
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-2 sm:mt-3 flex items-center gap-2">
             <div
               className={cn(
                 'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
