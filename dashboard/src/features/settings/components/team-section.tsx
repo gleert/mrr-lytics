@@ -233,9 +233,10 @@ export function TeamSection() {
                             {!isCurrentUser && (
                               <Button
                                 variant="ghost"
-                                size="sm"
+                                size="icon"
                                 onClick={() => setMemberToRemove(member)}
-                                className="h-8 w-8 p-0 text-muted hover:text-danger hover:bg-danger/10"
+                                title={t('team.removeMember')}
+                                className="h-9 w-9 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-all"
                               >
                                 <Icon name="person_remove" size="md" />
                               </Button>

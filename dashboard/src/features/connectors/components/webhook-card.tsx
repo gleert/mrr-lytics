@@ -58,19 +58,19 @@ export function WebhookCard({
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onViewEvents}
-              className="h-8 w-8 p-0 text-muted hover:text-foreground"
+              className="h-8 w-8 rounded-lg bg-white/5 border border-border/50 text-muted hover:bg-surface-elevated hover:border-border hover:text-foreground transition-all"
               title={t('connectors.viewEvents')}
             >
               <Icon name="history" size="sm" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onTest}
               disabled={!connector.enabled || isTestLoading}
-              className="h-8 w-8 p-0 text-muted hover:text-foreground"
+              className="h-8 w-8 rounded-lg bg-white/5 border border-border/50 text-muted hover:bg-surface-elevated hover:border-border hover:text-foreground transition-all"
               title={t('connectors.test')}
             >
               {isTestLoading
@@ -79,18 +79,18 @@ export function WebhookCard({
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onEdit}
-              className="h-8 w-8 p-0 text-muted hover:text-foreground"
+              className="h-8 w-8 rounded-lg bg-white/5 border border-border/50 text-muted hover:bg-surface-elevated hover:border-border hover:text-foreground transition-all"
               title={t('common.edit')}
             >
               <Icon name="edit" size="sm" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onDelete}
-              className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger/10"
+              className="h-8 w-8 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-all"
               title={t('common.delete')}
             >
               <Icon name="delete" size="sm" />

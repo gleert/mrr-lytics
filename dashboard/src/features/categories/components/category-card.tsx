@@ -76,20 +76,22 @@ export function CategoryCard({ category, onEdit, onDelete }: CategoryCardProps) 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => onEdit(category)}
-              className="h-9 w-9 p-0"
+              title={t('common.edit')}
+              className="h-9 w-9 rounded-lg bg-white/5 border border-border/50 text-muted hover:bg-surface-elevated hover:border-border hover:text-foreground transition-all"
             >
-              <Icon name="edit" size="lg" />
+              <Icon name="edit" size="md" />
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => onDelete(category)}
-              className="h-9 w-9 p-0 border-danger/30 text-danger hover:text-danger hover:bg-danger/10 hover:border-danger/50"
+              title={t('common.delete')}
+              className="h-9 w-9 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-all"
             >
-              <Icon name="delete" size="lg" />
+              <Icon name="delete" size="md" />
             </Button>
           </div>
         </div>

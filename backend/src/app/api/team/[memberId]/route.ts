@@ -60,8 +60,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
     const { role } = body
 
-    if (!role || !['admin', 'member', 'viewer'].includes(role)) {
-      return error(new Error('Invalid role'), 400)
+    if (!role || !['admin', 'viewer'].includes(role)) {
+      return error(new Error('Invalid role. Allowed: admin, viewer'), 400)
     }
 
     // Check if this would remove the last admin
@@ -144,14 +144,17 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Remove from tenant by setting tenant_id to null
+    // Remove from tenant by deleting the user record
     const { error: deleteError } = await supabase
       .from('users')
-      .update({ tenant_id: null, is_active: false })
+      .delete()
       .eq('id', memberId)
       .eq('tenant_id', tenantId)
 
-    if (deleteError) return error(new Error('Failed to remove team member'), 500)
+    if (deleteError) {
+      console.error('[team/delete] error:', deleteError)
+      return error(new Error(`Failed to remove team member: ${deleteError.message}`), 500)
+    }
 
     return success({ message: 'Team member removed', member_id: memberId })
   } catch (err) {
