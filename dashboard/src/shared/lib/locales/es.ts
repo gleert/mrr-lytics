@@ -676,6 +676,22 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v200: {
+          dashboardKpis: 'Nuevos KPIs: servicios activos, dominios, facturas pendientes y vencidas',
+          healthScore: 'Indicador de salud del negocio con gauge circular y factores',
+          quickInsights: 'Insights automáticos en lenguaje natural en el dashboard',
+          quickLinks: 'Barra de accesos rápidos en el dashboard',
+          rbac: 'Control de acceso por roles: los viewers no pueden gestionar configuración, sync ni conectores',
+          actionButtons: 'Botones de acción rediseñados con fondo translúcido',
+          staleWarning: 'Aviso de datos obsoletos cuando las métricas tienen más de 30 minutos',
+          teamInvite: 'Corregido error al invitar miembros del equipo (enum de rol)',
+          teamDelete: 'Corregido error al eliminar miembros del equipo (constraint NOT NULL)',
+          syncFeedback: 'Notificaciones toast al sincronizar desde el header',
+        },
+        v190: {
+          topClientsMrrToggle: 'Toggle de top clientes entre ranking por MRR e ingresos',
+          topClientsHeadline: 'Nombre del top cliente como titular en lugar del importe total',
+        },
         v180: {
           productStats: 'Sección de estadísticas de productos con KPIs y gráficos',
           productTopMrr: 'Gráfico de top productos por MRR',

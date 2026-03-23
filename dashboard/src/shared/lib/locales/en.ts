@@ -720,6 +720,22 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v200: {
+          dashboardKpis: 'New KPIs: active services, domains, unpaid and overdue invoices',
+          healthScore: 'Business health score with circular gauge and contributing factors',
+          quickInsights: 'Auto-generated natural language insights on the dashboard',
+          quickLinks: 'Quick navigation links bar on dashboard home',
+          rbac: 'Role-based access control: viewers cannot manage settings, sync, or connectors',
+          actionButtons: 'Redesigned action icon buttons with translucent background style',
+          staleWarning: 'Stale data warning when metrics are older than 30 minutes',
+          teamInvite: 'Fixed team invitation error (role enum mismatch)',
+          teamDelete: 'Fixed team member deletion (NOT NULL constraint on tenant_id)',
+          syncFeedback: 'Toast notifications when triggering sync from header',
+        },
+        v190: {
+          topClientsMrrToggle: 'Toggle top clients between MRR and revenue ranking',
+          topClientsHeadline: 'Top client name shown as headline instead of total amount',
+        },
         v180: {
           productStats: 'Product statistics section with KPIs and charts',
           productTopMrr: 'Top products by MRR chart',

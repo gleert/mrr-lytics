@@ -24,6 +24,30 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.0.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v200.dashboardKpis' },
+      { type: 'feature', text: 'changelog.entries.v200.healthScore' },
+      { type: 'feature', text: 'changelog.entries.v200.quickInsights' },
+      { type: 'feature', text: 'changelog.entries.v200.quickLinks' },
+      { type: 'feature', text: 'changelog.entries.v200.rbac' },
+      { type: 'improvement', text: 'changelog.entries.v200.actionButtons' },
+      { type: 'improvement', text: 'changelog.entries.v200.staleWarning' },
+      { type: 'fix', text: 'changelog.entries.v200.teamInvite' },
+      { type: 'fix', text: 'changelog.entries.v200.teamDelete' },
+      { type: 'fix', text: 'changelog.entries.v200.syncFeedback' },
+    ],
+  },
+  {
+    version: '1.9.0',
+    date: '2026-03-23',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v190.topClientsMrrToggle' },
+      { type: 'improvement', text: 'changelog.entries.v190.topClientsHeadline' },
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-03-23',
     changes: [
