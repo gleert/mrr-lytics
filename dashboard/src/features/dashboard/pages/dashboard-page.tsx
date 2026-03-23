@@ -112,7 +112,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Stale data warning (#6) */}
+      {/* Stale data warning */}
       {isDataStale && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
           <Icon name="schedule" size="sm" className="text-amber-400 shrink-0" />
@@ -129,7 +129,7 @@ export function DashboardPage() {
       {/* Uncategorized products warning */}
       <UncategorizedProductsBanner />
 
-      {/* Quick Links (#7) */}
+      {/* Quick Links */}
       <QuickLinks />
 
       {/* Main KPI Cards — Row 1: Core metrics */}
@@ -171,7 +171,7 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* KPI Cards — Row 2: Services, Domains, Invoices (#1, #2, #3) */}
+      {/* KPI Cards — Row 2: Services, Domains, Invoices */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('dashboard.activeServices')}
@@ -203,7 +203,7 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Health Score + Quick Insights (#5, #12) */}
+      {/* Health Score + Quick Insights */}
       {!metricsLoading && metrics && (
         <div className="grid gap-4 lg:grid-cols-2">
           <HealthScore metrics={metrics} />
@@ -211,7 +211,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Forecast CTA (#8 - moved after KPIs, before charts) */}
+      {/* Forecast CTA */}
       <ForecastCTA />
 
       {/* Revenue Analytics Section */}
@@ -221,7 +221,7 @@ export function DashboardPage() {
           <p className="text-muted">{t('dashboard.revenueAnalyticsDesc')}</p>
         </div>
 
-        {/* Revenue Breakdown (#9 - already uses BarSkeleton) */}
+        {/* Revenue Breakdown */}
         <RevenueBreakdownBar />
 
         {/* MRR Trend + Daily Committed MRR side by side */}
@@ -268,7 +268,7 @@ export function DashboardPage() {
         )}
       </div>
 
-      {/* Recent Syncs Section (#8 - stays at bottom) */}
+      {/* Recent Syncs Section */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('dashboard.recentSyncsSection.title')}</h2>
