@@ -11,33 +11,35 @@ export function HealthScore({ metrics }: HealthScoreProps) {
   const { t } = useTranslation()
 
   const { score, label, color, bgColor, factors } = useMemo(() => {
-    let score = 50 // Base
+    let score = 70 // Base — a stable business starts at "good"
 
     const factors: { label: string; impact: number; good: boolean }[] = []
 
-    // MRR growth (+20 max)
+    // MRR growth (±15)
     const mrrChange = metrics.mrr.mrr_change ?? 0
-    if (mrrChange > 10) { score += 20; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 20, good: true }) }
-    else if (mrrChange > 0) { score += 10; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 10, good: true }) }
-    else if (mrrChange < -5) { score -= 15; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -15, good: false }) }
-    else if (mrrChange < 0) { score -= 5; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -5, good: false }) }
+    if (mrrChange > 10) { score += 15; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 15, good: true }) }
+    else if (mrrChange > 0) { score += 8; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 8, good: true }) }
+    else if (mrrChange < -10) { score -= 20; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -20, good: false }) }
+    else if (mrrChange < 0) { score -= 8; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -8, good: false }) }
 
-    // Churn rate (+20 max)
+    // Churn rate (±15)
     const churnRate = metrics.churn.churn_rate ?? 0
-    if (churnRate <= 2) { score += 20; factors.push({ label: t('dashboard.health.lowChurn'), impact: 20, good: true }) }
-    else if (churnRate <= 5) { score += 10; factors.push({ label: t('dashboard.health.moderateChurn'), impact: 10, good: true }) }
+    if (churnRate <= 2) { score += 10; factors.push({ label: t('dashboard.health.lowChurn'), impact: 10, good: true }) }
+    else if (churnRate <= 5) { score += 0; factors.push({ label: t('dashboard.health.moderateChurn'), impact: 0, good: true }) }
     else if (churnRate > 10) { score -= 20; factors.push({ label: t('dashboard.health.highChurn'), impact: -20, good: false }) }
     else { score -= 10; factors.push({ label: t('dashboard.health.elevatedChurn'), impact: -10, good: false }) }
 
-    // Client growth (+10 max)
+    // Client growth (±10)
     const clientChange = metrics.clients.active_change ?? 0
     if (clientChange > 5) { score += 10; factors.push({ label: t('dashboard.health.clientGrowth'), impact: 10, good: true }) }
-    else if (clientChange < -5) { score -= 10; factors.push({ label: t('dashboard.health.clientLoss'), impact: -10, good: false }) }
+    else if (clientChange > 0) { score += 5; factors.push({ label: t('dashboard.health.clientGrowth'), impact: 5, good: true }) }
+    else if (clientChange < -5) { score -= 15; factors.push({ label: t('dashboard.health.clientLoss'), impact: -15, good: false }) }
 
-    // Overdue invoices (-10 max)
+    // Overdue invoices (±5)
     const overdue = metrics.invoices.overdue_count ?? 0
     if (overdue > 10) { score -= 10; factors.push({ label: t('dashboard.health.manyOverdue'), impact: -10, good: false }) }
-    else if (overdue === 0) { score += 5; factors.push({ label: t('dashboard.health.noOverdue'), impact: 5, good: true }) }
+    else if (overdue > 0) { score -= 3; factors.push({ label: t('dashboard.health.manyOverdue'), impact: -3, good: false }) }
+    else { score += 5; factors.push({ label: t('dashboard.health.noOverdue'), impact: 5, good: true }) }
 
     score = Math.max(0, Math.min(100, score))
 
