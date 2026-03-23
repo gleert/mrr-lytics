@@ -45,13 +45,11 @@ export function TopClientsBlock() {
                 {t('clients.topClients.title')}
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-black text-white">
-                {formatCurrency(totalRevenue, { maximumFractionDigits: 0 })}
-              </span>
-            </div>
-            <p className="text-xl font-light text-white/80">
-              {t('clients.topClients.subtitle')}
+            <p className="text-3xl sm:text-4xl font-black text-white leading-tight">
+              {clients[0]?.name || '—'}
+            </p>
+            <p className="text-lg font-light text-white/80">
+              {formatCurrency(totalRevenue, { maximumFractionDigits: 0 })} {t('clients.topClients.subtitle')}
             </p>
           </div>
         </div>
