@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar'
-import { useTheme, useAuth } from '@/app/providers'
+import { useTheme, useAuth, useFilters } from '@/app/providers'
 import { useLocation } from 'react-router-dom'
 import { cn, formatRelativeTime } from '@/shared/lib/utils'
 import { useSyncStatus, useTriggerSync } from '@/features/sync/hooks/use-sync'
@@ -46,7 +46,9 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
     return titles[location.pathname] || ''
   }, [location.pathname, t])
 
-  // Sync status and trigger
+  // Role and sync
+  const { userRole } = useFilters()
+  const isAdmin = userRole === 'admin'
   const toast = useToast()
   const { data: syncStatus } = useSyncStatus()
   const { mutate: triggerSync, isPending: isSyncing } = useTriggerSync()
@@ -161,8 +163,8 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
 
       {/* Right side */}
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {/* Sync status and button */}
-        {!isMobile && syncStatus && (
+        {/* Sync status and button (admin only) */}
+        {isAdmin && !isMobile && syncStatus && (
           <div className="flex items-center gap-2 mr-1">
             {/* Last sync indicator */}
             <div className="flex items-center gap-1.5 text-xs text-muted">
@@ -192,23 +194,25 @@ export function Header({ isMobile = false, onMenuClick }: HeaderProps) {
           </div>
         )}
 
-        {/* Sync button */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleSync}
-          disabled={isSyncing || syncStatus?.is_syncing}
-          className="rounded-xl text-muted hover:text-foreground"
-          title={t('sync.triggerSync')}
-        >
-          <Icon 
-            name="sync" 
-            size="lg" 
-            className={cn(
-              (isSyncing || syncStatus?.is_syncing) && 'animate-spin'
-            )} 
-          />
-        </Button>
+        {/* Sync button (admin only) */}
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSync}
+            disabled={isSyncing || syncStatus?.is_syncing}
+            className="rounded-xl text-muted hover:text-foreground"
+            title={t('sync.triggerSync')}
+          >
+            <Icon
+              name="sync"
+              size="lg"
+              className={cn(
+                (isSyncing || syncStatus?.is_syncing) && 'animate-spin'
+              )}
+            />
+          </Button>
+        )}
 
         {/* Theme toggle */}
         <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-muted hover:text-foreground">

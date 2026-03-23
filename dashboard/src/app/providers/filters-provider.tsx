@@ -79,6 +79,7 @@ interface FiltersState {
   getCurrentCurrency: () => Currency
   getCurrentLocale: () => string
   getCurrentTenant: () => TenantWithInstances | null
+  userRole: 'admin' | 'viewer'
 }
 
 const FiltersContext = React.createContext<FiltersState | undefined>(undefined)
@@ -256,6 +257,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
       getCurrentCurrency,
       getCurrentLocale,
       getCurrentTenant,
+      userRole: (getCurrentTenant()?.role || 'viewer') as 'admin' | 'viewer',
     }),
     [tenants, allInstances, currentInstance, isLoadingTenants, hasMultipleInstances, isTenantDeleted, period, setCurrentInstance, setPeriod, getSelectedInstanceIds, getCurrentTenantId, getCurrentCurrency, getCurrentLocale, getCurrentTenant]
   )

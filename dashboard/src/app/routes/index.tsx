@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useFilters } from '@/app/providers'
 import { AppLayout, AuthLayout } from '../layouts'
 import {
   LoginPage,
@@ -24,6 +25,12 @@ const ProfilePage = lazy(() => import('@/features/profile/pages/profile-page').t
 const ConnectorsPage = lazy(() => import('@/features/connectors/pages/connectors-page').then(m => ({ default: m.ConnectorsPage })))
 const ReportsPage = lazy(() => import('@/features/reports/pages/reports-page').then(m => ({ default: m.ReportsPage })))
 const SuperAdminPage = lazy(() => import('@/features/superadmin/pages/superadmin-page').then(m => ({ default: m.SuperAdminPage })))
+
+function AdminGuard({ children }: { children: ReactNode }) {
+  const { userRole } = useFilters()
+  if (userRole !== 'admin') return <Navigate to="/" replace />
+  return <>{children}</>
+}
 
 function PageLoader() {
   return (
@@ -63,10 +70,10 @@ export function AppRoutes() {
         <Route path="/products" element={<LazyPage><ProductsPage /></LazyPage>} />
         <Route path="/domains" element={<LazyPage><DomainsPage /></LazyPage>} />
         <Route path="/forecasting" element={<LazyPage><ForecastingPage /></LazyPage>} />
-        <Route path="/connectors" element={<LazyPage><ConnectorsPage /></LazyPage>} />
+        <Route path="/connectors" element={<AdminGuard><LazyPage><ConnectorsPage /></LazyPage></AdminGuard>} />
         <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
-        <Route path="/settings" element={<LazyPage><SettingsPage /></LazyPage>} />
-        <Route path="/settings/billing" element={<LazyPage><BillingPage /></LazyPage>} />
+        <Route path="/settings" element={<AdminGuard><LazyPage><SettingsPage /></LazyPage></AdminGuard>} />
+        <Route path="/settings/billing" element={<AdminGuard><LazyPage><BillingPage /></LazyPage></AdminGuard>} />
         <Route path="/profile" element={<LazyPage><ProfilePage /></LazyPage>} />
         <Route path="/superadmin" element={<LazyPage><SuperAdminPage /></LazyPage>} />
       </Route>

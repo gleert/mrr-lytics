@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
-import { useAuth } from '@/app/providers'
+import { useAuth, useFilters } from '@/app/providers'
 import { useIsSuperAdmin } from '@/features/superadmin'
 
 interface SidebarProps {
@@ -35,12 +35,12 @@ const productItems: NavItem[] = [
 
 // Others section items
 const otherItems: NavItem[] = [
-  { to: '/connectors', icon: 'cable', labelKey: 'nav.connectors' },
+  { to: '/connectors', icon: 'cable', labelKey: 'nav.connectors', adminOnly: true },
   { to: '/reports', icon: 'description', labelKey: 'nav.reports' },
 ]
 
 const bottomItems: NavItem[] = [
-  { to: '/settings', icon: 'settings', labelKey: 'nav.settings' },
+  { to: '/settings', icon: 'settings', labelKey: 'nav.settings', adminOnly: true },
   { to: '/profile', icon: 'person', labelKey: 'nav.profile' },
 ]
 
@@ -48,9 +48,10 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
   const { t } = useTranslation()
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { userRole } = useFilters()
   const isSuperAdmin = useIsSuperAdmin()
 
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = userRole === 'admin'
 
   // Close sidebar on nav click (mobile only)
   const handleNavClick = () => {
