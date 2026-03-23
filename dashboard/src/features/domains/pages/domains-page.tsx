@@ -355,7 +355,7 @@ export function DomainsPage() {
                 <p>{t('domains.noData')}</p>
               </div>
             ) : (
-              <div style={{ height: 280 }}>
+              <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={stats.status_breakdown}
@@ -415,7 +415,7 @@ export function DomainsPage() {
               <p>{t('domains.noData')}</p>
             </div>
           ) : (
-            <div style={{ height: 280 }}>
+            <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={stats.tld_breakdown}
@@ -477,7 +477,7 @@ export function DomainsPage() {
               <p>{t('domains.noData')}</p>
             </div>
           ) : (
-            <div style={{ height: 300 }}>
+            <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={stats.registered_vs_expired}

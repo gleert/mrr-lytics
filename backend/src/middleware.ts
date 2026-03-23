@@ -3,6 +3,7 @@ import { validateApiKeyEdge, validateAdminKeyEdge, extractBearerToken, isJwtToke
 import { timingSafeEqual } from '@/utils/crypto-edge'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { jwtVerify } from 'jose'
+import { checkRateLimit, getRateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 
 async function validateImpersonationToken(token: string): Promise<{
   tenant_id: string
@@ -112,9 +113,20 @@ export async function middleware(request: NextRequest) {
     return addCorsHeaders(response, origin)
   }
 
-  // Allow public paths
+  // Allow public paths (with rate limiting)
   if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(path + '/'))) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const rl = checkRateLimit(`public:${ip}`, RATE_LIMITS.public)
+    if (!rl.allowed) {
+      const response = NextResponse.json(
+        { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rl)).forEach(([k, v]) => response.headers.set(k, v))
+      return addCorsHeaders(response, origin)
+    }
     const response = NextResponse.next()
+    Object.entries(getRateLimitHeaders(rl)).forEach(([k, v]) => response.headers.set(k, v))
     return addCorsHeaders(response, origin)
   }
 
@@ -358,6 +370,19 @@ export async function middleware(request: NextRequest) {
       // If we can't check tenant status, allow the request through
     }
 
+    // Rate limit by auth identity
+    const rlConfig = RATE_LIMITS[authType] || RATE_LIMITS.api_key
+    const rl = checkRateLimit(`${authType}:${authId}`, rlConfig)
+    if (!rl.allowed) {
+      logRequest(request.method, pathname, authType, 429, startMs)
+      const response = NextResponse.json(
+        { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rl)).forEach(([k, v]) => response.headers.set(k, v))
+      return addCorsHeaders(response, origin)
+    }
+
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-tenant-id', tenantId)
     requestHeaders.set('x-tenant-scopes', JSON.stringify(scopes))
@@ -369,6 +394,7 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next({
       request: { headers: requestHeaders },
     })
+    Object.entries(getRateLimitHeaders(rl)).forEach(([k, v]) => response.headers.set(k, v))
     return addCorsHeaders(response, origin)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Invalid credentials'

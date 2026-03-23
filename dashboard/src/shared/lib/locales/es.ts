@@ -280,6 +280,7 @@ export const es = {
       minutesAgo_other: 'hace {{count}} min',
       hoursAgo_one: 'hace {{count}}h',
       hoursAgo_other: 'hace {{count}}h',
+      refreshing: 'Actualizando datos...',
       mrr: 'Ingreso Mensual Recurrente',
       arr: 'Ingreso Anual Recurrente',
       churnRate: 'Tasa de Abandono',

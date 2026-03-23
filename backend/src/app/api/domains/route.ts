@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
     // Apply TLD filter
     if (tldFilter && tldFilter !== 'all') {
       // Filter domains ending with the TLD (e.g., ".com", ".es")
-      query = query.ilike('domain', `%${tldFilter}`)
+      const escapedTld = tldFilter.replace(/[%_\\]/g, '\\$&')
+      query = query.ilike('domain', `%${escapedTld}`)
     }
 
     // Note: Date filter is NOT applied to the list - we show all domains
@@ -85,7 +86,8 @@ export async function GET(request: NextRequest) {
 
     // Apply search (by domain name)
     if (search) {
-      query = query.ilike('domain', `%${search}%`)
+      const escapedSearch = search.replace(/[%_\\]/g, '\\$&')
+      query = query.ilike('domain', `%${escapedSearch}%`)
     }
 
     // Apply sorting

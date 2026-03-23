@@ -17,6 +17,7 @@ import { SyncErrorBanner } from '../components/sync-error-banner'
 import { useMetrics, usePendingCancellations } from '../hooks/use-metrics'
 import { useSyncStatus } from '@/features/sync/hooks/use-sync'
 import { useAuth, useFilters } from '@/app/providers'
+import { useToast } from '@/shared/components/ui/toast'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import type { TFunction } from 'i18next'
 
@@ -34,6 +35,7 @@ export function DashboardPage() {
   const { user } = useAuth()
   const { getCurrentTenant } = useFilters()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const { data: metrics, isLoading: metricsLoading, isFetching: metricsFetching, dataUpdatedAt } = useMetrics()
   const { data: syncStatus, isLoading: syncLoading } = useSyncStatus()
   const { data: cancellationsData, isLoading: cancellationsLoading } = usePendingCancellations(10)
@@ -45,6 +47,7 @@ export function DashboardPage() {
     queryClient.invalidateQueries({ queryKey: ['sync'] })
     queryClient.invalidateQueries({ queryKey: ['revenue'] })
     queryClient.invalidateQueries({ queryKey: ['cancellations'] })
+    toast.info(t('dashboard.refreshing'))
   }
 
   const hasPendingCancellations = !cancellationsLoading && cancellationsData && cancellationsData.count > 0

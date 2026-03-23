@@ -152,7 +152,7 @@ export function ForecastingPage() {
                   <p>{t('forecasting.noData')}</p>
                 </div>
               ) : (
-                <div style={{ height: 280 }}>
+                <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                       data={stats.revenue_trend}
@@ -260,7 +260,7 @@ export function ForecastingPage() {
                   <p>{t('forecasting.noData')}</p>
                 </div>
               ) : (
-                <div style={{ height: 280 }}>
+                <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={stats.billing_cycle_breakdown}

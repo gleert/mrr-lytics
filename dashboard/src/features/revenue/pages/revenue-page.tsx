@@ -245,7 +245,7 @@ export function RevenuePage() {
             </div>
           ) : (
             <>
-            <div style={{ height: 320 }}>
+            <div className="h-[260px] sm:h-[300px] lg:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={chartData}

@@ -322,6 +322,7 @@ export const en = {
       minutesAgo_other: '{{count}} min ago',
       hoursAgo_one: '{{count}}h ago',
       hoursAgo_other: '{{count}}h ago',
+      refreshing: 'Refreshing data...',
       mrr: 'Monthly Recurring Revenue',
       arr: 'Annual Recurring Revenue',
       churnRate: 'Churn Rate',

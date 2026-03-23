@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Icon } from '@/shared/components/ui/icon'
 import { useTopProducts } from '../hooks/use-metrics'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function TopProductsTable() {
   const { t } = useTranslation()
@@ -32,16 +33,15 @@ export function TopProductsTable() {
       {/* Table */}
       <div className="p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <Icon name="sync" size="xl" className="animate-spin text-muted" />
-          </div>
+          <TableSkeleton rows={5} />
         ) : !data?.products?.length ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted">
             <Icon name="inventory_2" size="xl" className="mb-2 opacity-50" />
             <p>{t('dashboard.noData')}</p>
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="py-3 px-2 text-left text-sm font-medium text-muted">
@@ -95,6 +95,7 @@ export function TopProductsTable() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

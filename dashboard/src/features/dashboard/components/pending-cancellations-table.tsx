@@ -3,6 +3,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { usePendingCancellations } from '../hooks/use-metrics'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function PendingCancellationsTable() {
   const { t } = useTranslation()
@@ -48,16 +49,15 @@ export function PendingCancellationsTable() {
       {/* Table */}
       <div className="p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <Icon name="sync" size="xl" className="animate-spin text-muted" />
-          </div>
+          <TableSkeleton rows={5} />
         ) : !data?.cancellations?.length ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted">
             <Icon name="check_circle" size="xl" className="mb-2 text-success opacity-50" />
             <p>{t('dashboard.pendingCancellations.noCancellations')}</p>
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="py-3 px-2 text-left text-sm font-medium text-muted">
@@ -104,6 +104,7 @@ export function PendingCancellationsTable() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

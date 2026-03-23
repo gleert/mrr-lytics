@@ -4,6 +4,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { useMRRBreakdown } from '../hooks/use-metrics'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { BarSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function RevenueBreakdownBar() {
   const { t } = useTranslation()
@@ -64,9 +65,7 @@ export function RevenueBreakdownBar() {
 
       <div className="p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <Icon name="sync" size="xl" className="animate-spin text-muted" />
-          </div>
+          <BarSkeleton />
         ) : !data?.breakdown?.length ? (
           <div className="flex flex-col items-center justify-center h-32 text-muted">
             <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />

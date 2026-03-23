@@ -16,6 +16,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { useMRRTrend } from '../hooks/use-metrics'
 import { useCurrency } from '@/shared/hooks/use-currency'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
+import { ChartSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function MRRTrendChart() {
   const { t } = useTranslation()
@@ -221,16 +222,14 @@ export function MRRTrendChart() {
       {/* Chart */}
       <div className="p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-80">
-            <Icon name="sync" size="xl" className="animate-spin text-muted" />
-          </div>
+          <ChartSkeleton height={320} />
         ) : !chartData.length || selectedGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-80 text-muted">
             <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />
             <p>{selectedGroups.length === 0 ? t('dashboard.selectGroupsHint') : t('dashboard.noData')}</p>
           </div>
         ) : (
-          <div style={{ height: 350 }} role="img" aria-label={t('dashboard.mrrTrendChart')}>
+          <div className="h-[280px] sm:h-[320px] lg:h-[350px]" role="img" aria-label={t('dashboard.mrrTrendChart')}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={chartData}

@@ -3,6 +3,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { useMRRMovement } from '../hooks/use-metrics'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function MRRMovementChart() {
   const { t } = useTranslation()
@@ -26,10 +27,8 @@ export function MRRMovementChart() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl overflow-hidden bg-surface border border-border p-8">
-        <div className="flex items-center justify-center h-32">
-          <Icon name="sync" size="xl" className="animate-spin text-muted" />
-        </div>
+      <div className="rounded-xl overflow-hidden bg-surface border border-border">
+        <TableSkeleton rows={4} />
       </div>
     )
   }

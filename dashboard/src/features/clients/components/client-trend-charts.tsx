@@ -76,7 +76,7 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
     }
 
     return (
-      <div style={{ height: 176 }}>
+      <div className="h-[140px] sm:h-[160px] lg:h-[176px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} {...sharedChartProps}>
             <CartesianGrid
