@@ -11,14 +11,16 @@ import { PendingCancellationsTable } from '../components/pending-cancellations-t
 import { DashboardFilters } from '../components/dashboard-filters'
 import { ForecastCTA } from '../components/forecast-cta'
 import { UncategorizedProductsBanner } from '../components/uncategorized-products-banner'
+import { SyncErrorBanner } from '../components/sync-error-banner'
 import { useMetrics, usePendingCancellations } from '../hooks/use-metrics'
 import { useSyncStatus } from '@/features/sync/hooks/use-sync'
-import { useAuth } from '@/app/providers'
+import { useAuth, useFilters } from '@/app/providers'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 
 export function DashboardPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const { getCurrentTenant } = useFilters()
   const { data: metrics, isLoading: metricsLoading } = useMetrics()
   const { data: syncStatus, isLoading: syncLoading } = useSyncStatus()
   const { data: cancellationsData, isLoading: cancellationsLoading } = usePendingCancellations(10)
@@ -30,6 +32,10 @@ export function DashboardPage() {
                    user?.user_metadata?.name?.split(' ')[0] || 
                    user?.email?.split('@')[0] || 
                    ''
+
+  // Get company name if defined
+  const currentTenant = getCurrentTenant()
+  const companyName = currentTenant?.company_name || null
 
   // Get current hour to determine greeting
   const hour = new Date().getHours()
@@ -46,10 +52,17 @@ export function DashboardPage() {
           <h1 className="text-2xl font-semibold text-foreground">
             {t(greetingKey, { name: userName })}
           </h1>
-          <p className="text-muted">{t('dashboard.welcomeSubtitle')}</p>
+          <p className="text-muted">
+            {companyName
+              ? t('dashboard.welcomeSubtitleCompany', { company: companyName, defaultValue: `Here's an overview of ${companyName}'s business metrics` })
+              : t('dashboard.welcomeSubtitle')}
+          </p>
         </div>
         <DashboardFilters showPeriod={false} />
       </div>
+
+      {/* Sync error warning */}
+      <SyncErrorBanner />
 
       {/* Uncategorized products warning */}
       <UncategorizedProductsBanner />
