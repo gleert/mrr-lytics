@@ -18,13 +18,23 @@ import { useMetrics, usePendingCancellations } from '../hooks/use-metrics'
 import { useSyncStatus } from '@/features/sync/hooks/use-sync'
 import { useAuth, useFilters } from '@/app/providers'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
+import type { TFunction } from 'i18next'
+
+function formatRelativeTime(timestamp: number, t: TFunction): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000)
+  if (seconds < 60) return t('dashboard.justNow')
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return t('dashboard.minutesAgo', { count: minutes })
+  const hours = Math.floor(minutes / 60)
+  return t('dashboard.hoursAgo', { count: hours })
+}
 
 export function DashboardPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const { getCurrentTenant } = useFilters()
   const queryClient = useQueryClient()
-  const { data: metrics, isLoading: metricsLoading, isFetching: metricsFetching } = useMetrics()
+  const { data: metrics, isLoading: metricsLoading, isFetching: metricsFetching, dataUpdatedAt } = useMetrics()
   const { data: syncStatus, isLoading: syncLoading } = useSyncStatus()
   const { data: cancellationsData, isLoading: cancellationsLoading } = usePendingCancellations(10)
 
@@ -71,6 +81,11 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {dataUpdatedAt > 0 && (
+            <span className="text-xs text-muted hidden sm:inline">
+              {t('dashboard.lastUpdated', { time: formatRelativeTime(dataUpdatedAt, t) })}
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"

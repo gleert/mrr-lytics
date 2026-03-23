@@ -84,9 +84,22 @@ function addCorsHeaders(response: NextResponse, origin: string | null): NextResp
   return response
 }
 
+function logRequest(method: string, pathname: string, authType: string, status: number, startMs: number) {
+  const duration = Date.now() - startMs
+  console.log(JSON.stringify({
+    method,
+    path: pathname,
+    auth: authType,
+    status,
+    duration_ms: duration,
+    ts: new Date().toISOString(),
+  }))
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const origin = request.headers.get('origin')
+  const startMs = Date.now()
 
   // Skip non-API routes
   if (!pathname.startsWith('/api')) {
@@ -351,12 +364,17 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-auth-id', authId)
     requestHeaders.set('x-auth-type', authType)
 
+    logRequest(request.method, pathname, authType, 200, startMs)
+
     const response = NextResponse.next({
       request: { headers: requestHeaders },
     })
     return addCorsHeaders(response, origin)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Invalid credentials'
+
+    logRequest(request.method, pathname, 'none', 401, startMs)
+
     const response = NextResponse.json(
       {
         success: false,

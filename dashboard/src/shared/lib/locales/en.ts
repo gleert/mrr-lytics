@@ -316,6 +316,12 @@ export const en = {
       goodEvening: 'Good evening, {{name}}',
       welcomeSubtitle: "Here's an overview of your business metrics",
       welcomeSubtitleCompany: "Here's an overview of {{company}}'s business metrics",
+      lastUpdated: 'Updated {{time}}',
+      justNow: 'just now',
+      minutesAgo_one: '{{count}} min ago',
+      minutesAgo_other: '{{count}} min ago',
+      hoursAgo_one: '{{count}}h ago',
+      hoursAgo_other: '{{count}}h ago',
       mrr: 'Monthly Recurring Revenue',
       arr: 'Annual Recurring Revenue',
       churnRate: 'Churn Rate',
@@ -337,6 +343,8 @@ export const en = {
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Revenue Analytics',
       revenueAnalyticsDesc: 'MRR composition and trends',
+      mrrTrendChart: 'MRR trend chart showing monthly recurring revenue over time',
+      dailyMRRChart: 'Daily committed MRR chart showing revenue by category',
       // Revenue Breakdown
       revenueBreakdownTitle: 'Revenue Breakdown',
       revenueBreakdownDesc: 'MRR distribution by product group',

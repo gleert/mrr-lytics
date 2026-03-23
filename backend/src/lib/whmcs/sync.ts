@@ -168,44 +168,52 @@ export async function syncInstance(
     // Sync each table
     const recordsSynced = await syncAllTables(supabase, instance, whmcsData)
 
-    // Update all client metrics (MRR, services count, etc.)
-    try {
-      await supabase.rpc('update_all_client_metrics', {
-        p_instance_id: instance.id,
-      })
-      console.log(`[Sync] Updated client metrics for instance ${instance.id}`)
-    } catch (clientMetricsError) {
-      console.error('Failed to update client metrics:', clientMetricsError)
-    }
+    // Check if any records were actually synced
+    const totalRecords = Object.values(recordsSynced).reduce((sum: number, count) => sum + (count as number), 0)
 
-    // Populate metrics_daily (this also refreshes materialized views)
     let metricsId: string | null = null
-    try {
-      const { data: metricsResult } = await supabase.rpc('populate_metrics_daily', {
-        p_instance_id: instance.id,
-      })
-      metricsId = metricsResult
-      console.log(`[Sync] Populated metrics_daily for instance ${instance.id}`)
-    } catch (metricsError) {
-      console.error('Failed to populate metrics_daily:', metricsError)
-      // Fallback: just refresh views
-      try {
-        await supabase.rpc('refresh_metrics_views')
-      } catch (refreshError) {
-        console.error('Failed to refresh views:', refreshError)
-      }
-    }
-
-    // Create daily metrics snapshot (legacy, for backwards compatibility)
     let snapshotId: string | null = null
-    try {
-      const { data: snapshotResult } = await supabase.rpc('create_daily_snapshot', {
-        p_instance_id: instance.id,
-      })
-      snapshotId = snapshotResult
-    } catch (snapshotError) {
-      // Log but don't fail the sync if snapshot creation fails
-      console.error('Failed to create snapshot after sync:', snapshotError)
+
+    if (totalRecords > 0 || type === 'full') {
+      // Update all client metrics (MRR, services count, etc.)
+      try {
+        await supabase.rpc('update_all_client_metrics', {
+          p_instance_id: instance.id,
+        })
+        console.log(`[Sync] Updated client metrics for instance ${instance.id}`)
+      } catch (clientMetricsError) {
+        console.error('Failed to update client metrics:', clientMetricsError)
+      }
+
+      // Populate metrics_daily (this also refreshes materialized views)
+      try {
+        const { data: metricsResult } = await supabase.rpc('populate_metrics_daily', {
+          p_instance_id: instance.id,
+        })
+        metricsId = metricsResult
+        console.log(`[Sync] Populated metrics_daily for instance ${instance.id}`)
+      } catch (metricsError) {
+        console.error('Failed to populate metrics_daily:', metricsError)
+        // Fallback: just refresh views
+        try {
+          await supabase.rpc('refresh_metrics_views')
+        } catch (refreshError) {
+          console.error('Failed to refresh views:', refreshError)
+        }
+      }
+
+      // Create daily metrics snapshot (legacy, for backwards compatibility)
+      try {
+        const { data: snapshotResult } = await supabase.rpc('create_daily_snapshot', {
+          p_instance_id: instance.id,
+        })
+        snapshotId = snapshotResult
+      } catch (snapshotError) {
+        // Log but don't fail the sync if snapshot creation fails
+        console.error('Failed to create snapshot after sync:', snapshotError)
+      }
+    } else {
+      console.log(`[Sync] No records changed for instance ${instance.id}, skipping metrics refresh`)
     }
 
     const duration_ms = Date.now() - startTime

@@ -274,6 +274,12 @@ export const es = {
       goodEvening: 'Buenas noches, {{name}}',
       welcomeSubtitle: 'Aquí tienes un resumen de las métricas de tu negocio',
       welcomeSubtitleCompany: 'Aquí tienes un resumen de las métricas de {{company}}',
+      lastUpdated: 'Actualizado {{time}}',
+      justNow: 'ahora mismo',
+      minutesAgo_one: 'hace {{count}} min',
+      minutesAgo_other: 'hace {{count}} min',
+      hoursAgo_one: 'hace {{count}}h',
+      hoursAgo_other: 'hace {{count}}h',
       mrr: 'Ingreso Mensual Recurrente',
       arr: 'Ingreso Anual Recurrente',
       churnRate: 'Tasa de Abandono',
@@ -291,6 +297,8 @@ export const es = {
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Analíticas de Ingresos',
       revenueAnalyticsDesc: 'Composición y tendencias del MRR',
+      mrrTrendChart: 'Gráfico de tendencia MRR mostrando ingresos recurrentes mensuales',
+      dailyMRRChart: 'Gráfico diario de MRR comprometido por categoría',
       // Revenue Breakdown
       revenueBreakdownTitle: 'Desglose de Ingresos',
       revenueBreakdownDesc: 'Distribución del MRR por grupo de producto',

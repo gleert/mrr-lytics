@@ -230,7 +230,7 @@ export function MRRTrendChart() {
             <p>{selectedGroups.length === 0 ? t('dashboard.selectGroupsHint') : t('dashboard.noData')}</p>
           </div>
         ) : (
-          <div style={{ height: 350 }}>
+          <div style={{ height: 350 }} role="img" aria-label={t('dashboard.mrrTrendChart')}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={chartData}

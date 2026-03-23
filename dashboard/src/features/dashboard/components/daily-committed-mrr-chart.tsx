@@ -120,7 +120,7 @@ export function DailyCommittedMRRChart() {
             <p>{t('dashboard.noData')}</p>
           </div>
         ) : (
-          <div style={{ height: 350 }}>
+          <div style={{ height: 350 }} role="img" aria-label={t('dashboard.dailyMRRChart')}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
