@@ -203,7 +203,14 @@ export async function POST(request: Request) {
     )
 
     if (inviteError) {
-      console.error('Error inviting user:', inviteError)
+      console.error('Error inviting user:', JSON.stringify(inviteError))
+      // Common Supabase invite errors
+      if (inviteError.message?.includes('already registered')) {
+        return error(new Error('This email is already registered'), 400)
+      }
+      if (inviteError.message?.includes('rate limit')) {
+        return error(new Error('Too many invitations. Please wait a few minutes.'), 429)
+      }
       return error(new Error(`Failed to send invitation: ${inviteError.message}`), 500)
     }
 
@@ -226,7 +233,8 @@ export async function POST(request: Request) {
       role,
     })
   } catch (err) {
-    console.error('Error in POST /api/team:', err)
-    return error(err instanceof Error ? err : new Error('Failed to invite team member'))
+    console.error('Error in POST /api/team:', err instanceof Error ? err.message : err)
+    const message = err instanceof Error ? err.message : 'Failed to invite team member'
+    return error(new Error(message))
   }
 }
