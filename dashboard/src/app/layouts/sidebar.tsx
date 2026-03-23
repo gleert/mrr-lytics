@@ -47,7 +47,7 @@ const bottomItems: NavItem[] = [
 export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProps) {
   const { t } = useTranslation()
   const location = useLocation()
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
   const { userRole } = useFilters()
   const isSuperAdmin = useIsSuperAdmin()
 
