@@ -57,7 +57,6 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
   const renderChart = (
     data: ClientStats['new_clients_trend'],
     color: string,
-    tooltipLabel: string,
   ) => {
     if (isLoading) {
       return (
@@ -124,7 +123,6 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
           {renderChart(
             stats.new_clients_trend,
             '#10B981',
-            t('clients.newClients'),
           )}
         </div>
       </div>
@@ -145,7 +143,6 @@ export function ClientTrendCharts({ stats, isLoading }: ClientTrendChartsProps) 
           {renderChart(
             stats.churned_clients_trend,
             'var(--color-error)',
-            t('clients.churnedClients'),
           )}
         </div>
         {stats.churned_clients_trend && stats.churned_clients_trend.length > 0 && (
