@@ -888,6 +888,20 @@ export const es = {
       churnedClientsTrendTitle: 'Clientes Perdidos',
       churnedClientsTrendDesc: 'Clientes con estado Cerrado detectados a lo largo del tiempo',
       churnedClientsTrendNote: 'Fecha basada en la sincronización — WHMCS no expone la fecha de cierre.',
+      // New metrics
+      retentionRate: 'Tasa de Retención',
+      netGrowth: 'Crecimiento Neto',
+      revenueConcentration: 'Concentración de Ingresos',
+      top5Clients: 'de los 5 principales clientes',
+      avgAge: 'Antigüedad Media',
+      months: 'meses',
+      withoutServices: 'Sin Servicios',
+      upsellOpportunity: 'Oportunidad de upsell',
+      // Net trend
+      netTrendTitle: 'Crecimiento Neto de Clientes',
+      netTrendDesc: 'Nuevos clientes vs perdidos con línea de crecimiento neto',
+      noTrendData: 'Sin datos de tendencia',
+      noTrendDataHint: 'Prueba seleccionando un período más largo',
     },
 
     // Filters

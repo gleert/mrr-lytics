@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { useTopClients } from '../hooks/use-client-stats'
 import { useCurrency } from '@/shared/hooks/use-currency'
 
@@ -10,10 +11,8 @@ export function TopClientsBlock() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl overflow-hidden bg-surface border border-border p-8">
-        <div className="flex items-center justify-center h-32">
-          <Icon name="sync" size="xl" className="animate-spin text-muted" />
-        </div>
+      <div className="rounded-xl overflow-hidden bg-surface border border-border p-6">
+        <TableSkeleton rows={4} />
       </div>
     )
   }

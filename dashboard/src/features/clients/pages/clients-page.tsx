@@ -154,6 +154,91 @@ export function ClientsPage() {
         />
       </div>
 
+      {/* Client Health Insights */}
+      {!statsLoading && stats && (
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-5">
+          {/* Retention Rate */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
+                stats.retention_rate >= 80 ? 'bg-emerald-500/10' : stats.retention_rate >= 60 ? 'bg-amber-500/10' : 'bg-red-500/10'
+              }`}>
+                <Icon name="shield" size="sm" className={
+                  stats.retention_rate >= 80 ? 'text-emerald-400' : stats.retention_rate >= 60 ? 'text-amber-400' : 'text-red-400'
+                } />
+              </div>
+              <span className="text-xs text-muted">{t('clients.retentionRate')}</span>
+            </div>
+            <p className={`text-2xl font-semibold ${
+              stats.retention_rate >= 80 ? 'text-emerald-400' : stats.retention_rate >= 60 ? 'text-amber-400' : 'text-red-400'
+            }`}>{stats.retention_rate}%</p>
+          </div>
+
+          {/* Net Growth */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
+                stats.net_growth > 0 ? 'bg-emerald-500/10' : stats.net_growth < 0 ? 'bg-red-500/10' : 'bg-blue-500/10'
+              }`}>
+                <Icon name={stats.net_growth >= 0 ? 'trending_up' : 'trending_down'} size="sm" className={
+                  stats.net_growth > 0 ? 'text-emerald-400' : stats.net_growth < 0 ? 'text-red-400' : 'text-blue-400'
+                } />
+              </div>
+              <span className="text-xs text-muted">{t('clients.netGrowth')}</span>
+            </div>
+            <p className={`text-2xl font-semibold ${
+              stats.net_growth > 0 ? 'text-emerald-400' : stats.net_growth < 0 ? 'text-red-400' : 'text-foreground'
+            }`}>{stats.net_growth > 0 ? '+' : ''}{stats.net_growth}</p>
+          </div>
+
+          {/* Revenue Concentration */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
+                stats.revenue_concentration > 80 ? 'bg-red-500/10' : stats.revenue_concentration > 50 ? 'bg-amber-500/10' : 'bg-emerald-500/10'
+              }`}>
+                <Icon name="donut_large" size="sm" className={
+                  stats.revenue_concentration > 80 ? 'text-red-400' : stats.revenue_concentration > 50 ? 'text-amber-400' : 'text-emerald-400'
+                } />
+              </div>
+              <span className="text-xs text-muted">{t('clients.revenueConcentration')}</span>
+            </div>
+            <p className="text-2xl font-semibold">{stats.revenue_concentration}%</p>
+            <p className="text-xs text-muted mt-1">{t('clients.top5Clients')}</p>
+          </div>
+
+          {/* Avg Client Age */}
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 shrink-0">
+                <Icon name="schedule" size="sm" className="text-blue-400" />
+              </div>
+              <span className="text-xs text-muted">{t('clients.avgAge')}</span>
+            </div>
+            <p className="text-2xl font-semibold">{stats.avg_client_age_months}</p>
+            <p className="text-xs text-muted mt-1">{t('clients.months')}</p>
+          </div>
+
+          {/* Clients Without Services */}
+          <div className="col-span-2 lg:col-span-1 rounded-xl border border-border bg-surface p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
+                stats.clients_without_services > 0 ? 'bg-amber-500/10' : 'bg-emerald-500/10'
+              }`}>
+                <Icon name="person_search" size="sm" className={
+                  stats.clients_without_services > 0 ? 'text-amber-400' : 'text-emerald-400'
+                } />
+              </div>
+              <span className="text-xs text-muted">{t('clients.withoutServices')}</span>
+            </div>
+            <p className="text-2xl font-semibold">{stats.clients_without_services}</p>
+            {stats.clients_without_services > 0 && (
+              <p className="text-xs text-amber-400 mt-1">{t('clients.upsellOpportunity')}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Client Trend Charts */}
       <div className="space-y-4">
         <div>
@@ -169,6 +254,8 @@ export function ClientsPage() {
               total_clients: 0, active_clients: 0, inactive_clients: 0, closed_clients: 0,
               new_clients: 0, churned_clients: 0, mrr: 0, arr: 0, arpu: 0, ltv: 0,
               revenue_in_period: 0, clients_with_revenue: 0,
+              retention_rate: 0, net_growth: 0, avg_client_age_months: 0,
+              clients_without_services: 0, revenue_concentration: 0,
               new_clients_trend: [], churned_clients_trend: [], bucket_type: 'monthly',
               period: { type: '30d', start_date: '', end_date: '', days: 30 },
             }}

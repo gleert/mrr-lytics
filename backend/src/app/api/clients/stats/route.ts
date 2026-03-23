@@ -78,6 +78,11 @@ export async function GET(request: NextRequest) {
         ltv: 0,
         revenue_in_period: 0,
         clients_with_revenue: 0,
+        retention_rate: 0,
+        net_growth: 0,
+        avg_client_age_months: 0,
+        clients_without_services: 0,
+        revenue_concentration: 0,
         period: {
           type: period,
           start_date: startDate.toISOString(),
@@ -190,6 +195,47 @@ export async function GET(request: NextRequest) {
     const averageLifetimeMonths = 24
     const ltv = arpu * averageLifetimeMonths
 
+    // Calculate retention rate
+    const retentionRate = clients.length > 0
+      ? Math.round((activeClients.length / clients.length) * 10000) / 100
+      : 0
+
+    // Net client growth
+    const netGrowth = (newClients?.length || 0) - (churnedClients?.length || 0)
+
+    // Average client age in months (from datecreated of active clients)
+    const now = new Date()
+    let totalAgeMonths = 0
+    let clientsWithDate = 0
+    activeClients.forEach(c => {
+      if (c.datecreated) {
+        const created = new Date(c.datecreated)
+        const ageMonths = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+        totalAgeMonths += ageMonths
+        clientsWithDate++
+      }
+    })
+    const avgClientAgeMonths = clientsWithDate > 0 ? Math.round(totalAgeMonths / clientsWithDate) : 0
+
+    // Active clients without services (services_count = 0)
+    const activeClientIds = new Set(activeClients.map(c => c.whmcs_id))
+    const clientsWithServices = new Set<number>()
+    services?.forEach(s => {
+      if (activeClientIds.has(s.client_id)) {
+        clientsWithServices.add(s.client_id)
+      }
+    })
+    const clientsWithoutServices = activeClients.length - clientsWithServices.size
+
+    // Revenue concentration — % of MRR from top 5 clients
+    const sortedClientMrr = Object.entries(clientMrr)
+      .map(([id, mrr]) => ({ id, mrr }))
+      .sort((a, b) => b.mrr - a.mrr)
+    const top5Mrr = sortedClientMrr.slice(0, 5).reduce((sum, c) => sum + c.mrr, 0)
+    const revenueConcentration = totalMrr > 0
+      ? Math.round((top5Mrr / totalMrr) * 10000) / 100
+      : 0
+
     // Get paid invoices for revenue calculation
     const { data: paidInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
@@ -219,6 +265,12 @@ export async function GET(request: NextRequest) {
       ltv: Math.round(ltv * 100) / 100,
       revenue_in_period: revenueInPeriod,
       clients_with_revenue: clientsWithRevenue,
+      // New metrics
+      retention_rate: retentionRate,
+      net_growth: netGrowth,
+      avg_client_age_months: avgClientAgeMonths,
+      clients_without_services: clientsWithoutServices,
+      revenue_concentration: revenueConcentration,
       // Time-series trends
       new_clients_trend: newClientsTrend,
       churned_clients_trend: churnedClientsTrend,

@@ -935,6 +935,20 @@ export const en = {
       churnedClientsTrendTitle: 'Churned Clients',
       churnedClientsTrendDesc: 'Clients with Closed status detected over time',
       churnedClientsTrendNote: 'Date based on sync time — WHMCS does not expose a closure date.',
+      // New metrics
+      retentionRate: 'Retention Rate',
+      netGrowth: 'Net Growth',
+      revenueConcentration: 'Revenue Concentration',
+      top5Clients: 'from top 5 clients',
+      avgAge: 'Avg Client Age',
+      months: 'months',
+      withoutServices: 'Without Services',
+      upsellOpportunity: 'Upsell opportunity',
+      // Net trend
+      netTrendTitle: 'Net Client Growth',
+      netTrendDesc: 'New clients vs churned with net growth line',
+      noTrendData: 'No trend data',
+      noTrendDataHint: 'Try selecting a longer period',
     },
 
     // Filters

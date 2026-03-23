@@ -130,6 +130,11 @@ export interface ClientStats {
   ltv: number
   revenue_in_period: number
   clients_with_revenue: number
+  retention_rate: number
+  net_growth: number
+  avg_client_age_months: number
+  clients_without_services: number
+  revenue_concentration: number
   new_clients_trend: ClientTrendPoint[]
   churned_clients_trend: ClientTrendPoint[]
   bucket_type: 'daily' | 'weekly' | 'monthly'
