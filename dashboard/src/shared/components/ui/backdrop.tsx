@@ -25,7 +25,7 @@ export function Backdrop({ open, onClose, className }: BackdropProps) {
   return (
     <div
       className={cn(
-        'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm',
+        'fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm',
         'animate-in fade-in duration-200',
         className
       )}

@@ -97,7 +97,7 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
   // Mobile drawer classes
   const mobileClasses = isMobile
     ? cn(
-        'fixed inset-y-0 left-0 z-50 w-[280px] sm:w-[320px]',
+        'fixed inset-y-0 left-0 z-[60] w-[280px] sm:w-[320px]',
         open ? 'translate-x-0' : '-translate-x-full',
         'transition-transform duration-300 ease-in-out'
       )
