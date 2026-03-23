@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useDebounce } from '@/shared/hooks'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Icon } from '@/shared/components/ui/icon'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { KPICard } from '@/features/dashboard/components/kpi-card'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
 import { useClientStats, useClientsList, type WhmcsClient } from '../hooks/use-client-stats'
@@ -75,7 +76,7 @@ export function ClientsPage() {
       </div>
 
       {/* KPI Cards - Row 1: Client counts */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <KPICard
           title={t('clients.totalClients')}
           value={stats?.total_clients ?? 0}
@@ -104,20 +105,22 @@ export function ClientsPage() {
           icon={<Icon name="person_remove" size="2xl" />}
           accentColor="warning"
         />
-        <KPICard
-          title={t('clients.inactiveClients')}
-          value={stats?.inactive_clients ?? 0}
-          loading={statsLoading}
-          icon={<Icon name="person_off" size="2xl" />}
-          accentColor="error"
-        />
+        <div className="col-span-2 lg:col-span-1">
+          <KPICard
+            title={t('clients.inactiveClients')}
+            value={stats?.inactive_clients ?? 0}
+            loading={statsLoading}
+            icon={<Icon name="person_off" size="2xl" />}
+            accentColor="error"
+          />
+        </div>
       </div>
 
       {/* Top Clients Block */}
       <TopClientsBlock />
 
       {/* KPI Cards - Row 2: Financial metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('clients.arpu')}
           value={stats?.arpu ?? 0}
@@ -278,8 +281,8 @@ export function ClientsPage() {
             <tbody className="divide-y divide-border">
               {listLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center">
-                    <Icon name="sync" size="xl" className="animate-spin text-muted" />
+                  <td colSpan={7} className="p-4">
+                    <TableSkeleton rows={5} />
                   </td>
                 </tr>
               ) : clientsData?.clients.length === 0 ? (

@@ -20,30 +20,31 @@ const statusConfig = {
   pending: {
     icon: Clock,
     variant: 'secondary' as const,
-    label: 'Pending',
+    labelKey: 'sync.pending',
     color: 'text-muted',
   },
   running: {
     icon: RefreshCw,
     variant: 'warning' as const,
-    label: 'Running',
+    labelKey: 'sync.running',
     color: 'text-warning',
   },
   completed: {
     icon: CheckCircle2,
     variant: 'success' as const,
-    label: 'Completed',
+    labelKey: 'sync.completed',
     color: 'text-success',
   },
   failed: {
     icon: XCircle,
     variant: 'destructive' as const,
-    label: 'Failed',
+    labelKey: 'sync.failed',
     color: 'text-error',
   },
 }
 
 function SyncLogRow({ log }: { log: SyncLog }) {
+  const { t } = useTranslation()
   const config = statusConfig[log.status]
   const Icon = config.icon
   const duration = log.completed_at
@@ -63,11 +64,11 @@ function SyncLogRow({ log }: { log: SyncLog }) {
               log.status === 'running' ? 'animate-spin' : ''
             }`}
           />
-          <Badge variant={config.variant}>{config.label}</Badge>
+          <Badge variant={config.variant}>{t(config.labelKey)}</Badge>
         </div>
       </td>
       <td className="px-4 py-3 text-sm">
-        {log.sync_type === 'manual' ? 'Manual' : 'Scheduled'}
+        {log.sync_type === 'manual' ? t('sync.manual') : t('sync.scheduled')}
       </td>
       <td className="px-4 py-3 text-sm text-muted">
         {formatDate(log.started_at, {
@@ -114,7 +115,7 @@ export function SyncPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">{t('sync.title')}</h1>
-          <p className="text-muted">Manage data synchronization with WHMCS</p>
+          <p className="text-muted">{t('sync.subtitle')}</p>
         </div>
         <Button
           onClick={handleTriggerSync}
@@ -124,7 +125,7 @@ export function SyncPage() {
           {isSyncing ? (
             <>
               <Spinner size="sm" />
-              Syncing...
+              {t('sync.syncing')}
             </>
           ) : (
             <>
@@ -141,7 +142,7 @@ export function SyncPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted">
-              Current Status
+              {t('sync.currentStatus')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -151,13 +152,13 @@ export function SyncPage() {
               <div className="flex items-center gap-2">
                 <RefreshCw className="h-5 w-5 animate-spin text-warning" />
                 <span className="text-lg font-semibold text-warning">
-                  Syncing...
+                  {t('sync.syncing')}
                 </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-success" />
-                <span className="text-lg font-semibold">Idle</span>
+                <span className="text-lg font-semibold">{t('sync.idle')}</span>
               </div>
             )}
           </CardContent>
@@ -179,11 +180,11 @@ export function SyncPage() {
                   {formatRelativeTime(lastSync.started_at)}
                 </p>
                 <p className="text-xs text-muted">
-                  {lastSync.records_processed} records processed
+                  {lastSync.records_processed} {t('sync.recordsProcessed').toLowerCase()}
                 </p>
               </div>
             ) : (
-              <p className="text-lg font-semibold text-muted">Never</p>
+              <p className="text-lg font-semibold text-muted">{t('sync.never')}</p>
             )}
           </CardContent>
         </Card>
@@ -192,12 +193,12 @@ export function SyncPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted">
-              Sync Interval
+              {t('sync.syncInterval')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-semibold">Every 6 hours</p>
-            <p className="text-xs text-muted">Automatic synchronization</p>
+            <p className="text-lg font-semibold">{t('sync.everyNHours', { hours: 6 })}</p>
+            <p className="text-xs text-muted">{t('sync.automaticSync')}</p>
           </CardContent>
         </Card>
       </div>
@@ -208,7 +209,7 @@ export function SyncPage() {
           <CardContent className="flex items-start gap-3 p-4">
             <AlertCircle className="h-5 w-5 text-error shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-error">Last sync failed</p>
+              <p className="font-medium text-error">{t('sync.lastSyncFailed')}</p>
               <p className="text-sm text-muted mt-1">{lastSync.error_message}</p>
             </div>
           </CardContent>
@@ -233,22 +234,22 @@ export function SyncPage() {
                 <thead>
                   <tr className="border-b border-border bg-surface-elevated">
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Status
+                      {t('sync.status')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Type
+                      {t('sync.type')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Started
+                      {t('sync.started')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Duration
+                      {t('sync.duration')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Records
+                      {t('sync.recordsProcessed')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">
-                      Error
+                      {t('sync.errors')}
                     </th>
                   </tr>
                 </thead>
@@ -261,7 +262,7 @@ export function SyncPage() {
             </div>
           ) : (
             <div className="p-6 text-center text-muted">
-              No sync history available
+              {t('sync.noHistory')}
             </div>
           )}
         </CardContent>

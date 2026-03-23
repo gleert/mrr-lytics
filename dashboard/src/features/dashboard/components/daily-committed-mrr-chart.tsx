@@ -75,7 +75,7 @@ export function DailyCommittedMRRChart() {
 
   const formatDateLabel = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
   }
 
   return (

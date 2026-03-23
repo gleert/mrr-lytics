@@ -64,7 +64,7 @@ export function MRRTrendChart() {
   const formatMonth = (monthStr: string) => {
     const [year, month] = monthStr.split('-')
     const date = new Date(parseInt(year), parseInt(month) - 1)
-    return date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+    return date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' })
   }
 
   const toggleGroup = (groupName: string) => {

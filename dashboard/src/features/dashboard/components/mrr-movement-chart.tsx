@@ -19,7 +19,7 @@ export function MRRMovementChart() {
   const formatMonth = (monthStr: string) => {
     const [year, month] = monthStr.split('-')
     const date = new Date(parseInt(year), parseInt(month) - 1)
-    return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
   }
 
   const isPositive = latestMonth ? latestMonth.net_change >= 0 : true

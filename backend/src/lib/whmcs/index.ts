@@ -2,7 +2,7 @@
 export { WhmcsClient, createWhmcsClient, type WhmcsClientOptions, type FetchOptions } from './client'
 
 // Sync functionality
-export { syncTenant, type SyncResult } from './sync'
+export { syncTenantInstances, type SyncResult } from './sync'
 
 // Types (excluding WhmcsClient which is already exported from client)
 export type {

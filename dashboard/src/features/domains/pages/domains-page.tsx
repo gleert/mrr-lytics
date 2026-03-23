@@ -17,6 +17,7 @@ import {
 } from 'recharts'
 import { Icon } from '@/shared/components/ui/icon'
 import { DomainFavicon } from '@/shared/components/ui/domain-favicon'
+import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { KPICard } from '@/features/dashboard/components/kpi-card'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
 import { useDomainStats, useDomainsList, type WhmcsDomain } from '../hooks/use-domain-stats'
@@ -92,7 +93,7 @@ export function DomainsPage() {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return '-'
-    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
   const getStatusBadge = (status: string) => {
@@ -761,8 +762,8 @@ export function DomainsPage() {
             <tbody className="divide-y divide-border">
               {listLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center">
-                    <Icon name="sync" size="xl" className="animate-spin text-muted" />
+                  <td colSpan={7} className="p-4">
+                    <TableSkeleton rows={5} />
                   </td>
                 </tr>
               ) : domainsData?.domains.length === 0 ? (

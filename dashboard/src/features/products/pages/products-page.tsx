@@ -206,7 +206,7 @@ export function ProductsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('products.searchPlaceholder')}
-              className="h-9 pl-9 pr-3 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 text-sm w-64"
+              className="h-9 pl-9 pr-3 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 text-sm w-full sm:w-64"
             />
           </div>
 

@@ -699,6 +699,3 @@ async function syncAllTables(
   return counts
 }
 
-// Legacy export for backwards compatibility
-// TODO: Remove after updating all callers
-export const syncTenant = syncTenantInstances

@@ -13,7 +13,7 @@ export function PendingCancellationsTable() {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return '-'
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   const getDaysUntilBadge = (days: number) => {
