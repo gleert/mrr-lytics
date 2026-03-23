@@ -116,7 +116,14 @@ export async function POST(request: Request) {
     }
 
     // Check subscription limit
-    const limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
+    let limitCheck
+    try {
+      limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
+    } catch (limitErr) {
+      console.error('[team/invite] subscription check failed:', limitErr)
+      // Don't block invites if subscription check fails
+      limitCheck = { allowed: true, current: 0, limit: 999 }
+    }
     if (!limitCheck.allowed) {
       return error(
         new Error(`Team member limit reached. Your plan allows ${limitCheck.limit} members.`),
@@ -171,7 +178,10 @@ export async function POST(request: Request) {
           .update({ tenant_id: tenantId, role })
           .eq('id', existingAuthUser.id)
 
-        if (updateError) return error(new Error('Failed to add team member'), 500)
+        if (updateError) {
+          console.error('[team/invite] update existing user error:', updateError)
+          return error(new Error(`Failed to reassign user: ${updateError.message}`), 500)
+        }
       } else {
         // Create new user record for this tenant
         const { error: insertError } = await supabase
@@ -185,7 +195,10 @@ export async function POST(request: Request) {
             is_active: true,
           }, { onConflict: 'id' })
 
-        if (insertError) return error(new Error('Failed to add team member'), 500)
+        if (insertError) {
+          console.error('[team/invite] upsert user error:', insertError)
+          return error(new Error(`Failed to create user record: ${insertError.message}`), 500)
+        }
       }
 
       return success({
