@@ -6,7 +6,7 @@ export interface TeamMember {
   user_id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'member'
+  role: 'admin' | 'viewer'
   is_default: boolean
   joined_at: string
   last_sign_in: string | null
@@ -21,7 +21,7 @@ export interface TeamLimits {
 export interface TeamResponse {
   members: TeamMember[]
   current_user_id: string
-  current_user_role: 'admin' | 'member'
+  current_user_role: 'admin' | 'viewer'
   limits: TeamLimits
 }
 
@@ -38,7 +38,7 @@ export function useTeam() {
 
 export interface InviteMemberData {
   email: string
-  role?: 'admin' | 'member'
+  role?: 'admin' | 'viewer'
 }
 
 export function useInviteMember() {
@@ -62,7 +62,7 @@ export function useUpdateMemberRole() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: 'admin' | 'member' }) => {
+    mutationFn: async ({ memberId, role }: { memberId: string; role: 'admin' | 'viewer' }) => {
       const response = await api.patch<{ success: boolean; data: { message: string } }>(
         `/api/team/${memberId}`,
         { role }
