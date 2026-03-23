@@ -15,7 +15,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
   const inviteMember = useInviteMember()
 
   const [email, setEmail] = React.useState('')
-  const [role, setRole] = React.useState<'admin' | 'member'>('member')
+  const [role, setRole] = React.useState<'admin' | 'viewer'>('viewer')
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState(false)
 
@@ -23,7 +23,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
   React.useEffect(() => {
     if (isOpen) {
       setEmail('')
-      setRole('member')
+      setRole('viewer')
       setError(null)
       setSuccess(false)
     }
@@ -130,10 +130,10 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setRole('member')}
+                    onClick={() => setRole('viewer')}
                     className={cn(
                       'flex-1 flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors',
-                      role === 'member'
+                      role === 'viewer'
                         ? 'border-primary-500 bg-primary-500/10 text-primary-500'
                         : 'border-border bg-surface text-muted hover:text-foreground hover:bg-surface-hover'
                     )}

@@ -24,7 +24,7 @@ export function TeamSection() {
   const [memberToRemove, setMemberToRemove] = React.useState<TeamMember | null>(null)
   const [updatingMemberId, setUpdatingMemberId] = React.useState<string | null>(null)
 
-  const handleRoleChange = async (member: TeamMember, newRole: 'admin' | 'member') => {
+  const handleRoleChange = async (member: TeamMember, newRole: 'admin' | 'viewer') => {
     if (member.role === newRole) return
     
     setUpdatingMemberId(member.id)
@@ -194,7 +194,7 @@ export function TeamSection() {
                           {isCurrentUserAdmin && !isCurrentUser ? (
                             <select
                               value={member.role}
-                              onChange={(e) => handleRoleChange(member, e.target.value as 'admin' | 'member')}
+                              onChange={(e) => handleRoleChange(member, e.target.value as 'admin' | 'viewer')}
                               disabled={isUpdating}
                               className={cn(
                                 'px-2 py-1 text-sm rounded border border-border bg-surface',
@@ -203,7 +203,7 @@ export function TeamSection() {
                               )}
                             >
                               <option value="admin">{t('team.roleAdmin')}</option>
-                              <option value="member">{t('team.roleMember')}</option>
+                              <option value="viewer">{t('team.roleMember')}</option>
                             </select>
                           ) : (
                             <span className={cn(

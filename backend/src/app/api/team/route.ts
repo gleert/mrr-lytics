@@ -132,10 +132,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { email, role = 'member' } = body
+    const { email, role = 'viewer' } = body
 
     if (!email || typeof email !== 'string') return error(new Error('Email is required'), 400)
-    if (!['admin', 'member', 'viewer'].includes(role)) return error(new Error('Invalid role'), 400)
+    if (!['admin', 'viewer'].includes(role)) return error(new Error('Invalid role. Allowed: admin, viewer'), 400)
 
     const normalizedEmail = email.toLowerCase().trim()
     console.log('[team/invite] Inviting:', normalizedEmail, 'to tenant:', tenantId, 'as:', role)
