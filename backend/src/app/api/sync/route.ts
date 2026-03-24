@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthContext, requireScope } from '@/lib/auth'
-import { syncTenantInstances } from '@/lib/whmcs/sync'
+import { syncInstance, syncTenantInstances, type WhmcsInstance } from '@/lib/whmcs/sync'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError, BadRequestError, NotFoundError } from '@/utils/errors'
 import { z } from 'zod'
@@ -61,6 +61,36 @@ export async function POST(request: NextRequest) {
 
     if (tenant.status !== 'active') {
       throw new BadRequestError('Tenant is not active')
+    }
+
+    // If instance_id is provided, sync only that instance
+    if (parsed.data.instance_id) {
+      const { data: instance, error: instError } = await supabase
+        .from('whmcs_instances')
+        .select('id, tenant_id, name, whmcs_url, whmcs_api_identifier, whmcs_api_secret, status')
+        .eq('id', parsed.data.instance_id)
+        .eq('tenant_id', auth.tenant_id)
+        .single()
+
+      if (instError || !instance) {
+        throw new NotFoundError('Instance not found')
+      }
+      if (!instance.whmcs_api_secret) {
+        throw new BadRequestError('API token not configured for this instance')
+      }
+
+      const singleResult = await syncInstance(instance as WhmcsInstance, {
+        type: parsed.data.type,
+        triggered_by: 'manual',
+      })
+
+      return success({
+        message: singleResult.success ? 'Sync completed' : 'Sync failed',
+        total: 1,
+        succeeded: singleResult.success ? 1 : 0,
+        failed: singleResult.success ? 0 : 1,
+        results: [singleResult],
+      }, { tenant_id: auth.tenant_id })
     }
 
     // Execute sync for all tenant instances
