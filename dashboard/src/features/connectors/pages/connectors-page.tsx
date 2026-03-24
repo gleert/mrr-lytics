@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useToast } from '@/app/providers'
 import { useFilters } from '@/app/providers'
-import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo } from '../components/connector-logos'
+import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo } from '../components/connector-logos'
 import { WebhookFormModal } from '../components/webhook-form-modal'
 import { WebhookCard } from '../components/webhook-card'
 import { DeleteWebhookModal } from '../components/delete-webhook-modal'
@@ -15,6 +15,8 @@ import { EmailFormModal } from '../components/email-form-modal'
 import { EmailCard } from '../components/email-card'
 import { SlackFormModal } from '../components/slack-form-modal'
 import { SlackCard } from '../components/slack-card'
+import { HubspotFormModal } from '../components/hubspot-form-modal'
+import { HubspotCard } from '../components/hubspot-card'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   useConnectors,
@@ -32,15 +34,23 @@ import {
   useUpdateSlackConnector,
   useDeleteSlackConnector,
   useTestSlackConnector,
+  useHubspotConnectors,
+  useCreateHubspotConnector,
+  useUpdateHubspotConnector,
+  useDeleteHubspotConnector,
+  useTestHubspotConnector,
   type Connector,
   type EmailConnector,
   type SlackConnector,
+  type HubspotConnector,
   type CreateConnectorData,
   type UpdateConnectorData,
   type CreateEmailConnectorData,
   type UpdateEmailConnectorData,
   type CreateSlackConnectorData,
   type UpdateSlackConnectorData,
+  type CreateHubspotConnectorData,
+  type UpdateHubspotConnectorData,
 } from '../hooks/use-connectors'
 
 interface FutureConnector {
@@ -65,13 +75,7 @@ const futureConnectors: FutureConnector[] = [
     description: 'connectors.sapDescription',
     category: 'erp',
   },
-  {
-    id: 'odoo',
-    name: 'Odoo',
-    description: 'connectors.odooDescription',
-    category: 'erp',
-  },
-  {
+{
     id: 'holded',
     name: 'Holded',
     description: 'connectors.holdedDescription',
@@ -85,12 +89,6 @@ const futureConnectors: FutureConnector[] = [
     category: 'automation',
   },
   // CRM
-  {
-    id: 'hubspot',
-    name: 'HubSpot',
-    description: 'connectors.hubspotDescription',
-    category: 'crm',
-  },
   {
     id: 'salesforce',
     name: 'Salesforce',
@@ -147,6 +145,18 @@ export function ConnectorsPage() {
   const [isEmailDeleteOpen, setIsEmailDeleteOpen] = React.useState(false)
   const [selectedEmail, setSelectedEmail] = React.useState<EmailConnector | null>(null)
   const [testingEmailId, setTestingEmailId] = React.useState<string | null>(null)
+
+  // ─── HubSpot Connectors ──────────────────────────────────────────────────────
+  const { data: hubspotConnectors = [], isLoading: isLoadingHubspot } = useHubspotConnectors()
+  const createHubspot = useCreateHubspotConnector()
+  const updateHubspot = useUpdateHubspotConnector()
+  const deleteHubspot = useDeleteHubspotConnector()
+  const testHubspot = useTestHubspotConnector()
+
+  const [isHubspotFormOpen, setIsHubspotFormOpen] = React.useState(false)
+  const [isHubspotDeleteOpen, setIsHubspotDeleteOpen] = React.useState(false)
+  const [selectedHubspot, setSelectedHubspot] = React.useState<HubspotConnector | null>(null)
+  const [testingHubspotId, setTestingHubspotId] = React.useState<string | null>(null)
 
   // ─── Webhook handlers ───────────────────────────────────────────────────────
 
@@ -346,6 +356,69 @@ export function ConnectorsPage() {
       setSelectedSlack(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('connectors.slackDeleteError'))
+    }
+  }
+
+  // ─── HubSpot handlers ──────────────────────────────────────────────────────
+
+  const handleAddHubspot = () => {
+    setSelectedHubspot(null)
+    setIsHubspotFormOpen(true)
+  }
+
+  const handleEditHubspot = (connector: HubspotConnector) => {
+    setSelectedHubspot(connector)
+    setIsHubspotFormOpen(true)
+  }
+
+  const handleDeleteHubspotClick = (connector: HubspotConnector) => {
+    setSelectedHubspot(connector)
+    setIsHubspotDeleteOpen(true)
+  }
+
+  const handleTestHubspot = async (connector: HubspotConnector) => {
+    if (!tenantId) return
+    setTestingHubspotId(connector.id)
+    try {
+      await testHubspot.mutateAsync({ tenantId, connectorId: connector.id })
+      toast.success(t('connectors.testHubspotSent'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.testHubspotFailed'))
+    } finally {
+      setTestingHubspotId(null)
+    }
+  }
+
+  const handleHubspotFormSubmit = async (
+    formData: CreateHubspotConnectorData | UpdateHubspotConnectorData
+  ) => {
+    try {
+      if (selectedHubspot) {
+        await updateHubspot.mutateAsync({
+          connectorId: selectedHubspot.id,
+          data: formData as UpdateHubspotConnectorData,
+        })
+        toast.success(t('connectors.hubspotUpdated'))
+        setIsHubspotFormOpen(false)
+      } else {
+        await createHubspot.mutateAsync(formData as CreateHubspotConnectorData)
+        toast.success(t('connectors.hubspotCreated'))
+        setIsHubspotFormOpen(false)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.hubspotSaveError'))
+    }
+  }
+
+  const handleHubspotDeleteConfirm = async () => {
+    if (!selectedHubspot) return
+    try {
+      await deleteHubspot.mutateAsync(selectedHubspot.id)
+      toast.success(t('connectors.hubspotDeleted'))
+      setIsHubspotDeleteOpen(false)
+      setSelectedHubspot(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.hubspotDeleteError'))
     }
   }
 
@@ -571,7 +644,61 @@ export function ConnectorsPage() {
         description={t('connectors.crmDescription')}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {crmConnectors.map(renderFutureConnectorCard)}
+          {isLoadingHubspot ? (
+            <Card className="opacity-50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-surface-hover animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 rounded bg-surface-hover animate-pulse" />
+                    <div className="h-3 w-48 rounded bg-surface-hover animate-pulse" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* HubSpot live connectors */}
+              {hubspotConnectors.map(connector => (
+                <HubspotCard
+                  key={connector.id}
+                  connector={connector}
+                  onEdit={() => handleEditHubspot(connector)}
+                  onTest={() => handleTestHubspot(connector)}
+                  onDelete={() => handleDeleteHubspotClick(connector)}
+                  isTestLoading={testingHubspotId === connector.id}
+                />
+              ))}
+
+              {/* Add HubSpot */}
+              <Card className="relative overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover">
+                        <HubspotLogo className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">HubSpot</h3>
+                        <p className="mt-1 text-sm text-muted">{t('connectors.addHubspotHint')}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                      {t('connectors.notConnected')}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={handleAddHubspot}>
+                      {t('connectors.connect')}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coming soon: Salesforce, etc. */}
+              {crmConnectors.map(renderFutureConnectorCard)}
+            </>
+          )}
         </div>
       </Section>
 
@@ -726,6 +853,68 @@ export function ConnectorsPage() {
                 disabled={deleteEmail.isPending}
               >
                 {deleteEmail.isPending ? (
+                  <>
+                    <Icon name="sync" size="sm" className="animate-spin mr-2" />
+                    {t('common.deleting')}
+                  </>
+                ) : t('common.delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─── HubSpot Modals ──────────────────────────────────────────────── */}
+      <HubspotFormModal
+        isOpen={isHubspotFormOpen}
+        onClose={() => {
+          setIsHubspotFormOpen(false)
+          setSelectedHubspot(null)
+        }}
+        onSubmit={handleHubspotFormSubmit}
+        connector={selectedHubspot}
+        isLoading={createHubspot.isPending || updateHubspot.isPending}
+      />
+
+      {isHubspotDeleteOpen && selectedHubspot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setIsHubspotDeleteOpen(false)
+              setSelectedHubspot(null)
+            }}
+          />
+          <div className="relative w-full max-w-md bg-surface-elevated border border-border rounded-xl shadow-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-danger/10">
+                <Icon name="delete" className="text-danger" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{t('connectors.deleteHubspot')}</h3>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteHubspotConfirm', { name: selectedHubspot.name })}
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteHubspotWarning')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsHubspotDeleteOpen(false)
+                  setSelectedHubspot(null)
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleHubspotDeleteConfirm}
+                disabled={deleteHubspot.isPending}
+              >
+                {deleteHubspot.isPending ? (
                   <>
                     <Icon name="sync" size="sm" className="animate-spin mr-2" />
                     {t('common.deleting')}

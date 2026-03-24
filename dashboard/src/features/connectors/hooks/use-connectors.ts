@@ -124,6 +124,55 @@ export interface UpdateEmailConnectorData {
   enabled?: boolean
 }
 
+// ============================================================================
+// HUBSPOT CONNECTOR TYPES
+// ============================================================================
+
+export interface HubspotConnector {
+  id: string
+  type: 'hubspot'
+  name: string
+  config: {
+    access_token: string
+    portal_id?: string | null
+    has_access_token: boolean
+    actions: {
+      create_contacts: boolean
+      update_lifecycle: boolean
+      log_notes: boolean
+    }
+  }
+  events: WebhookEventType[]
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateHubspotConnectorData {
+  name: string
+  access_token: string
+  portal_id?: string
+  events: WebhookEventType[]
+  actions: {
+    create_contacts: boolean
+    update_lifecycle: boolean
+    log_notes: boolean
+  }
+}
+
+export interface UpdateHubspotConnectorData {
+  name?: string
+  access_token?: string
+  portal_id?: string
+  events?: WebhookEventType[]
+  enabled?: boolean
+  actions?: {
+    create_contacts: boolean
+    update_lifecycle: boolean
+    log_notes: boolean
+  }
+}
+
 export interface ConnectorLimit {
   current: number
   max: number
@@ -236,6 +285,27 @@ interface TestEmailResponse {
   data: {
     message: string
     messageId?: string
+  }
+}
+
+interface HubspotConnectorsResponse {
+  success: boolean
+  data: {
+    connectors: HubspotConnector[]
+  }
+}
+
+interface HubspotConnectorResponse {
+  success: boolean
+  data: {
+    connector: HubspotConnector
+  }
+}
+
+interface TestHubspotResponse {
+  success: boolean
+  data: {
+    message: string
   }
 }
 
@@ -656,6 +726,126 @@ export function useTestSlackConnector() {
     }) => {
       const response = await api.post<TestSlackResponse>(
         `/api/tenants/${tenantId}/slack-connectors/${connectorId}/test`
+      )
+      return response.data
+    },
+  })
+}
+
+// ============================================================================
+// HUBSPOT CONNECTOR HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch all HubSpot connectors for the current tenant
+ */
+export function useHubspotConnectors() {
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useQuery({
+    queryKey: ['hubspot-connectors', tenantId],
+    queryFn: async () => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.get<HubspotConnectorsResponse>(
+        `/api/tenants/${tenantId}/hubspot-connectors`
+      )
+      return response.data.connectors
+    },
+    enabled: !!tenantId,
+    staleTime: 30 * 1000,
+  })
+}
+
+/**
+ * Hook to create a new HubSpot connector
+ */
+export function useCreateHubspotConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (data: CreateHubspotConnectorData) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.post<HubspotConnectorResponse>(
+        `/api/tenants/${tenantId}/hubspot-connectors`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hubspot-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to update a HubSpot connector
+ */
+export function useUpdateHubspotConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async ({
+      connectorId,
+      data,
+    }: {
+      connectorId: string
+      data: UpdateHubspotConnectorData
+    }) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.patch<HubspotConnectorResponse>(
+        `/api/tenants/${tenantId}/hubspot-connectors/${connectorId}`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hubspot-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to delete a HubSpot connector
+ */
+export function useDeleteHubspotConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (connectorId: string) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      await api.delete(`/api/tenants/${tenantId}/hubspot-connectors/${connectorId}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hubspot-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to test a HubSpot connector connection
+ */
+export function useTestHubspotConnector() {
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      connectorId,
+    }: {
+      tenantId: string
+      connectorId: string
+    }) => {
+      const response = await api.post<TestHubspotResponse>(
+        `/api/tenants/${tenantId}/hubspot-connectors/${connectorId}/test`
       )
       return response.data
     },

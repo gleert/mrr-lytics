@@ -35,6 +35,13 @@ import {
   dispatchSlackClientChurned,
   dispatchSlackSubscriptionCancelled,
 } from '@/lib/slack'
+import {
+  dispatchHubspotSyncCompleted,
+  dispatchHubspotSyncFailed,
+  dispatchHubspotClientNew,
+  dispatchHubspotClientChurned,
+  dispatchHubspotSubscriptionCancelled,
+} from '@/lib/hubspot'
 import type { WhmcsApiResponse } from './types'
 
 /**
@@ -252,6 +259,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.completed email:', e))
     dispatchSlackSyncCompleted(instance.tenant_id, syncCompletedPayload)
       .catch((e) => console.error('Failed to dispatch sync.completed slack:', e))
+    dispatchHubspotSyncCompleted(instance.tenant_id, syncCompletedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.completed hubspot:', e))
 
     return {
       success: true,
@@ -294,6 +303,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.failed email:', e))
     dispatchSlackSyncFailed(instance.tenant_id, syncFailedPayload)
       .catch((e) => console.error('Failed to dispatch sync.failed slack:', e))
+    dispatchHubspotSyncFailed(instance.tenant_id, syncFailedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.failed hubspot:', e))
 
     return {
       success: false,
@@ -434,6 +445,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchEmailClientNew error:', e))
         dispatchSlackClientNew(instance.tenant_id, newClientPayload)
           .catch((e) => console.error('dispatchSlackClientNew error:', e))
+        dispatchHubspotClientNew(instance.tenant_id, newClientPayload)
+          .catch((e) => console.error('dispatchHubspotClientNew error:', e))
       } else if (
         c.status && CHURNED_STATUSES.includes(c.status) &&
         !CHURNED_STATUSES.includes(prevStatus)
@@ -450,6 +463,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchEmailClientChurned error:', e))
         dispatchSlackClientChurned(instance.tenant_id, churnPayload)
           .catch((e) => console.error('dispatchSlackClientChurned error:', e))
+        dispatchHubspotClientChurned(instance.tenant_id, churnPayload)
+          .catch((e) => console.error('dispatchHubspotClientChurned error:', e))
       }
     }
   }
@@ -562,6 +577,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchEmailSubscriptionCancelled error:', e))
         dispatchSlackSubscriptionCancelled(instance.tenant_id, cancelPayload)
           .catch((e) => console.error('dispatchSlackSubscriptionCancelled error:', e))
+        dispatchHubspotSubscriptionCancelled(instance.tenant_id, cancelPayload)
+          .catch((e) => console.error('dispatchHubspotSubscriptionCancelled error:', e))
       }
     }
   }
