@@ -18,24 +18,41 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get all active instances across all tenants
-    const { data: instances, error: dbError } = await supabase
+    // Get all active instances with sync enabled
+    const { data: allInstances, error: dbError } = await supabase
       .from('whmcs_instances')
-      .select('id, tenant_id, name, whmcs_url, whmcs_api_identifier, whmcs_api_secret, status')
+      .select('id, tenant_id, name, whmcs_url, whmcs_api_identifier, whmcs_api_secret, status, sync_enabled, sync_interval_hours, last_sync_at')
       .eq('status', 'active')
+      .eq('sync_enabled', true)
       .not('whmcs_api_secret', 'is', null)
 
     if (dbError) {
       throw new Error(dbError.message)
     }
 
-    if (!instances || instances.length === 0) {
+    if (!allInstances || allInstances.length === 0) {
       return success({ message: 'No active instances to sync', results: [] })
+    }
+
+    // Filter instances that are due for sync based on their interval
+    const now = new Date()
+    const instances = allInstances.filter((inst) => {
+      if (!inst.last_sync_at) return true // Never synced, always due
+      const lastSync = new Date(inst.last_sync_at)
+      const intervalMs = (inst.sync_interval_hours ?? 6) * 60 * 60 * 1000
+      return now.getTime() - lastSync.getTime() >= intervalMs
+    })
+
+    if (instances.length === 0) {
+      return success({
+        message: `No instances due for sync (${allInstances.length} active, none overdue)`,
+        results: [],
+      })
     }
 
     // Determine sync type based on time
     // Full sync at midnight (00:00), incremental otherwise
-    const hour = new Date().getUTCHours()
+    const hour = now.getUTCHours()
     const isFullSync = hour === 0
 
     // Sync each instance
