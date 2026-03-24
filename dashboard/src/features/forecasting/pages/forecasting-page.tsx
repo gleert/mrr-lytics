@@ -293,6 +293,7 @@ export function ForecastingPage() {
                         tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
+                        cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
                         content={
                           <ChartTooltip
                             valueFormatter={(v) => formatCurrency(v)}
@@ -401,6 +402,7 @@ export function ForecastingPage() {
                         width={70}
                       />
                       <Tooltip
+                        cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
                         content={
                           <ChartTooltip
                             valueFormatter={(v, key) => key === 'mrr' ? formatCurrency(v) : String(v)}
