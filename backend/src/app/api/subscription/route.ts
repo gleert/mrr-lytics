@@ -71,12 +71,15 @@ export async function GET() {
       .eq('tenant_id', auth.tenant_id)
       .eq('type', 'webhook')
 
-    // Calculate trial days remaining
+    // Calculate trial days remaining (for any trialing subscription, including free)
     let trialDaysRemaining: number | null = null
-    if (subscription.status === 'trialing' && subscription.trial_end) {
+    let trialExpired = false
+    if (subscription.trial_end) {
       const trialEnd = new Date(subscription.trial_end)
       const now = new Date()
-      trialDaysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+      const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      trialDaysRemaining = Math.max(0, daysLeft)
+      trialExpired = subscription.plan_id === 'free' && daysLeft <= 0
     }
 
     // Format response - subscription_plans is an object (not array) due to foreign key
@@ -106,12 +109,13 @@ export async function GET() {
       dev_mode: !stripeConfigured,
       subscription: {
         id: subscription.id,
-        status: subscription.status,
+        status: trialExpired ? 'expired' : subscription.status,
         billing_interval: subscription.billing_interval,
         current_period_start: subscription.current_period_start,
         current_period_end: subscription.current_period_end,
         trial_end: subscription.trial_end,
         trial_days_remaining: trialDaysRemaining,
+        trial_expired: trialExpired,
         cancel_at_period_end: subscription.cancel_at_period_end,
         has_payment_method: !!subscription.stripe_subscription_id,
       },

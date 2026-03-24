@@ -133,6 +133,16 @@ export const en = {
       upgradeNow: 'Upgrade Now',
       viewPlans: 'View Plans',
       daysLeft: 'days left',
+      free: 'Free',
+      trialDuration: '15-day trial',
+      trialExpiredBanner: 'Your free trial has expired — upgrade to continue',
+      trialExpiredTitle: 'Your free trial has ended',
+      trialExpiredDesc: 'Your 15-day free trial has expired. Upgrade to a paid plan to regain full access to your analytics dashboard.',
+      trialExpiredUnlock: 'Upgrade to unlock',
+      unlockInstances: 'Multiple WHMCS instances',
+      unlockHistory: 'Extended data history',
+      unlockExports: 'PDF & CSV exports',
+      unlockTeam: 'Team collaboration',
     },
 
     // Team

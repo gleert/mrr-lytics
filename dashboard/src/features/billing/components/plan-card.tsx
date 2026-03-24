@@ -67,16 +67,25 @@ export function PlanCard({
 
       {/* Price */}
       <div className="mt-4">
-        <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold text-foreground">{price}</span>
-          {!plan.is_free && (
-            <span className="text-muted">/mo</span>
-          )}
-        </div>
-        {billingInterval === 'year' && !plan.is_free && (
-          <p className="text-sm text-muted mt-1">
-            {totalPrice}/year ({plan.price.yearly_savings_percent}% off)
-          </p>
+        {plan.is_free ? (
+          <div>
+            <span className="text-4xl font-bold text-foreground">{t('billing.free', 'Free')}</span>
+            <p className="text-sm text-primary-400 font-medium mt-1">
+              {t('billing.trialDuration', '15-day trial')}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-foreground">{price}</span>
+              <span className="text-muted">/mo</span>
+            </div>
+            {billingInterval === 'year' && (
+              <p className="text-sm text-muted mt-1">
+                {totalPrice}/year ({plan.price.yearly_savings_percent}% off)
+              </p>
+            )}
+          </>
         )}
       </div>
 

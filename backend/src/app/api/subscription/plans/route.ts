@@ -55,6 +55,8 @@ export async function GET() {
       limits: plan.limits,
       features: plan.features,
       is_free: plan.id === 'free',
+      is_trial: plan.id === 'free',
+      trial_days: plan.id === 'free' ? (plan.limits as Record<string, number>)?.trial_days ?? 15 : null,
       is_default: plan.is_default,
       is_popular: plan.id === 'pro', // Mark Pro as popular
     }))

@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Backdrop } from '@/shared/components/ui/backdrop'
-import { TrialBanner } from '@/features/billing'
+import { TrialBanner, TrialExpiredWall, useSubscription } from '@/features/billing'
 import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
 import { TourProvider } from '@/features/onboarding'
@@ -17,6 +17,7 @@ export function AppLayout() {
   const { isMobile } = useMobile()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const { getCurrentTenant, isTenantDeleted } = useFilters()
+  const { data: subscriptionData } = useSubscription()
   const location = useLocation()
   const mainRef = React.useRef<HTMLElement>(null)
 
@@ -112,6 +113,10 @@ export function AppLayout() {
             onMenuClick={handleMenuClick}
           />
           <TrialBanner />
+          {/* Trial expired wall - allow billing page through */}
+          {subscriptionData?.subscription.trial_expired && !location.pathname.includes('/settings/billing') && (
+            <TrialExpiredWall />
+          )}
           <main ref={mainRef} className="flex-1 overflow-auto p-4 lg:p-6">
             <ErrorBoundary>
             <Outlet />

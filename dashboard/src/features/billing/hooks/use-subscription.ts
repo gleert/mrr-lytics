@@ -29,12 +29,13 @@ export interface SubscriptionPlan {
 
 export interface Subscription {
   id: string
-  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'expired'
   billing_interval: 'month' | 'year' | null
   current_period_start: string | null
   current_period_end: string | null
   trial_end: string | null
   trial_days_remaining: number | null
+  trial_expired: boolean
   cancel_at_period_end: boolean
   has_payment_method: boolean
 }

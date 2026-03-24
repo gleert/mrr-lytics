@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
-import { checkSubscriptionLimit, SubscriptionLimitError } from '@/lib/subscription'
+import { checkSubscriptionLimit, SubscriptionLimitError, TrialExpiredError } from '@/lib/subscription'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -118,7 +118,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check subscription limit for instances
-    const limitCheck = await checkSubscriptionLimit(userTenant.tenant_id, 'instances')
+    let limitCheck
+    try {
+      limitCheck = await checkSubscriptionLimit(userTenant.tenant_id, 'instances')
+    } catch (err) {
+      if (err instanceof TrialExpiredError) {
+        return error(err, 402)
+      }
+      throw err
+    }
     if (!limitCheck.allowed) {
       return error(
         new SubscriptionLimitError('instances', limitCheck.limit, limitCheck.current, limitCheck.planId),

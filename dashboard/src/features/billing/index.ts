@@ -1,5 +1,5 @@
 export { BillingPage } from './pages/billing-page'
-export { PlanCard, UsageMeter, BillingIntervalToggle, TrialBanner } from './components'
+export { PlanCard, UsageMeter, BillingIntervalToggle, TrialBanner, TrialExpiredWall } from './components'
 export { 
   useSubscription, 
   useSubscriptionPlans, 

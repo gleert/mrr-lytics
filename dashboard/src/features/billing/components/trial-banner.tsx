@@ -16,14 +16,15 @@ export function TrialBanner() {
 
   const { subscription: sub } = subscription
 
-  // Only show for trialing status
-  if (sub.status !== 'trialing') return null
+  // Show for trialing or expired status
+  if (sub.status !== 'trialing' && sub.status !== 'expired') return null
 
-  // Don't show if no trial days remaining info
-  if (sub.trial_days_remaining === null) return null
+  // Don't show if no trial days remaining info (unless expired)
+  if (sub.trial_days_remaining === null && !sub.trial_expired) return null
 
-  const daysRemaining = sub.trial_days_remaining
-  const isUrgent = daysRemaining <= 3
+  const daysRemaining = sub.trial_days_remaining ?? 0
+  const isExpired = sub.trial_expired || sub.status === 'expired'
+  const isUrgent = isExpired || daysRemaining <= 3
 
   return (
     <div className={`
@@ -40,11 +41,13 @@ export function TrialBanner() {
           className={isUrgent ? 'text-warning' : 'text-primary-400'} 
         />
         <span className={isUrgent ? 'text-warning' : 'text-primary-400'}>
-          {daysRemaining === 0 
-            ? t('billing.trialEndsToday', 'Your trial ends today!')
-            : daysRemaining === 1
-              ? t('billing.trialEnds1Day', 'Your trial ends in 1 day')
-              : t('billing.trialEndsDays', 'Your trial ends in {{days}} days', { days: daysRemaining })
+          {isExpired
+            ? t('billing.trialExpiredBanner', 'Your free trial has expired — upgrade to continue')
+            : daysRemaining === 0
+              ? t('billing.trialEndsToday', 'Your trial ends today!')
+              : daysRemaining === 1
+                ? t('billing.trialEnds1Day', 'Your trial ends in 1 day')
+                : t('billing.trialEndsDays', 'Your trial ends in {{days}} days', { days: daysRemaining })
           }
         </span>
       </div>

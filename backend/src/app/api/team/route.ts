@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
-import { checkSubscriptionLimit } from '@/lib/subscription/limits'
+import { checkSubscriptionLimit, TrialExpiredError } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,6 +120,9 @@ export async function POST(request: Request) {
     try {
       limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
     } catch (limitErr) {
+      if (limitErr instanceof TrialExpiredError) {
+        return error(limitErr, 402)
+      }
       console.error('[team/invite] subscription check failed:', limitErr)
       // Don't block invites if subscription check fails
       limitCheck = { allowed: true, current: 0, limit: 999 }

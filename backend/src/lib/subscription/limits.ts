@@ -29,13 +29,24 @@ export class SubscriptionLimitError extends Error {
   }
 }
 
+export class TrialExpiredError extends Error {
+  planId: string
+
+  constructor(planId: string) {
+    super('Your free trial has expired. Please upgrade to a paid plan to continue.')
+    this.name = 'TrialExpiredError'
+    this.planId = planId
+  }
+}
+
 /**
  * Check if tenant can perform an action based on their subscription limits
- * 
+ *
  * @param tenantId - The tenant ID to check
  * @param limitType - The type of limit to check
  * @returns LimitCheckResult with allowed status
  * @throws SubscriptionLimitError if limit is exceeded
+ * @throws TrialExpiredError if free trial has expired
  */
 export async function checkSubscriptionLimit(
   tenantId: string,
@@ -47,23 +58,23 @@ export async function checkSubscriptionLimit(
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Get current subscription and plan
+  // Get current subscription and plan (include all statuses to detect expired trials)
   const { data: subscription, error: subError } = await supabase
     .from('subscriptions')
     .select(`
       plan_id,
       status,
+      trial_end,
       subscription_plans (
         name,
         limits
       )
     `)
     .eq('tenant_id', tenantId)
-    .in('status', ['active', 'trialing'])
     .single()
 
   if (subError || !subscription) {
-    // No active subscription, use free plan limits
+    // No subscription at all, use free plan limits
     const { data: freePlan } = await supabase
       .from('subscription_plans')
       .select('id, name, limits')
@@ -82,6 +93,19 @@ export async function checkSubscriptionLimit(
       freePlan.limits as Record<string, number>,
       supabase
     )
+  }
+
+  // Check if free trial has expired
+  if (subscription.plan_id === 'free' && subscription.trial_end) {
+    const trialEnd = new Date(subscription.trial_end)
+    if (trialEnd < new Date()) {
+      throw new TrialExpiredError(subscription.plan_id)
+    }
+  }
+
+  // If subscription is not in an active state (canceled, unpaid, etc.) and not free trialing
+  if (!['active', 'trialing'].includes(subscription.status)) {
+    throw new TrialExpiredError(subscription.plan_id)
   }
 
   const plan = subscription.subscription_plans as unknown as {
