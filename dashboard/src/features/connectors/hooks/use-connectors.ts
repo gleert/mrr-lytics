@@ -174,6 +174,37 @@ export interface UpdateHubspotConnectorData {
 }
 
 // ============================================================================
+// ZAPIER CONNECTOR TYPES
+// ============================================================================
+
+export interface ZapierConnector {
+  id: string
+  type: 'zapier'
+  name: string
+  config: {
+    webhook_url: string
+    has_webhook_url: boolean
+  }
+  events: WebhookEventType[]
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateZapierConnectorData {
+  name: string
+  webhook_url: string
+  events: WebhookEventType[]
+}
+
+export interface UpdateZapierConnectorData {
+  name?: string
+  webhook_url?: string
+  events?: WebhookEventType[]
+  enabled?: boolean
+}
+
+// ============================================================================
 // SALESFORCE CONNECTOR TYPES
 // ============================================================================
 
@@ -373,6 +404,27 @@ interface SalesforceConnectorResponse {
 }
 
 interface TestSalesforceResponse {
+  success: boolean
+  data: {
+    message: string
+  }
+}
+
+interface ZapierConnectorsResponse {
+  success: boolean
+  data: {
+    connectors: ZapierConnector[]
+  }
+}
+
+interface ZapierConnectorResponse {
+  success: boolean
+  data: {
+    connector: ZapierConnector
+  }
+}
+
+interface TestZapierResponse {
   success: boolean
   data: {
     message: string
@@ -1036,6 +1088,126 @@ export function useTestSalesforceConnector() {
     }) => {
       const response = await api.post<TestSalesforceResponse>(
         `/api/tenants/${tenantId}/salesforce-connectors/${connectorId}/test`
+      )
+      return response.data
+    },
+  })
+}
+
+// ============================================================================
+// ZAPIER CONNECTOR HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch all Zapier connectors for the current tenant
+ */
+export function useZapierConnectors() {
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useQuery({
+    queryKey: ['zapier-connectors', tenantId],
+    queryFn: async () => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.get<ZapierConnectorsResponse>(
+        `/api/tenants/${tenantId}/zapier-connectors`
+      )
+      return response.data.connectors
+    },
+    enabled: !!tenantId,
+    staleTime: 30 * 1000,
+  })
+}
+
+/**
+ * Hook to create a new Zapier connector
+ */
+export function useCreateZapierConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (data: CreateZapierConnectorData) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.post<ZapierConnectorResponse>(
+        `/api/tenants/${tenantId}/zapier-connectors`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zapier-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to update a Zapier connector
+ */
+export function useUpdateZapierConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async ({
+      connectorId,
+      data,
+    }: {
+      connectorId: string
+      data: UpdateZapierConnectorData
+    }) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.patch<ZapierConnectorResponse>(
+        `/api/tenants/${tenantId}/zapier-connectors/${connectorId}`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zapier-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to delete a Zapier connector
+ */
+export function useDeleteZapierConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (connectorId: string) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      await api.delete(`/api/tenants/${tenantId}/zapier-connectors/${connectorId}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zapier-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to test a Zapier connector
+ */
+export function useTestZapierConnector() {
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      connectorId,
+    }: {
+      tenantId: string
+      connectorId: string
+    }) => {
+      const response = await api.post<TestZapierResponse>(
+        `/api/tenants/${tenantId}/zapier-connectors/${connectorId}/test`
       )
       return response.data
     },

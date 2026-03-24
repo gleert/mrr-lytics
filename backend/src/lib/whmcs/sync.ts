@@ -49,6 +49,13 @@ import {
   dispatchSalesforceClientChurned,
   dispatchSalesforceSubscriptionCancelled,
 } from '@/lib/salesforce'
+import {
+  dispatchZapierSyncCompleted,
+  dispatchZapierSyncFailed,
+  dispatchZapierClientNew,
+  dispatchZapierClientChurned,
+  dispatchZapierSubscriptionCancelled,
+} from '@/lib/zapier'
 import type { WhmcsApiResponse } from './types'
 
 /**
@@ -270,6 +277,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.completed hubspot:', e))
     dispatchSalesforceSyncCompleted(instance.tenant_id, syncCompletedPayload)
       .catch((e) => console.error('Failed to dispatch sync.completed salesforce:', e))
+    dispatchZapierSyncCompleted(instance.tenant_id, syncCompletedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.completed zapier:', e))
 
     return {
       success: true,
@@ -316,6 +325,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.failed hubspot:', e))
     dispatchSalesforceSyncFailed(instance.tenant_id, syncFailedPayload)
       .catch((e) => console.error('Failed to dispatch sync.failed salesforce:', e))
+    dispatchZapierSyncFailed(instance.tenant_id, syncFailedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.failed zapier:', e))
 
     return {
       success: false,
@@ -460,6 +471,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchHubspotClientNew error:', e))
         dispatchSalesforceClientNew(instance.tenant_id, newClientPayload)
           .catch((e) => console.error('dispatchSalesforceClientNew error:', e))
+        dispatchZapierClientNew(instance.tenant_id, newClientPayload)
+          .catch((e) => console.error('dispatchZapierClientNew error:', e))
       } else if (
         c.status && CHURNED_STATUSES.includes(c.status) &&
         !CHURNED_STATUSES.includes(prevStatus)
@@ -480,6 +493,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchHubspotClientChurned error:', e))
         dispatchSalesforceClientChurned(instance.tenant_id, churnPayload)
           .catch((e) => console.error('dispatchSalesforceClientChurned error:', e))
+        dispatchZapierClientChurned(instance.tenant_id, churnPayload)
+          .catch((e) => console.error('dispatchZapierClientChurned error:', e))
       }
     }
   }
@@ -596,6 +611,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchHubspotSubscriptionCancelled error:', e))
         dispatchSalesforceSubscriptionCancelled(instance.tenant_id, cancelPayload)
           .catch((e) => console.error('dispatchSalesforceSubscriptionCancelled error:', e))
+        dispatchZapierSubscriptionCancelled(instance.tenant_id, cancelPayload)
+          .catch((e) => console.error('dispatchZapierSubscriptionCancelled error:', e))
       }
     }
   }

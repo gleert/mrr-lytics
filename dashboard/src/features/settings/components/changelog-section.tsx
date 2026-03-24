@@ -29,6 +29,7 @@ const CHANGELOG: ChangelogEntry[] = [
     changes: [
       { type: 'feature', text: 'changelog.entries.v220.hubspotConnector' },
       { type: 'feature', text: 'changelog.entries.v220.salesforceConnector' },
+      { type: 'feature', text: 'changelog.entries.v220.zapierConnector' },
       { type: 'improvement', text: 'changelog.entries.v220.connectorsOutbound' },
     ],
   },

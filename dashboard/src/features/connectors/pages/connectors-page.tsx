@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useToast } from '@/app/providers'
 import { useFilters } from '@/app/providers'
-import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo, SalesforceLogo } from '../components/connector-logos'
+import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo, SalesforceLogo, ZapierLogo } from '../components/connector-logos'
 import { WebhookFormModal } from '../components/webhook-form-modal'
 import { WebhookCard } from '../components/webhook-card'
 import { DeleteWebhookModal } from '../components/delete-webhook-modal'
@@ -19,6 +19,8 @@ import { HubspotFormModal } from '../components/hubspot-form-modal'
 import { HubspotCard } from '../components/hubspot-card'
 import { SalesforceFormModal } from '../components/salesforce-form-modal'
 import { SalesforceCard } from '../components/salesforce-card'
+import { ZapierFormModal } from '../components/zapier-form-modal'
+import { ZapierCard } from '../components/zapier-card'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   useConnectors,
@@ -46,11 +48,17 @@ import {
   useUpdateSalesforceConnector,
   useDeleteSalesforceConnector,
   useTestSalesforceConnector,
+  useZapierConnectors,
+  useCreateZapierConnector,
+  useUpdateZapierConnector,
+  useDeleteZapierConnector,
+  useTestZapierConnector,
   type Connector,
   type EmailConnector,
   type SlackConnector,
   type HubspotConnector,
   type SalesforceConnector,
+  type ZapierConnector,
   type CreateConnectorData,
   type UpdateConnectorData,
   type CreateEmailConnectorData,
@@ -61,6 +69,8 @@ import {
   type UpdateHubspotConnectorData,
   type CreateSalesforceConnectorData,
   type UpdateSalesforceConnectorData,
+  type CreateZapierConnectorData,
+  type UpdateZapierConnectorData,
 } from '../hooks/use-connectors'
 
 interface FutureConnector {
@@ -90,13 +100,6 @@ const futureConnectors: FutureConnector[] = [
     name: 'Holded',
     description: 'connectors.holdedDescription',
     category: 'erp',
-  },
-  // Automation
-  {
-    id: 'zapier',
-    name: 'Zapier',
-    description: 'connectors.zapierDescription',
-    category: 'automation',
   },
 ]
 
@@ -172,6 +175,18 @@ export function ConnectorsPage() {
   const [isSalesforceDeleteOpen, setIsSalesforceDeleteOpen] = React.useState(false)
   const [selectedSalesforce, setSelectedSalesforce] = React.useState<SalesforceConnector | null>(null)
   const [testingSalesforceId, setTestingSalesforceId] = React.useState<string | null>(null)
+
+  // ─── Zapier Connectors ─────────────────────────────────────────────────────
+  const { data: zapierConnectors = [], isLoading: isLoadingZapier } = useZapierConnectors()
+  const createZapier = useCreateZapierConnector()
+  const updateZapier = useUpdateZapierConnector()
+  const deleteZapier = useDeleteZapierConnector()
+  const testZapier = useTestZapierConnector()
+
+  const [isZapierFormOpen, setIsZapierFormOpen] = React.useState(false)
+  const [isZapierDeleteOpen, setIsZapierDeleteOpen] = React.useState(false)
+  const [selectedZapier, setSelectedZapier] = React.useState<ZapierConnector | null>(null)
+  const [testingZapierId, setTestingZapierId] = React.useState<string | null>(null)
 
   // ─── Webhook handlers ───────────────────────────────────────────────────────
 
@@ -500,6 +515,69 @@ export function ConnectorsPage() {
     }
   }
 
+  // ─── Zapier handlers ──────────────────────────────────────────────────────
+
+  const handleAddZapier = () => {
+    setSelectedZapier(null)
+    setIsZapierFormOpen(true)
+  }
+
+  const handleEditZapier = (connector: ZapierConnector) => {
+    setSelectedZapier(connector)
+    setIsZapierFormOpen(true)
+  }
+
+  const handleDeleteZapierClick = (connector: ZapierConnector) => {
+    setSelectedZapier(connector)
+    setIsZapierDeleteOpen(true)
+  }
+
+  const handleTestZapier = async (connector: ZapierConnector) => {
+    if (!tenantId) return
+    setTestingZapierId(connector.id)
+    try {
+      await testZapier.mutateAsync({ tenantId, connectorId: connector.id })
+      toast.success(t('connectors.testZapierSent'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.testZapierFailed'))
+    } finally {
+      setTestingZapierId(null)
+    }
+  }
+
+  const handleZapierFormSubmit = async (
+    formData: CreateZapierConnectorData | UpdateZapierConnectorData
+  ) => {
+    try {
+      if (selectedZapier) {
+        await updateZapier.mutateAsync({
+          connectorId: selectedZapier.id,
+          data: formData as UpdateZapierConnectorData,
+        })
+        toast.success(t('connectors.zapierUpdated'))
+        setIsZapierFormOpen(false)
+      } else {
+        await createZapier.mutateAsync(formData as CreateZapierConnectorData)
+        toast.success(t('connectors.zapierCreated'))
+        setIsZapierFormOpen(false)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.zapierSaveError'))
+    }
+  }
+
+  const handleZapierDeleteConfirm = async () => {
+    if (!selectedZapier) return
+    try {
+      await deleteZapier.mutateAsync(selectedZapier.id)
+      toast.success(t('connectors.zapierDeleted'))
+      setIsZapierDeleteOpen(false)
+      setSelectedZapier(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.zapierDeleteError'))
+    }
+  }
+
   // ─── Future connector card ───────────────────────────────────────────────────
 
   const renderFutureConnectorCard = (connector: FutureConnector) => {
@@ -712,7 +790,61 @@ export function ConnectorsPage() {
         description={t('connectors.automationDescription')}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {automationConnectors.map(renderFutureConnectorCard)}
+          {isLoadingZapier ? (
+            <Card className="opacity-50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-surface-hover animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 rounded bg-surface-hover animate-pulse" />
+                    <div className="h-3 w-48 rounded bg-surface-hover animate-pulse" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Zapier live connectors */}
+              {zapierConnectors.map(connector => (
+                <ZapierCard
+                  key={connector.id}
+                  connector={connector}
+                  onEdit={() => handleEditZapier(connector)}
+                  onTest={() => handleTestZapier(connector)}
+                  onDelete={() => handleDeleteZapierClick(connector)}
+                  isTestLoading={testingZapierId === connector.id}
+                />
+              ))}
+
+              {/* Add Zapier */}
+              <Card className="relative overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover">
+                        <ZapierLogo className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Zapier</h3>
+                        <p className="mt-1 text-sm text-muted">{t('connectors.addZapierHint')}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                      {t('connectors.notConnected')}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={handleAddZapier}>
+                      {t('connectors.connect')}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coming soon automation connectors */}
+              {automationConnectors.map(renderFutureConnectorCard)}
+            </>
+          )}
         </div>
       </Section>
 
@@ -1092,6 +1224,68 @@ export function ConnectorsPage() {
                 disabled={deleteSalesforce.isPending}
               >
                 {deleteSalesforce.isPending ? (
+                  <>
+                    <Icon name="sync" size="sm" className="animate-spin mr-2" />
+                    {t('common.deleting')}
+                  </>
+                ) : t('common.delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─── Zapier Modals ──────────────────────────────────────────────── */}
+      <ZapierFormModal
+        isOpen={isZapierFormOpen}
+        onClose={() => {
+          setIsZapierFormOpen(false)
+          setSelectedZapier(null)
+        }}
+        onSubmit={handleZapierFormSubmit}
+        connector={selectedZapier}
+        isLoading={createZapier.isPending || updateZapier.isPending}
+      />
+
+      {isZapierDeleteOpen && selectedZapier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setIsZapierDeleteOpen(false)
+              setSelectedZapier(null)
+            }}
+          />
+          <div className="relative w-full max-w-md bg-surface-elevated border border-border rounded-xl shadow-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-danger/10">
+                <Icon name="delete" className="text-danger" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{t('connectors.deleteZapier')}</h3>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteZapierConfirm', { name: selectedZapier.name })}
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteZapierWarning')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsZapierDeleteOpen(false)
+                  setSelectedZapier(null)
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleZapierDeleteConfirm}
+                disabled={deleteZapier.isPending}
+              >
+                {deleteZapier.isPending ? (
                   <>
                     <Icon name="sync" size="sm" className="animate-spin mr-2" />
                     {t('common.deleting')}
