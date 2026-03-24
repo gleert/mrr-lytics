@@ -30,7 +30,7 @@ export class WhmcsClient {
    * Fetch data from WHMCS MRRlytics endpoint
    */
   async fetch(options: FetchOptions = {}): Promise<WhmcsApiResponse> {
-    const { limit = 1000, offset = 0, since } = options
+    const { limit = 500, offset = 0, since } = options
 
     const params = new URLSearchParams({
       limit: String(limit),
@@ -87,7 +87,7 @@ export class WhmcsClient {
    * Fetch all data with pagination
    */
   async fetchAll(options: Omit<FetchOptions, 'offset'> = {}): Promise<WhmcsApiResponse> {
-    const { limit = 1000, since } = options
+    const { limit = 500, since } = options
     const allData: WhmcsApiResponse = {
       success: true,
       meta: {
