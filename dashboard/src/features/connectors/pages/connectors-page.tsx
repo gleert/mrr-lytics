@@ -602,7 +602,7 @@ export function ConnectorsPage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
               {t('connectors.comingSoon')}
             </span>
             <Button variant="ghost" size="sm" disabled>
@@ -703,7 +703,7 @@ export function ConnectorsPage() {
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                         {t('connectors.notConnected')}
                       </span>
                       <Button variant="ghost" size="sm" onClick={handleAddWebhook}>
@@ -729,7 +729,7 @@ export function ConnectorsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                       {t('connectors.notConnected')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={handleAddSlack}>
@@ -754,7 +754,7 @@ export function ConnectorsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                       {t('connectors.notConnected')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={handleAddEmail}>
@@ -831,7 +831,7 @@ export function ConnectorsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                       {t('connectors.notConnected')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={handleAddZapier}>
@@ -895,7 +895,7 @@ export function ConnectorsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                       {t('connectors.notConnected')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={handleAddHubspot}>
@@ -932,7 +932,7 @@ export function ConnectorsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted/60">
                       {t('connectors.notConnected')}
                     </span>
                     <Button variant="ghost" size="sm" onClick={handleAddSalesforce}>
