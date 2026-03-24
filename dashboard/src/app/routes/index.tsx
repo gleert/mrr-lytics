@@ -24,6 +24,7 @@ const BillingPage = lazy(() => import('@/features/billing/pages/billing-page').t
 const ProfilePage = lazy(() => import('@/features/profile/pages/profile-page').then(m => ({ default: m.ProfilePage })))
 const ConnectorsPage = lazy(() => import('@/features/connectors/pages/connectors-page').then(m => ({ default: m.ConnectorsPage })))
 const ReportsPage = lazy(() => import('@/features/reports/pages/reports-page').then(m => ({ default: m.ReportsPage })))
+const SyncPage = lazy(() => import('@/features/sync/pages/sync-page').then(m => ({ default: m.SyncPage })))
 const SuperAdminPage = lazy(() => import('@/features/superadmin/pages/superadmin-page').then(m => ({ default: m.SuperAdminPage })))
 
 function AdminGuard({ children }: { children: ReactNode }) {
@@ -70,6 +71,7 @@ export function AppRoutes() {
         <Route path="/products" element={<LazyPage><ProductsPage /></LazyPage>} />
         <Route path="/domains" element={<LazyPage><DomainsPage /></LazyPage>} />
         <Route path="/forecasting" element={<LazyPage><ForecastingPage /></LazyPage>} />
+        <Route path="/sync" element={<AdminGuard><LazyPage><SyncPage /></LazyPage></AdminGuard>} />
         <Route path="/connectors" element={<AdminGuard><LazyPage><ConnectorsPage /></LazyPage></AdminGuard>} />
         <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
         <Route path="/settings" element={<AdminGuard><LazyPage><SettingsPage /></LazyPage></AdminGuard>} />

@@ -17,6 +17,7 @@ interface NavItem {
   icon: string // Material Symbol name
   labelKey: string
   adminOnly?: boolean
+  tourId?: string
 }
 
 // Main menu items
@@ -35,13 +36,13 @@ const productItems: NavItem[] = [
 
 // Others section items
 const otherItems: NavItem[] = [
-  { to: '/connectors', icon: 'cable', labelKey: 'nav.connectors', adminOnly: true },
+  { to: '/connectors', icon: 'cable', labelKey: 'nav.connectors', adminOnly: true, tourId: 'nav-connectors' },
   { to: '/reports', icon: 'description', labelKey: 'nav.reports' },
 ]
 
 const bottomItems: NavItem[] = [
-  { to: '/settings', icon: 'settings', labelKey: 'nav.settings', adminOnly: true },
-  { to: '/profile', icon: 'person', labelKey: 'nav.profile' },
+  { to: '/settings', icon: 'settings', labelKey: 'nav.settings', adminOnly: true, tourId: 'nav-settings' },
+  { to: '/profile', icon: 'person', labelKey: 'nav.profile', tourId: 'nav-profile' },
 ]
 
 export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProps) {
@@ -74,6 +75,7 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
         key={item.to}
         to={item.to}
         onClick={handleNavClick}
+        data-tour={item.tourId}
         className={cn(
           'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm sm:text-base font-normal transition-all duration-200',
           isActive
@@ -114,6 +116,7 @@ export function Sidebar({ isMobile = false, open = false, onClose }: SidebarProp
 
   return (
     <aside
+      data-tour="sidebar-nav"
       className={cn(
         'glass-sidebar flex flex-col h-full',
         mobileClasses,

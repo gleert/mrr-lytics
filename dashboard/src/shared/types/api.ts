@@ -32,7 +32,7 @@ export interface SyncLog {
   started_at: string
   completed_at: string | null
   records_processed?: number
-  records_synced?: number
+  records_synced?: Record<string, number> | number | null
   error_message: string | null
   sync_type: 'manual' | 'scheduled'
   metadata?: Record<string, unknown> | null

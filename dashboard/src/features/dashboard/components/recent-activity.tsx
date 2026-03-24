@@ -43,7 +43,12 @@ export function RecentActivity({ syncLogs, loading }: RecentActivityProps) {
     )
   }
 
-  const recordsCount = (log: SyncLog) => log.records_synced ?? log.records_processed ?? 0
+  const recordsCount = (log: SyncLog): number => {
+    const synced = log.records_synced
+    if (synced != null && typeof synced === 'object') return Object.values(synced).reduce((a, b) => a + b, 0)
+    if (typeof synced === 'number') return synced
+    return log.records_processed ?? 0
+  }
 
   return (
     <Card>

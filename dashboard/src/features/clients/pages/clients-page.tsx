@@ -76,7 +76,7 @@ export function ClientsPage() {
       </div>
 
       {/* KPI Cards - Row 1: Client counts */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+      <div data-tour="kpi-clients" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <KPICard
           title={t('clients.totalClients')}
           value={stats?.total_clients ?? 0}
@@ -156,7 +156,7 @@ export function ClientsPage() {
 
       {/* Client Health Insights */}
       {!statsLoading && stats && (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-5">
+        <div data-tour="health-insights" className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-5">
           {/* Retention Rate */}
           <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
             <div className="flex items-center gap-2 mb-2">
@@ -240,7 +240,7 @@ export function ClientsPage() {
       )}
 
       {/* Client Trend Charts */}
-      <div className="space-y-4">
+      <div data-tour="client-trends" className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('clients.trendTitle')}</h2>
           <p className="text-muted">{t('clients.trendDesc')}</p>
@@ -265,7 +265,7 @@ export function ClientsPage() {
       </div>
 
       {/* Client List */}
-      <div className="rounded-xl border border-border bg-surface">
+      <div data-tour="client-list" className="rounded-xl border border-border bg-surface">
         {/* Table header with filters */}
         <div className="flex flex-col gap-4 p-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">

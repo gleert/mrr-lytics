@@ -1395,5 +1395,138 @@ export const en = {
       details: 'Error details',
       reload: 'Reload page',
     },
+
+    // Onboarding Tour
+    onboarding: {
+      welcome: {
+        title: 'Welcome to MRRlytics!',
+        description: 'Take a quick tour to discover how to track your revenue metrics and get the most out of your dashboard.',
+        startTour: 'Start Tour',
+        skip: 'Maybe Later',
+      },
+      tours: {
+        dashboard: {
+          sidebar: {
+            title: 'Navigation',
+            description: 'Access all sections of your dashboard from the sidebar — metrics, clients, products, and more.',
+          },
+          quickLinks: {
+            title: 'Quick Links',
+            description: 'Jump directly to the sections you use most with a single click.',
+          },
+          kpiCards: {
+            title: 'Key Metrics',
+            description: 'Your MRR, ARR, active clients, and churn rate at a glance. Changes are compared to the previous period.',
+          },
+          healthScore: {
+            title: 'Health Score',
+            description: 'A composite score that summarizes your business health based on revenue growth, churn, and client activity.',
+          },
+          connectors: {
+            title: 'WHMCS Connectors',
+            description: 'Connect your WHMCS installations to start syncing billing data automatically.',
+          },
+          settings: {
+            title: 'Settings',
+            description: 'Configure your organization, manage team members, and set up billing.',
+          },
+          profile: {
+            title: 'Your Profile',
+            description: 'Manage your account and restart this tour anytime from here.',
+          },
+        },
+        revenue: {
+          kpis: {
+            title: 'Revenue KPIs',
+            description: 'Total revenue, average invoice, top product, and recurring vs one-time breakdown at a glance.',
+          },
+          trends: {
+            title: 'Revenue Trends',
+            description: 'Track how your recurring and one-time revenue evolves over time with the stacked area chart.',
+          },
+          topTransactions: {
+            title: 'Top Transactions',
+            description: 'See your highest-value invoices and which clients generate the most revenue.',
+          },
+          mix: {
+            title: 'Revenue Mix',
+            description: 'Understand the split between recurring and one-time revenue sources.',
+          },
+        },
+        clients: {
+          kpis: {
+            title: 'Client KPIs',
+            description: 'Active clients, retention rate, net growth, and revenue concentration metrics.',
+          },
+          healthInsights: {
+            title: 'Health Insights',
+            description: 'Average client age, clients without services, and other health indicators for your client base.',
+          },
+          trends: {
+            title: 'Client Trends',
+            description: 'Visualize net client growth over time with new clients vs churned clients.',
+          },
+          list: {
+            title: 'Client List',
+            description: 'Browse and search your client base. Toggle between MRR and revenue ranking for top clients.',
+          },
+        },
+        products: {
+          controls: {
+            title: 'Product Controls',
+            description: 'Switch between group and product views, search, and toggle hidden items.',
+          },
+          table: {
+            title: 'Product Table',
+            description: 'All your WHMCS products and groups with category assignments. Admins can categorize items here.',
+          },
+          stats: {
+            title: 'Product Statistics',
+            description: 'KPIs, top products by MRR, category distribution, and payment type breakdown.',
+          },
+        },
+        forecasting: {
+          projections: {
+            title: 'MRR Projections',
+            description: 'Current and projected MRR, expected change, and growth percentage based on historical trends.',
+          },
+          growth: {
+            title: 'Growth & Milestones',
+            description: 'See if your growth is accelerating or decelerating, and track progress toward your next MRR milestone.',
+          },
+          scenarios: {
+            title: 'Scenario Comparison',
+            description: 'Compare pessimistic, baseline, and optimistic revenue projections side by side.',
+          },
+        },
+        sync: {
+          status: {
+            title: 'Sync Status',
+            description: 'Check the current sync state, last sync time, and trigger manual syncs.',
+          },
+          history: {
+            title: 'Sync History',
+            description: 'Review past sync operations with status, duration, records processed, and any errors.',
+          },
+        },
+        domains: {
+          status: {
+            title: 'Domain Overview',
+            description: 'Total domains, active count, expiring soon, and status distribution at a glance.',
+          },
+          revenue: {
+            title: 'Domain Revenue',
+            description: 'Renewal revenue, average price, and active vs expired domain trends over time.',
+          },
+        },
+      },
+      progress: 'Step {{current}} of {{total}}',
+      next: 'Next',
+      back: 'Back',
+      finish: 'Finish',
+      skipTour: 'Skip tour',
+      restartTour: 'Restart onboarding tour',
+      restartTourDesc: 'Walk through the dashboard features again.',
+    },
   },
 }

@@ -8,6 +8,7 @@ import { Icon } from '@/shared/components/ui/icon'
 import { Section } from '@/shared/components/ui/section'
 import { useAuth, useToast, useFilters } from '@/app/providers'
 import { supabase } from '@/shared/lib/supabase'
+import { useTour } from '@/features/onboarding'
 
 interface ProfileFormData {
   fullName: string
@@ -22,6 +23,7 @@ export function ProfilePage() {
   const { t } = useTranslation()
   const { user, updatePassword } = useAuth()
   const { tenants } = useFilters()
+  const { restartAllTours } = useTour()
   const toast = useToast()
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
@@ -294,6 +296,29 @@ export function ProfilePage() {
           </Card>
         </Section>
       )}
+
+      {/* Onboarding Tour */}
+      <Section title={t('onboarding.restartTour')} description={t('onboarding.restartTourDesc')}>
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Icon name="tour" size="lg" className="text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{t('onboarding.restartTour')}</p>
+                  <p className="text-sm text-muted">{t('onboarding.restartTourDesc')}</p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={restartAllTours}>
+                <Icon name="replay" size="sm" className="mr-2" />
+                {t('onboarding.welcome.startTour')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </Section>
 
       {/* Danger Zone */}
       <Section title={t('profile.dangerZone')} description={t('profile.dangerZoneDesc')}>

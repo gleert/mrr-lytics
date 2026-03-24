@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Icon } from '@/shared/components/ui/icon'
+import { useFilters } from '@/app/providers/filters-provider'
 
 const LINKS = [
   { to: '/clients', icon: 'groups', labelKey: 'nav.clients', color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -8,15 +9,17 @@ const LINKS = [
   { to: '/forecasting', icon: 'trending_up', labelKey: 'nav.forecasting', color: 'text-violet-400', bg: 'bg-violet-500/10' },
   { to: '/domains', icon: 'language', labelKey: 'nav.domains', color: 'text-amber-400', bg: 'bg-amber-500/10' },
   { to: '/products', icon: 'inventory_2', labelKey: 'nav.products', color: 'text-pink-400', bg: 'bg-pink-500/10' },
-  { to: '/sync', icon: 'sync', labelKey: 'sync.title', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { to: '/sync', icon: 'sync', labelKey: 'sync.title', color: 'text-cyan-400', bg: 'bg-cyan-500/10', adminOnly: true },
 ]
 
 export function QuickLinks() {
   const { t } = useTranslation()
+  const { userRole } = useFilters()
+  const isAdmin = userRole === 'admin'
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      {LINKS.map(link => (
+    <div data-tour="quick-links" className="flex gap-2 overflow-x-auto pb-1">
+      {LINKS.filter(link => !link.adminOnly || isAdmin).map(link => (
         <Link
           key={link.to}
           to={link.to}

@@ -6,6 +6,7 @@ import { Backdrop } from '@/shared/components/ui/backdrop'
 import { TrialBanner } from '@/features/billing'
 import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
+import { TourProvider } from '@/features/onboarding'
 import { ImpersonationBanner } from '@/features/superadmin/components/impersonation-banner'
 import { ErrorBoundary } from '@/shared/components/error-boundary'
 import { SuspendedScreen } from '@/features/superadmin/components/suspended-screen'
@@ -84,6 +85,7 @@ export function AppLayout() {
 
   return (
     <CommandPaletteProvider>
+    <TourProvider onOpenSidebar={handleMenuClick}>
       {impersonatingTenantId && (
         <ImpersonationBanner
           tenantId={impersonatingTenantId}
@@ -126,6 +128,7 @@ export function AppLayout() {
           </main>
         </div>
       </div>
+    </TourProvider>
     </CommandPaletteProvider>
   )
 }

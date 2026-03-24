@@ -10,118 +10,96 @@ This document tracks features and improvements that are not part of the MVP but 
 - [ ] Create OAuth 2.0 credentials
 - [ ] Configure redirect URIs in Google Console
 - [ ] Add Google provider in Supabase Dashboard
-- [ ] Update `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for production
 
 ### Additional Auth Features
-- [ ] Email/password authentication as alternative
 - [ ] Magic link authentication
 - [ ] Session timeout warning
 - [ ] "Remember me" functionality
 - [ ] Multi-factor authentication (MFA)
 
+## Email & Communications
+
+### Supabase SMTP (Required for Production)
+- [ ] Configure SMTP provider in Supabase Dashboard (Authentication > SMTP Settings)
+- [ ] Copy email templates from `backend/supabase/templates/` to Supabase Dashboard (Authentication > Email Templates)
+  - Confirmation, Invite, Recovery — dark-themed design matching the app
+- [ ] Verify team invitation emails are delivered
+
+### Notification Emails
+- [ ] Alert notification emails (via Nodemailer/connectors)
+- [ ] Scheduled report delivery by email
+
 ## User Management
 
-- [ ] Profile page (`/settings/profile`)
 - [ ] Avatar upload functionality
-- [ ] User invitation system (admin only)
-- [ ] User role management UI
 - [ ] Last login tracking display
-
-## Tenant Management (Admin Feature)
-
-- [ ] Full CRUD for tenants
-- [ ] WHMCS connection testing
-- [ ] API key generation and management
-- [ ] Tenant settings (sync interval, etc.)
-- [ ] Tenant usage statistics
 
 ## Metrics & Analytics
 
 ### Date Range Filtering
 - [ ] Custom date range picker (calendar)
 - [ ] Date range persistence across sessions
-- [ ] API integration with date parameters
 
 ### Export Features
 - [ ] PDF export with charts (use html2canvas + jspdf)
+- [ ] CSV export for tables
 - [ ] Scheduled export reports
-- [ ] Email report delivery
-
-### Forecasting
-- [ ] Simple linear regression for MRR forecast
-- [ ] Forecast visualization on charts
-- [ ] Confidence intervals
 
 ### Additional Metrics
 - [ ] Customer Lifetime Value (CLV)
 - [ ] Net Revenue Retention (NRR)
-- [ ] Average Revenue Per User (ARPU)
 - [ ] Cohort analysis
 - [ ] Revenue by geography
 
 ## Alerts & Notifications
 
-- [ ] Alert configuration UI
+- [ ] Alert configuration UI (6 alert types designed, need backend implementation)
 - [ ] Alert thresholds (e.g., MRR drops > 10%)
 - [ ] Email notifications
 - [ ] In-app notification center
-- [ ] Webhook integrations
+- [ ] Webhook delivery management
 
 ## Sync Management
 
-- [ ] Detailed sync error logs
-- [ ] Sync configuration per tenant
-- [ ] Retry failed syncs
-- [ ] Sync scheduling UI
+- [ ] Detailed sync error logs with drill-down
+- [ ] Retry failed syncs from UI
+- [ ] Sync scheduling UI (custom intervals)
 - [ ] Partial sync (only specific data types)
 
 ## Performance Optimizations
 
-- [ ] Code splitting with React.lazy()
-- [ ] Route-based code splitting
 - [ ] Image optimization
 - [ ] Service worker for offline support
-- [ ] Bundle size optimization
+- [ ] Further bundle size optimization (currently ~1176KB after code splitting)
 
 ## UI/UX Improvements
 
-- [ ] Keyboard shortcuts
-- [ ] Command palette (Cmd+K)
-- [ ] Onboarding tour for new users
-- [ ] Empty states with illustrations
-- [ ] Loading skeletons everywhere
-- [ ] Error boundaries with retry
-- [ ] Toast notifications system
+- [x] Onboarding tour for new users
 - [ ] Confirmation dialogs for destructive actions
+- [ ] Drag and drop for dashboard layout customization
 
 ## Internationalization
 
-- [ ] Spanish translations
 - [ ] Portuguese translations
 - [ ] Language selector in settings
-- [ ] RTL support (Arabic, Hebrew)
-- [ ] Currency localization
+- [ ] Currency localization per tenant
 
 ## Testing
 
 - [ ] Unit tests with Vitest
 - [ ] Component tests with Testing Library
 - [ ] E2E tests with Playwright
-- [ ] Visual regression tests
 - [ ] Accessibility tests
 
 ## Documentation
 
 - [ ] Component documentation (Storybook)
-- [ ] API client documentation
 - [ ] User guide
 - [ ] Admin guide
 
 ## DevOps & Deployment
 
-- [ ] Docker configuration
-- [ ] CI/CD pipeline
-- [ ] Environment-specific builds
+- [ ] CI/CD pipeline (currently manual `vercel --prod --yes`)
 - [ ] Error tracking (Sentry)
 - [ ] Analytics (Plausible/PostHog)
 - [ ] Performance monitoring
@@ -129,42 +107,93 @@ This document tracks features and improvements that are not part of the MVP but 
 ## Security
 
 - [ ] Content Security Policy headers
-- [ ] Rate limiting awareness in UI
-- [ ] CSRF protection
-- [ ] XSS prevention audit
 - [ ] Dependency vulnerability scanning
+- [ ] Rate limiting awareness in UI (show user-friendly message on 429)
+
+---
+
+## Already Completed (v1.0 - v2.0)
+
+### v1.2 - Security & Performance
+- [x] Timing-safe secret comparison in middleware
+- [x] API rate limiting per auth type
+- [x] Zod validation on instance endpoints
+- [x] LIKE injection fix in search queries
+- [x] In-memory caching for metric queries (2-5 min TTL)
+
+### v1.3-v1.4 - UX & Frontend
+- [x] Responsive design across all pages
+- [x] Code splitting with React.lazy (reduced bundle 1738KB → 1176KB)
+- [x] Search debounce (300ms) on clients and domains
+- [x] Scroll restoration on route change
+- [x] Error boundary for crash recovery
+- [x] Skeleton loading states for all charts and tables
+- [x] Changelog tab in Settings
+- [x] Command palette (Cmd+K)
+- [x] Toast notifications system
+
+### v1.5 - Forecasting
+- [x] MRR delta KPI, milestone tracker, ARPU current/projected
+- [x] Growth acceleration indicator
+- [x] "How it works" explanation block
+- [x] Billing cycle progress, skeleton loading
+
+### v1.6 - Revenue
+- [x] Average invoice amount KPI, top product by revenue
+- [x] Recurring vs one-time temporal stacked area chart
+- [x] KPIs reorganized into 2 responsive rows
+
+### v1.7 - Clients
+- [x] Retention rate, net growth, revenue concentration KPIs
+- [x] Net client growth combined chart (bars + line)
+- [x] Top clients MRR/Revenue toggle
+
+### v1.8 - Products
+- [x] Statistics section: KPIs, top by MRR, MRR by category
+- [x] Distribution by payment type and product type
+
+### v2.0 - Dashboard Home & RBAC
+- [x] 8 KPI cards, business health score, quick insights, quick links
+- [x] Role-based access control (admin/viewer)
+- [x] AdminGuard route protection, sidebar filtering, command palette filtering
+- [x] Sync page with route `/sync` (admin only)
+- [x] Action button redesign (translucent bg + border)
+- [x] Dark-friendly chart tooltip cursors
+- [x] Email templates redesigned (dark theme matching app)
+- [x] Complete i18n (English + Spanish)
+- [x] Locale-aware date formatting
 
 ---
 
 ## Priority Matrix
 
-### High Priority (Next Sprint)
-1. Google OAuth setup
-2. PDF export
-3. Toast notifications
-4. Error boundaries
+### High Priority (Next)
+1. Supabase SMTP configuration (team invites don't arrive)
+2. Copy email templates to Supabase Dashboard
+3. Google OAuth setup
+4. Alert system backend implementation
 
-### Medium Priority (Following Sprints)
+### Medium Priority
 1. Date range filtering
-2. Tenant management
-3. Alert configuration
-4. Code splitting
+2. PDF/CSV export
+3. CI/CD pipeline
+4. Error tracking (Sentry)
 
 ### Low Priority (Future)
-1. Additional languages
-2. Forecasting
-3. Cohort analysis
+1. Additional languages (Portuguese)
+2. Cohort analysis
+3. ~~Onboarding tour~~ (done)
 4. Storybook documentation
 
 ---
 
 ## Technical Debt
 
-1. **Bundle Size**: Currently ~940KB, should be under 500KB with code splitting
+1. **Test Coverage**: Currently 0%, aim for 80%
 2. **Type Safety**: Some `any` types in API responses need proper typing
-3. **Test Coverage**: Currently 0%, aim for 80%
-4. **Accessibility**: Need full ARIA support and keyboard navigation
+3. **Accessibility**: Need full ARIA support and keyboard navigation
+4. **CI/CD**: Manual deploys via `vercel --prod --yes` — should automate
 
 ---
 
-Last updated: 2026-02-17
+Last updated: 2026-03-23

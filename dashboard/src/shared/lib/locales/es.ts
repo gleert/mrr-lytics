@@ -1350,5 +1350,138 @@ export const es = {
       details: 'Detalles del error',
       reload: 'Recargar página',
     },
+
+    // Onboarding Tour
+    onboarding: {
+      welcome: {
+        title: '¡Bienvenido a MRRlytics!',
+        description: 'Realiza un recorrido rápido para descubrir cómo rastrear tus métricas de ingresos y sacar el máximo provecho del dashboard.',
+        startTour: 'Iniciar recorrido',
+        skip: 'Quizás después',
+      },
+      tours: {
+        dashboard: {
+          sidebar: {
+            title: 'Navegación',
+            description: 'Accede a todas las secciones del dashboard desde la barra lateral — métricas, clientes, productos y más.',
+          },
+          quickLinks: {
+            title: 'Accesos rápidos',
+            description: 'Navega directamente a las secciones que más usas con un solo clic.',
+          },
+          kpiCards: {
+            title: 'Métricas clave',
+            description: 'Tu MRR, ARR, clientes activos y tasa de cancelación de un vistazo. Los cambios se comparan con el período anterior.',
+          },
+          healthScore: {
+            title: 'Puntuación de salud',
+            description: 'Una puntuación compuesta que resume la salud de tu negocio basada en el crecimiento de ingresos, cancelaciones y actividad de clientes.',
+          },
+          connectors: {
+            title: 'Conectores WHMCS',
+            description: 'Conecta tus instalaciones de WHMCS para empezar a sincronizar datos de facturación automáticamente.',
+          },
+          settings: {
+            title: 'Configuración',
+            description: 'Configura tu organización, gestiona los miembros del equipo y establece la facturación.',
+          },
+          profile: {
+            title: 'Tu perfil',
+            description: 'Gestiona tu cuenta y reinicia este recorrido en cualquier momento desde aquí.',
+          },
+        },
+        revenue: {
+          kpis: {
+            title: 'KPIs de ingresos',
+            description: 'Ingresos totales, factura promedio, producto top y desglose recurrente vs puntual de un vistazo.',
+          },
+          trends: {
+            title: 'Tendencias de ingresos',
+            description: 'Observa cómo evolucionan tus ingresos recurrentes y puntuales con el gráfico de área apilada.',
+          },
+          topTransactions: {
+            title: 'Top transacciones',
+            description: 'Ve tus facturas de mayor valor y qué clientes generan más ingresos.',
+          },
+          mix: {
+            title: 'Mix de ingresos',
+            description: 'Entiende la distribución entre fuentes de ingresos recurrentes y puntuales.',
+          },
+        },
+        clients: {
+          kpis: {
+            title: 'KPIs de clientes',
+            description: 'Clientes activos, tasa de retención, crecimiento neto y métricas de concentración de ingresos.',
+          },
+          healthInsights: {
+            title: 'Indicadores de salud',
+            description: 'Antigüedad promedio de clientes, clientes sin servicios y otros indicadores de salud de tu base.',
+          },
+          trends: {
+            title: 'Tendencias de clientes',
+            description: 'Visualiza el crecimiento neto de clientes con nuevos clientes vs clientes perdidos.',
+          },
+          list: {
+            title: 'Lista de clientes',
+            description: 'Navega y busca en tu base de clientes. Alterna entre ranking por MRR e ingresos.',
+          },
+        },
+        products: {
+          controls: {
+            title: 'Controles de productos',
+            description: 'Cambia entre vista de grupos y productos, busca y muestra elementos ocultos.',
+          },
+          table: {
+            title: 'Tabla de productos',
+            description: 'Todos tus productos y grupos de WHMCS con asignación de categorías. Los admins pueden categorizar aquí.',
+          },
+          stats: {
+            title: 'Estadísticas de productos',
+            description: 'KPIs, top productos por MRR, distribución por categoría y desglose por tipo de pago.',
+          },
+        },
+        forecasting: {
+          projections: {
+            title: 'Proyecciones de MRR',
+            description: 'MRR actual y proyectado, cambio esperado y porcentaje de crecimiento basado en tendencias históricas.',
+          },
+          growth: {
+            title: 'Crecimiento e hitos',
+            description: 'Ve si tu crecimiento se acelera o desacelera, y sigue el progreso hacia tu próximo hito de MRR.',
+          },
+          scenarios: {
+            title: 'Comparación de escenarios',
+            description: 'Compara proyecciones de ingresos pesimistas, base y optimistas lado a lado.',
+          },
+        },
+        sync: {
+          status: {
+            title: 'Estado de sincronización',
+            description: 'Verifica el estado actual, última sincronización y ejecuta sincronizaciones manuales.',
+          },
+          history: {
+            title: 'Historial de sincronización',
+            description: 'Revisa operaciones pasadas con estado, duración, registros procesados y errores.',
+          },
+        },
+        domains: {
+          status: {
+            title: 'Resumen de dominios',
+            description: 'Total de dominios, activos, por expirar y distribución de estados de un vistazo.',
+          },
+          revenue: {
+            title: 'Ingresos por dominios',
+            description: 'Ingresos por renovación, precio promedio y tendencias de dominios activos vs expirados.',
+          },
+        },
+      },
+      progress: 'Paso {{current}} de {{total}}',
+      next: 'Siguiente',
+      back: 'Atrás',
+      finish: 'Finalizar',
+      skipTour: 'Omitir recorrido',
+      restartTour: 'Reiniciar recorrido de bienvenida',
+      restartTourDesc: 'Recorre las funciones del dashboard nuevamente.',
+    },
   },
 }

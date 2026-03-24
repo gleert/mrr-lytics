@@ -165,7 +165,7 @@ export function ProductsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div data-tour="product-controls" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* View mode toggle - Groups first (primary categorization from WHMCS) */}
         <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border">
           <button
@@ -231,7 +231,7 @@ export function ProductsPage() {
       </div>
 
       {/* Table */}
-      <Card>
+      <Card data-tour="product-table">
         <CardHeader className="pb-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Icon name={viewMode === 'products' ? 'inventory_2' : 'folder'} size="md" />
@@ -321,11 +321,13 @@ export function ProductsPage() {
       </Card>
 
       {/* Product Statistics */}
+      <div data-tour="product-stats">
       <ProductStats
         products={productsData?.products || []}
         productGroups={productsData?.product_groups || []}
         isLoading={isLoading}
       />
+      </div>
 
       {/* Category Form Modal */}
       <CategoryFormModal

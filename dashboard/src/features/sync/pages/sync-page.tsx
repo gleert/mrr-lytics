@@ -81,7 +81,13 @@ function SyncLogRow({ log }: { log: SyncLog }) {
       <td className="px-4 py-3 text-sm text-muted">
         {duration !== null ? `${duration}s` : '-'}
       </td>
-      <td className="px-4 py-3 text-sm">{log.records_processed}</td>
+      <td className="px-4 py-3 text-sm">
+        {log.records_synced != null
+          ? typeof log.records_synced === 'object'
+            ? Object.values(log.records_synced as Record<string, number>).reduce((a, b) => a + b, 0)
+            : log.records_synced
+          : '-'}
+      </td>
       <td className="px-4 py-3 text-sm text-error">
         {log.error_message && (
           <span className="truncate max-w-[200px] inline-block" title={log.error_message}>
@@ -137,7 +143,7 @@ export function SyncPage() {
       </div>
 
       {/* Status Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-tour="sync-status" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Current Status */}
         <Card>
           <CardHeader className="pb-2">
@@ -179,9 +185,14 @@ export function SyncPage() {
                 <p className="text-lg font-semibold">
                   {formatRelativeTime(lastSync.started_at)}
                 </p>
-                <p className="text-xs text-muted">
-                  {lastSync.records_processed} {t('sync.recordsProcessed').toLowerCase()}
-                </p>
+                {lastSync.records_synced != null && (
+                  <p className="text-xs text-muted">
+                    {typeof lastSync.records_synced === 'object'
+                      ? Object.values(lastSync.records_synced as Record<string, number>).reduce((a, b) => a + b, 0)
+                      : lastSync.records_synced}{' '}
+                    {t('sync.recordsProcessed').toLowerCase()}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-lg font-semibold text-muted">{t('sync.never')}</p>
@@ -217,7 +228,7 @@ export function SyncPage() {
       )}
 
       {/* Sync History */}
-      <Card>
+      <Card data-tour="sync-history">
         <CardHeader>
           <CardTitle>{t('sync.history')}</CardTitle>
         </CardHeader>

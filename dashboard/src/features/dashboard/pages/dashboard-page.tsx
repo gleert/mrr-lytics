@@ -133,7 +133,7 @@ export function DashboardPage() {
       <QuickLinks />
 
       {/* Main KPI Cards — Row 1: Core metrics */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div data-tour="kpi-cards" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('dashboard.mrr')}
           value={metrics?.mrr.mrr ?? 0}
@@ -205,7 +205,7 @@ export function DashboardPage() {
 
       {/* Health Score + Quick Insights */}
       {!metricsLoading && metrics && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div data-tour="health-score" className="grid gap-4 lg:grid-cols-2">
           <HealthScore metrics={metrics} />
           <QuickInsights metrics={metrics} />
         </div>

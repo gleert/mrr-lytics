@@ -241,7 +241,7 @@ export function DomainsPage() {
       </div>
 
       {/* Domain Status Section */}
-      <div className="space-y-4">
+      <div data-tour="domain-status" className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('domains.statusSectionTitle')}</h2>
           <p className="text-muted">{t('domains.statusSectionDesc')}</p>
@@ -286,7 +286,7 @@ export function DomainsPage() {
       </div>
 
       {/* Domain Revenue Section */}
-      <div className="space-y-4">
+      <div data-tour="domain-revenue" className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('domains.revenueSectionTitle')}</h2>
           <p className="text-muted">{t('domains.revenueSectionDesc')}</p>

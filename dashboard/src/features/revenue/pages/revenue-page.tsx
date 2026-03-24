@@ -137,7 +137,7 @@ export function RevenuePage() {
       </div>
 
       {/* KPI Cards - Row 1: Revenue breakdown */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div data-tour="kpi-revenue" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('revenue.totalRevenue')}
           value={stats?.total_revenue ?? 0}
@@ -230,7 +230,7 @@ export function RevenuePage() {
       </div>
 
       {/* Revenue Over Time — stacked area chart */}
-      <div className="rounded-xl border border-border bg-surface">
+      <div data-tour="revenue-trends" className="rounded-xl border border-border bg-surface">
         <div className="flex flex-col gap-4 p-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Icon name="show_chart" size="lg" className="text-primary-400" />
@@ -351,7 +351,9 @@ export function RevenuePage() {
         <p className="text-sm text-muted mt-0.5">{t('revenue.sectionTopDesc')}</p>
       </div>
 
-      <TopTransactionsBlock />
+      <div data-tour="top-transactions">
+        <TopTransactionsBlock />
+      </div>
 
       {/* Section: Revenue Mix */}
       <div>
@@ -359,7 +361,9 @@ export function RevenuePage() {
         <p className="text-sm text-muted mt-0.5">{t('revenue.sectionMixDesc')}</p>
       </div>
 
-      <RecurringVsOnetimeChart />
+      <div data-tour="revenue-mix">
+        <RecurringVsOnetimeChart />
+      </div>
 
       {/* Section: All Transactions */}
       <div>

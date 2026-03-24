@@ -68,7 +68,7 @@ export function ForecastingPage() {
       )}
 
       {/* MRR Projections Section */}
-      <div className="space-y-4">
+      <div data-tour="mrr-projections" className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('forecasting.mrrProjectionsTitle')}</h2>
           <p className="text-muted">{t('forecasting.mrrProjectionsDesc')}</p>
@@ -153,7 +153,7 @@ export function ForecastingPage() {
 
       {/* Growth Acceleration + Milestone */}
       {!isLoading && stats && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div data-tour="growth-milestone" className="grid gap-4 sm:grid-cols-2">
           {/* Growth Acceleration */}
           <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
             <div className="flex items-center gap-3 mb-3">
@@ -454,7 +454,7 @@ export function ForecastingPage() {
       </div>
 
       {/* Scenario Comparison Section */}
-      <div className="space-y-4">
+      <div data-tour="scenario-comparison" className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-foreground">{t('forecasting.scenarioTitle')}</h2>
           <p className="text-muted">{t('forecasting.scenarioDesc')}</p>
