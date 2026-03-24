@@ -727,6 +727,14 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v210: {
+          onboardingTour: 'Recorrido de bienvenida guiado para nuevos usuarios con modal de bienvenida',
+          freeTrial: 'Plan gratuito convertido a prueba de 15 días con funciones restringidas',
+          trialExpiredWall: 'Pantalla de mejora cuando la prueba gratuita expira (página de facturación accesible)',
+          emailTemplates: 'Plantillas de correo rediseñadas (confirmación, invitación, recuperación) con tema oscuro',
+          tourPerPage: 'Recorridos guiados por página para 7 secciones (dashboard, ingresos, clientes, productos, pronósticos, sync, dominios)',
+          billingEs: 'Traducciones completas al español para pantallas de facturación y prueba',
+        },
         v200: {
           dashboardKpis: 'Nuevos KPIs: servicios activos, dominios, facturas pendientes y vencidas',
           healthScore: 'Indicador de salud del negocio con gauge circular y factores',

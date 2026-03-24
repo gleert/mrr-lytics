@@ -730,6 +730,14 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v210: {
+          onboardingTour: 'Guided onboarding tour for new users with welcome modal',
+          freeTrial: 'Free plan converted to 15-day trial with restricted features',
+          trialExpiredWall: 'Upgrade wall when free trial expires (billing page accessible)',
+          emailTemplates: 'Redesigned email templates (confirmation, invite, recovery) with dark theme',
+          tourPerPage: 'Per-page guided tours for 7 sections (dashboard, revenue, clients, products, forecasting, sync, domains)',
+          billingEs: 'Complete Spanish translations for billing and trial screens',
+        },
         v200: {
           dashboardKpis: 'New KPIs: active services, domains, unpaid and overdue invoices',
           healthScore: 'Business health score with circular gauge and contributing factors',
