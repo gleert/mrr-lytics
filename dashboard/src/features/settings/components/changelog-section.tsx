@@ -24,6 +24,15 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.2.0',
+    date: '2026-03-24',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v220.hubspotConnector' },
+      { type: 'feature', text: 'changelog.entries.v220.salesforceConnector' },
+      { type: 'improvement', text: 'changelog.entries.v220.connectorsOutbound' },
+    ],
+  },
+  {
     version: '2.1.0',
     date: '2026-03-24',
     changes: [

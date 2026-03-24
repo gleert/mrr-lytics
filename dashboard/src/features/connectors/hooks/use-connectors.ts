@@ -173,6 +173,55 @@ export interface UpdateHubspotConnectorData {
   }
 }
 
+// ============================================================================
+// SALESFORCE CONNECTOR TYPES
+// ============================================================================
+
+export interface SalesforceConnector {
+  id: string
+  type: 'salesforce'
+  name: string
+  config: {
+    access_token: string
+    instance_url: string
+    has_access_token: boolean
+    actions: {
+      create_contacts: boolean
+      update_lead_status: boolean
+      log_tasks: boolean
+    }
+  }
+  events: WebhookEventType[]
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateSalesforceConnectorData {
+  name: string
+  access_token: string
+  instance_url: string
+  events: WebhookEventType[]
+  actions: {
+    create_contacts: boolean
+    update_lead_status: boolean
+    log_tasks: boolean
+  }
+}
+
+export interface UpdateSalesforceConnectorData {
+  name?: string
+  access_token?: string
+  instance_url?: string
+  events?: WebhookEventType[]
+  enabled?: boolean
+  actions?: {
+    create_contacts: boolean
+    update_lead_status: boolean
+    log_tasks: boolean
+  }
+}
+
 export interface ConnectorLimit {
   current: number
   max: number
@@ -303,6 +352,27 @@ interface HubspotConnectorResponse {
 }
 
 interface TestHubspotResponse {
+  success: boolean
+  data: {
+    message: string
+  }
+}
+
+interface SalesforceConnectorsResponse {
+  success: boolean
+  data: {
+    connectors: SalesforceConnector[]
+  }
+}
+
+interface SalesforceConnectorResponse {
+  success: boolean
+  data: {
+    connector: SalesforceConnector
+  }
+}
+
+interface TestSalesforceResponse {
   success: boolean
   data: {
     message: string
@@ -846,6 +916,126 @@ export function useTestHubspotConnector() {
     }) => {
       const response = await api.post<TestHubspotResponse>(
         `/api/tenants/${tenantId}/hubspot-connectors/${connectorId}/test`
+      )
+      return response.data
+    },
+  })
+}
+
+// ============================================================================
+// SALESFORCE CONNECTOR HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch all Salesforce connectors for the current tenant
+ */
+export function useSalesforceConnectors() {
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useQuery({
+    queryKey: ['salesforce-connectors', tenantId],
+    queryFn: async () => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.get<SalesforceConnectorsResponse>(
+        `/api/tenants/${tenantId}/salesforce-connectors`
+      )
+      return response.data.connectors
+    },
+    enabled: !!tenantId,
+    staleTime: 30 * 1000,
+  })
+}
+
+/**
+ * Hook to create a new Salesforce connector
+ */
+export function useCreateSalesforceConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (data: CreateSalesforceConnectorData) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.post<SalesforceConnectorResponse>(
+        `/api/tenants/${tenantId}/salesforce-connectors`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salesforce-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to update a Salesforce connector
+ */
+export function useUpdateSalesforceConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async ({
+      connectorId,
+      data,
+    }: {
+      connectorId: string
+      data: UpdateSalesforceConnectorData
+    }) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      const response = await api.patch<SalesforceConnectorResponse>(
+        `/api/tenants/${tenantId}/salesforce-connectors/${connectorId}`,
+        data
+      )
+      return response.data.connector
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salesforce-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to delete a Salesforce connector
+ */
+export function useDeleteSalesforceConnector() {
+  const queryClient = useQueryClient()
+  const { getCurrentTenant } = useFilters()
+  const tenant = getCurrentTenant()
+  const tenantId = tenant?.tenant_id
+
+  return useMutation({
+    mutationFn: async (connectorId: string) => {
+      if (!tenantId) throw new Error('No tenant selected')
+      await api.delete(`/api/tenants/${tenantId}/salesforce-connectors/${connectorId}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salesforce-connectors', tenantId] })
+    },
+  })
+}
+
+/**
+ * Hook to test a Salesforce connector connection
+ */
+export function useTestSalesforceConnector() {
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      connectorId,
+    }: {
+      tenantId: string
+      connectorId: string
+    }) => {
+      const response = await api.post<TestSalesforceResponse>(
+        `/api/tenants/${tenantId}/salesforce-connectors/${connectorId}/test`
       )
       return response.data
     },

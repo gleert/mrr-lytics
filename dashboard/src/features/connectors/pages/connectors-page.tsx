@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useToast } from '@/app/providers'
 import { useFilters } from '@/app/providers'
-import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo } from '../components/connector-logos'
+import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo, SalesforceLogo } from '../components/connector-logos'
 import { WebhookFormModal } from '../components/webhook-form-modal'
 import { WebhookCard } from '../components/webhook-card'
 import { DeleteWebhookModal } from '../components/delete-webhook-modal'
@@ -17,6 +17,8 @@ import { SlackFormModal } from '../components/slack-form-modal'
 import { SlackCard } from '../components/slack-card'
 import { HubspotFormModal } from '../components/hubspot-form-modal'
 import { HubspotCard } from '../components/hubspot-card'
+import { SalesforceFormModal } from '../components/salesforce-form-modal'
+import { SalesforceCard } from '../components/salesforce-card'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import {
   useConnectors,
@@ -39,10 +41,16 @@ import {
   useUpdateHubspotConnector,
   useDeleteHubspotConnector,
   useTestHubspotConnector,
+  useSalesforceConnectors,
+  useCreateSalesforceConnector,
+  useUpdateSalesforceConnector,
+  useDeleteSalesforceConnector,
+  useTestSalesforceConnector,
   type Connector,
   type EmailConnector,
   type SlackConnector,
   type HubspotConnector,
+  type SalesforceConnector,
   type CreateConnectorData,
   type UpdateConnectorData,
   type CreateEmailConnectorData,
@@ -51,6 +59,8 @@ import {
   type UpdateSlackConnectorData,
   type CreateHubspotConnectorData,
   type UpdateHubspotConnectorData,
+  type CreateSalesforceConnectorData,
+  type UpdateSalesforceConnectorData,
 } from '../hooks/use-connectors'
 
 interface FutureConnector {
@@ -87,13 +97,6 @@ const futureConnectors: FutureConnector[] = [
     name: 'Zapier',
     description: 'connectors.zapierDescription',
     category: 'automation',
-  },
-  // CRM
-  {
-    id: 'salesforce',
-    name: 'Salesforce',
-    description: 'connectors.salesforceDescription',
-    category: 'crm',
   },
 ]
 
@@ -157,6 +160,18 @@ export function ConnectorsPage() {
   const [isHubspotDeleteOpen, setIsHubspotDeleteOpen] = React.useState(false)
   const [selectedHubspot, setSelectedHubspot] = React.useState<HubspotConnector | null>(null)
   const [testingHubspotId, setTestingHubspotId] = React.useState<string | null>(null)
+
+  // ─── Salesforce Connectors ─────────────────────────────────────────────────
+  const { data: salesforceConnectors = [], isLoading: isLoadingSalesforce } = useSalesforceConnectors()
+  const createSalesforce = useCreateSalesforceConnector()
+  const updateSalesforce = useUpdateSalesforceConnector()
+  const deleteSalesforce = useDeleteSalesforceConnector()
+  const testSalesforce = useTestSalesforceConnector()
+
+  const [isSalesforceFormOpen, setIsSalesforceFormOpen] = React.useState(false)
+  const [isSalesforceDeleteOpen, setIsSalesforceDeleteOpen] = React.useState(false)
+  const [selectedSalesforce, setSelectedSalesforce] = React.useState<SalesforceConnector | null>(null)
+  const [testingSalesforceId, setTestingSalesforceId] = React.useState<string | null>(null)
 
   // ─── Webhook handlers ───────────────────────────────────────────────────────
 
@@ -422,6 +437,69 @@ export function ConnectorsPage() {
     }
   }
 
+  // ─── Salesforce handlers ──────────────────────────────────────────────────
+
+  const handleAddSalesforce = () => {
+    setSelectedSalesforce(null)
+    setIsSalesforceFormOpen(true)
+  }
+
+  const handleEditSalesforce = (connector: SalesforceConnector) => {
+    setSelectedSalesforce(connector)
+    setIsSalesforceFormOpen(true)
+  }
+
+  const handleDeleteSalesforceClick = (connector: SalesforceConnector) => {
+    setSelectedSalesforce(connector)
+    setIsSalesforceDeleteOpen(true)
+  }
+
+  const handleTestSalesforce = async (connector: SalesforceConnector) => {
+    if (!tenantId) return
+    setTestingSalesforceId(connector.id)
+    try {
+      await testSalesforce.mutateAsync({ tenantId, connectorId: connector.id })
+      toast.success(t('connectors.testSalesforceSent'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.testSalesforceFailed'))
+    } finally {
+      setTestingSalesforceId(null)
+    }
+  }
+
+  const handleSalesforceFormSubmit = async (
+    formData: CreateSalesforceConnectorData | UpdateSalesforceConnectorData
+  ) => {
+    try {
+      if (selectedSalesforce) {
+        await updateSalesforce.mutateAsync({
+          connectorId: selectedSalesforce.id,
+          data: formData as UpdateSalesforceConnectorData,
+        })
+        toast.success(t('connectors.salesforceUpdated'))
+        setIsSalesforceFormOpen(false)
+      } else {
+        await createSalesforce.mutateAsync(formData as CreateSalesforceConnectorData)
+        toast.success(t('connectors.salesforceCreated'))
+        setIsSalesforceFormOpen(false)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.salesforceSaveError'))
+    }
+  }
+
+  const handleSalesforceDeleteConfirm = async () => {
+    if (!selectedSalesforce) return
+    try {
+      await deleteSalesforce.mutateAsync(selectedSalesforce.id)
+      toast.success(t('connectors.salesforceDeleted'))
+      setIsSalesforceDeleteOpen(false)
+      setSelectedSalesforce(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('connectors.salesforceDeleteError'))
+    }
+  }
+
   // ─── Future connector card ───────────────────────────────────────────────────
 
   const renderFutureConnectorCard = (connector: FutureConnector) => {
@@ -644,7 +722,7 @@ export function ConnectorsPage() {
         description={t('connectors.crmDescription')}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {isLoadingHubspot ? (
+          {(isLoadingHubspot || isLoadingSalesforce) ? (
             <Card className="opacity-50">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -695,7 +773,44 @@ export function ConnectorsPage() {
                 </CardContent>
               </Card>
 
-              {/* Coming soon: Salesforce, etc. */}
+              {/* Salesforce live connectors */}
+              {salesforceConnectors.map(connector => (
+                <SalesforceCard
+                  key={connector.id}
+                  connector={connector}
+                  onEdit={() => handleEditSalesforce(connector)}
+                  onTest={() => handleTestSalesforce(connector)}
+                  onDelete={() => handleDeleteSalesforceClick(connector)}
+                  isTestLoading={testingSalesforceId === connector.id}
+                />
+              ))}
+
+              {/* Add Salesforce */}
+              <Card className="relative overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover">
+                        <SalesforceLogo className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Salesforce</h3>
+                        <p className="mt-1 text-sm text-muted">{t('connectors.addSalesforceHint')}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted">
+                      {t('connectors.notConnected')}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={handleAddSalesforce}>
+                      {t('connectors.connect')}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coming soon CRM connectors */}
               {crmConnectors.map(renderFutureConnectorCard)}
             </>
           )}
@@ -915,6 +1030,68 @@ export function ConnectorsPage() {
                 disabled={deleteHubspot.isPending}
               >
                 {deleteHubspot.isPending ? (
+                  <>
+                    <Icon name="sync" size="sm" className="animate-spin mr-2" />
+                    {t('common.deleting')}
+                  </>
+                ) : t('common.delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─── Salesforce Modals ────────────────────────────────────────────── */}
+      <SalesforceFormModal
+        isOpen={isSalesforceFormOpen}
+        onClose={() => {
+          setIsSalesforceFormOpen(false)
+          setSelectedSalesforce(null)
+        }}
+        onSubmit={handleSalesforceFormSubmit}
+        connector={selectedSalesforce}
+        isLoading={createSalesforce.isPending || updateSalesforce.isPending}
+      />
+
+      {isSalesforceDeleteOpen && selectedSalesforce && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setIsSalesforceDeleteOpen(false)
+              setSelectedSalesforce(null)
+            }}
+          />
+          <div className="relative w-full max-w-md bg-surface-elevated border border-border rounded-xl shadow-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-danger/10">
+                <Icon name="delete" className="text-danger" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{t('connectors.deleteSalesforce')}</h3>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteSalesforceConfirm', { name: selectedSalesforce.name })}
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  {t('connectors.deleteSalesforceWarning')}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsSalesforceDeleteOpen(false)
+                  setSelectedSalesforce(null)
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleSalesforceDeleteConfirm}
+                disabled={deleteSalesforce.isPending}
+              >
+                {deleteSalesforce.isPending ? (
                   <>
                     <Icon name="sync" size="sm" className="animate-spin mr-2" />
                     {t('common.deleting')}

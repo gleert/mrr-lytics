@@ -163,6 +163,11 @@ This document tracks features and improvements that are not part of the MVP but 
 - [x] Complete i18n (English + Spanish)
 - [x] Locale-aware date formatting
 
+### v2.2 - CRM Connectors
+- [x] HubSpot CRM outbound connector (contacts, lifecycle, notes)
+- [x] Salesforce CRM outbound connector (contacts, tasks, status updates)
+- [x] Connectors page outbound-only clarity messaging
+
 ---
 
 ## Priority Matrix
@@ -196,4 +201,4 @@ This document tracks features and improvements that are not part of the MVP but 
 
 ---
 
-Last updated: 2026-03-23
+Last updated: 2026-03-24

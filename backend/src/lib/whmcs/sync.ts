@@ -42,6 +42,13 @@ import {
   dispatchHubspotClientChurned,
   dispatchHubspotSubscriptionCancelled,
 } from '@/lib/hubspot'
+import {
+  dispatchSalesforceSyncCompleted,
+  dispatchSalesforceSyncFailed,
+  dispatchSalesforceClientNew,
+  dispatchSalesforceClientChurned,
+  dispatchSalesforceSubscriptionCancelled,
+} from '@/lib/salesforce'
 import type { WhmcsApiResponse } from './types'
 
 /**
@@ -261,6 +268,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.completed slack:', e))
     dispatchHubspotSyncCompleted(instance.tenant_id, syncCompletedPayload)
       .catch((e) => console.error('Failed to dispatch sync.completed hubspot:', e))
+    dispatchSalesforceSyncCompleted(instance.tenant_id, syncCompletedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.completed salesforce:', e))
 
     return {
       success: true,
@@ -305,6 +314,8 @@ export async function syncInstance(
       .catch((e) => console.error('Failed to dispatch sync.failed slack:', e))
     dispatchHubspotSyncFailed(instance.tenant_id, syncFailedPayload)
       .catch((e) => console.error('Failed to dispatch sync.failed hubspot:', e))
+    dispatchSalesforceSyncFailed(instance.tenant_id, syncFailedPayload)
+      .catch((e) => console.error('Failed to dispatch sync.failed salesforce:', e))
 
     return {
       success: false,
@@ -447,6 +458,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchSlackClientNew error:', e))
         dispatchHubspotClientNew(instance.tenant_id, newClientPayload)
           .catch((e) => console.error('dispatchHubspotClientNew error:', e))
+        dispatchSalesforceClientNew(instance.tenant_id, newClientPayload)
+          .catch((e) => console.error('dispatchSalesforceClientNew error:', e))
       } else if (
         c.status && CHURNED_STATUSES.includes(c.status) &&
         !CHURNED_STATUSES.includes(prevStatus)
@@ -465,6 +478,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchSlackClientChurned error:', e))
         dispatchHubspotClientChurned(instance.tenant_id, churnPayload)
           .catch((e) => console.error('dispatchHubspotClientChurned error:', e))
+        dispatchSalesforceClientChurned(instance.tenant_id, churnPayload)
+          .catch((e) => console.error('dispatchSalesforceClientChurned error:', e))
       }
     }
   }
@@ -579,6 +594,8 @@ async function syncAllTables(
           .catch((e) => console.error('dispatchSlackSubscriptionCancelled error:', e))
         dispatchHubspotSubscriptionCancelled(instance.tenant_id, cancelPayload)
           .catch((e) => console.error('dispatchHubspotSubscriptionCancelled error:', e))
+        dispatchSalesforceSubscriptionCancelled(instance.tenant_id, cancelPayload)
+          .catch((e) => console.error('dispatchSalesforceSubscriptionCancelled error:', e))
       }
     }
   }
