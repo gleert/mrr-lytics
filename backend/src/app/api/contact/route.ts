@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import nodemailer from 'nodemailer'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
@@ -97,37 +98,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send notification email if RESEND_API_KEY is configured
-    const resendKey = process.env.RESEND_API_KEY
-    if (resendKey) {
+    // Send notification email via SMTP if configured
+    const smtpHost = process.env.SMTP_HOST
+    const smtpUser = process.env.SMTP_USER
+    const smtpPass = process.env.SMTP_PASS
+    if (smtpHost && smtpUser && smtpPass) {
       try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'MRRlytics Contact <hello@mrrlytics.com>',
-            to: ['hello@mrrlytics.com'],
-            reply_to: email.trim(),
-            subject: `[Contact] ${subject.trim()}`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #8b5cf6;">New contact message</h2>
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr><td style="padding: 8px 0; font-weight: bold; width: 100px;">Name:</td><td>${name}</td></tr>
-                  <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td><a href="mailto:${email}">${email}</a></td></tr>
-                  <tr><td style="padding: 8px 0; font-weight: bold;">Subject:</td><td>${subject}</td></tr>
-                  <tr><td style="padding: 8px 0; font-weight: bold;">Lang:</td><td>${lang}</td></tr>
-                </table>
-                <hr style="margin: 16px 0; border-color: #e5e7eb;" />
-                <p style="white-space: pre-wrap; color: #374151;">${message}</p>
-                <hr style="margin: 16px 0; border-color: #e5e7eb;" />
-                <p style="font-size: 12px; color: #9ca3af;">Sent from mrrlytics.com contact form · IP: ${ip}</p>
-              </div>
-            `,
-          }),
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: Number(process.env.SMTP_PORT || '465'),
+          secure: (process.env.SMTP_PORT || '465') === '465',
+          auth: { user: smtpUser, pass: smtpPass },
+        })
+
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || `MRRlytics Contact <${smtpUser}>`,
+          to: process.env.CONTACT_EMAIL || 'hello@mrrlytics.com',
+          replyTo: email.trim(),
+          subject: `[Contact] ${subject.trim()}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #8b5cf6;">New contact message</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px 0; font-weight: bold; width: 100px;">Name:</td><td>${name}</td></tr>
+                <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td><a href="mailto:${email}">${email}</a></td></tr>
+                <tr><td style="padding: 8px 0; font-weight: bold;">Subject:</td><td>${subject}</td></tr>
+                <tr><td style="padding: 8px 0; font-weight: bold;">Lang:</td><td>${lang}</td></tr>
+              </table>
+              <hr style="margin: 16px 0; border-color: #e5e7eb;" />
+              <p style="white-space: pre-wrap; color: #374151;">${message}</p>
+              <hr style="margin: 16px 0; border-color: #e5e7eb;" />
+              <p style="font-size: 12px; color: #9ca3af;">Sent from mrrlytics.com contact form · IP: ${ip}</p>
+            </div>
+          `,
         })
       } catch (emailErr) {
         // Don't fail the request if email fails - message is already saved
