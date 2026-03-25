@@ -185,6 +185,16 @@ export async function POST(request: Request) {
           console.error('[team/invite] update existing user error:', updateError)
           return error(new Error(`Failed to reassign user: ${updateError.message}`), 500)
         }
+
+        // Also add to user_tenants for multi-tenant access
+        await supabase
+          .from('user_tenants')
+          .upsert({
+            user_id: existingAuthUser.id,
+            tenant_id: tenantId,
+            role,
+            is_default: false,
+          }, { onConflict: 'user_id,tenant_id' })
       } else {
         // Create new user record for this tenant
         const { error: insertError } = await supabase
@@ -202,6 +212,16 @@ export async function POST(request: Request) {
           console.error('[team/invite] upsert user error:', insertError)
           return error(new Error(`Failed to create user record: ${insertError.message}`), 500)
         }
+
+        // Also add to user_tenants for multi-tenant access
+        await supabase
+          .from('user_tenants')
+          .upsert({
+            user_id: existingAuthUser.id,
+            tenant_id: tenantId,
+            role,
+            is_default: true,
+          }, { onConflict: 'user_id,tenant_id' })
       }
 
       return success({
@@ -245,6 +265,16 @@ export async function POST(request: Request) {
           role,
           is_active: false, // Not active until they accept
         }, { onConflict: 'id' })
+
+      // Also pre-create user_tenants entry
+      await supabase
+        .from('user_tenants')
+        .upsert({
+          user_id: inviteData.user.id,
+          tenant_id: tenantId,
+          role,
+          is_default: true,
+        }, { onConflict: 'user_id,tenant_id' })
     }
 
     return success({

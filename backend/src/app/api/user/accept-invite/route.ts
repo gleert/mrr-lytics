@@ -71,6 +71,22 @@ export async function POST(request: Request) {
       return error(new Error('Failed to join organization'), 500)
     }
 
+    // Also upsert into user_tenants (multi-tenant access table)
+    const validRole = ['admin', 'member', 'viewer'].includes(role) ? role : 'member'
+    const { error: utError } = await supabase
+      .from('user_tenants')
+      .upsert({
+        user_id: authId,
+        tenant_id,
+        role: validRole,
+        is_default: true,
+      }, { onConflict: 'user_id,tenant_id' })
+
+    if (utError) {
+      console.error('Error creating user_tenants entry:', utError)
+      // Don't fail the whole request — user record was already created
+    }
+
     return success({
       message: `Successfully joined "${tenant.name}"`,
       tenant_id,
