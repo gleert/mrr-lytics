@@ -160,7 +160,7 @@ export function GeneralSection() {
       <Section title={t('settings.appearance')} description={t('settings.appearanceDesc')}>
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">{t('settings.theme')}</p>
                 <p className="text-sm text-muted">{t('settings.selectTheme')}</p>
@@ -170,6 +170,7 @@ export function GeneralSection() {
                   variant={theme === 'light' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleThemeChange('light')}
+                  className="flex-1 sm:flex-none"
                 >
                   <Sun className="mr-2 h-4 w-4" />
                   {t('settings.light')}
@@ -178,6 +179,7 @@ export function GeneralSection() {
                   variant={theme === 'dark' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleThemeChange('dark')}
+                  className="flex-1 sm:flex-none"
                 >
                   <Moon className="mr-2 h-4 w-4" />
                   {t('settings.dark')}
@@ -186,6 +188,7 @@ export function GeneralSection() {
                   variant={theme === 'system' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleThemeChange('system')}
+                  className="flex-1 sm:flex-none"
                 >
                   {t('settings.system')}
                 </Button>
@@ -199,7 +202,7 @@ export function GeneralSection() {
       <Section title={t('settings.language')} description={t('settings.languageDesc')}>
         <Card>
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">{t('settings.displayLanguage')}</p>
                 <p className="text-sm text-muted">
@@ -213,6 +216,7 @@ export function GeneralSection() {
                     variant={i18n.language === lang ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleLanguageChange(lang)}
+                    className="flex-1 sm:flex-none"
                   >
                     {i18n.language === lang && <Check className="mr-2 h-4 w-4" />}
                     {languageNames[lang]}
@@ -229,7 +233,7 @@ export function GeneralSection() {
         <Section title={t('settings.currency')} description={t('settings.currencyDesc')}>
           <Card>
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium">{t('settings.selectCurrency')}</p>
                   <p className="text-sm text-muted">
@@ -249,6 +253,7 @@ export function GeneralSection() {
                         size="sm"
                         onClick={() => handleCurrencyChange(currency)}
                         disabled={updateCurrencyMutation.isPending}
+                        className="flex-1 sm:flex-none"
                       >
                         {isLoading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
