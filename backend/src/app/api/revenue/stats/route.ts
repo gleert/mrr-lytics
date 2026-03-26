@@ -82,6 +82,12 @@ export async function GET(request: NextRequest) {
         recurring_pct_change: 0,
         invoices_count: 0,
         avg_invoice_amount: 0,
+        paid_total: 0,
+        paid_count: 0,
+        unpaid_total: 0,
+        unpaid_count: 0,
+        projected_next_period: 0,
+        recent_paid: [],
         top_product: null,
         period: {
           type: period,
@@ -255,6 +261,48 @@ export async function GET(request: NextRequest) {
     const invoicesCount = invoices?.length || 0
     const avgInvoiceAmount = invoicesCount > 0 ? totalRevenue / invoicesCount : 0
 
+    // Paid vs Unpaid breakdown
+    const paidInvoices = invoices?.filter(i => i.status === 'Paid') || []
+    const unpaidInvoices = invoices?.filter(i => i.status !== 'Paid') || []
+    const paidTotal = paidInvoices.reduce((sum, inv) => sum + Number(inv.total), 0)
+    const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.total), 0)
+
+    // Next period projection: MRR + average one-time from last 3 periods
+    const projectedNextPeriod = Math.round((mrr + (onetimeRevenue / Math.max(days / 30, 1))) * 100) / 100
+
+    // Recent paid invoices (last 5)
+    const { data: recentPaidRaw } = await supabase
+      .from('whmcs_invoices')
+      .select('whmcs_id, invoicenum, total, datepaid, client_id, instance_id')
+      .in('instance_id', instanceIds)
+      .eq('status', 'Paid')
+      .not('datepaid', 'is', null)
+      .order('datepaid', { ascending: false })
+      .limit(5)
+
+    // Get client names for recent invoices
+    const recentClientIds = [...new Set(recentPaidRaw?.map(i => i.client_id) || [])]
+    const { data: recentClients } = recentClientIds.length > 0
+      ? await supabase
+          .from('whmcs_clients')
+          .select('whmcs_id, instance_id, firstname, lastname, companyname')
+          .in('instance_id', instanceIds)
+          .in('whmcs_id', recentClientIds)
+      : { data: null }
+
+    const clientNameMap = new Map<string, string>()
+    recentClients?.forEach(c => {
+      const key = `${c.instance_id}:${c.whmcs_id}`
+      clientNameMap.set(key, c.companyname || `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Unknown')
+    })
+
+    const recentPaid = (recentPaidRaw || []).map(inv => ({
+      invoice_num: inv.invoicenum,
+      amount: Number(inv.total),
+      date: inv.datepaid,
+      client_name: clientNameMap.get(`${inv.instance_id}:${inv.client_id}`) || 'Unknown',
+    }))
+
     // Find top product by revenue (from invoice items already loaded)
     const productRevenue = new Map<string, number>()
     if (invoiceWhmcsIds.length > 0) {
@@ -295,6 +343,12 @@ export async function GET(request: NextRequest) {
       recurring_pct_change: recurringPctChange,
       invoices_count: invoicesCount,
       avg_invoice_amount: Math.round(avgInvoiceAmount * 100) / 100,
+      paid_total: Math.round(paidTotal * 100) / 100,
+      paid_count: paidInvoices.length,
+      unpaid_total: Math.round(unpaidTotal * 100) / 100,
+      unpaid_count: unpaidInvoices.length,
+      projected_next_period: projectedNextPeriod,
+      recent_paid: recentPaid,
       top_product: topProduct,
       period: {
         type: period,

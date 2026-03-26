@@ -302,6 +302,16 @@ export const es = {
       inPeriod: 'en el período',
       noData: 'No hay datos de ingresos disponibles',
       noDataHint: 'Asegúrate de que tu instancia WHMCS está sincronizada y tiene facturas pagadas',
+      // Highlights
+      highlights: {
+        projectionLabel: 'Proyección próximo periodo',
+        projectionDesc: 'Basado en MRR actual + promedio de ingresos únicos',
+        pendingLabel: 'Pendiente de cobro',
+        pendingDesc: '{{count}} facturas sin pagar en este periodo',
+        paidSummary: '{{amount}} cobrado ({{count}} facturas)',
+        recentLabel: 'Últimos cobros',
+        noRecent: 'Sin cobros recientes',
+      },
       // Top Transactions
       topTransactions: {
         title: 'Top Transacciones',

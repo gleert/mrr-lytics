@@ -15,6 +15,12 @@ export interface RevenueStats {
   recurring_pct_change: number
   invoices_count: number
   avg_invoice_amount: number
+  paid_total: number
+  paid_count: number
+  unpaid_total: number
+  unpaid_count: number
+  projected_next_period: number
+  recent_paid: Array<{ invoice_num: string; amount: number; date: string; client_name: string }>
   top_product: { name: string; revenue: number } | null
   period: {
     type: string

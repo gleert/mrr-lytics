@@ -18,6 +18,7 @@ import { DashboardFilters } from '@/features/dashboard/components/dashboard-filt
 import { TopTransactionsBlock } from '../components/top-transactions-block'
 import { RecurringVsOnetimeChart } from '../components/recurring-vs-onetime-chart'
 import { RevenueTransactionsTable } from '../components/revenue-transactions-table'
+import { RevenueHighlights } from '../components/revenue-highlights'
 import { useRevenueStats, useRevenueBreakdownTrend, type BreakdownGroupBy } from '../hooks/use-revenue-stats'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
@@ -222,6 +223,11 @@ export function RevenuePage() {
           )}
         </div>
       </div>
+
+      {/* Revenue Highlights */}
+      {!isLoading && stats && (
+        <RevenueHighlights stats={stats} />
+      )}
 
       {/* Section: Revenue Trends */}
       <div>

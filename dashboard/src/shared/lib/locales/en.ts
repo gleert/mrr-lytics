@@ -302,6 +302,16 @@ export const en = {
       inPeriod: 'in period',
       noData: 'No revenue data available',
       noDataHint: 'Make sure your WHMCS instance is synced and has paid invoices',
+      // Highlights
+      highlights: {
+        projectionLabel: 'Next period projection',
+        projectionDesc: 'Based on current MRR + average one-time revenue',
+        pendingLabel: 'Pending payment',
+        pendingDesc: '{{count}} unpaid invoices this period',
+        paidSummary: '{{amount}} paid ({{count}} invoices)',
+        recentLabel: 'Latest payments',
+        noRecent: 'No recent payments',
+      },
       // Top Transactions
       topTransactions: {
         title: 'Top Transactions',
