@@ -1502,6 +1502,23 @@ export const es = {
       toggleTheme: 'Cambiar modo oscuro/claro',
       logout: 'Cerrar sesión',
       syncNow: 'Sincronizar datos ahora',
+      sub: {
+        transactions: 'Transacciones de Ingresos',
+        pendingInvoices: 'Facturas Pendientes',
+        mrrMovement: 'Movimiento de MRR',
+        churn: 'Clientes Perdidos',
+        topClients: 'Top Clientes por Ingresos',
+        expiringDomains: 'Dominios por Vencer',
+        categories: 'Categorías de Productos',
+        scenarios: 'Escenarios de Previsión',
+        reportMrr: 'Informe de MRR',
+        reportRevenue: 'Informe de Ingresos',
+        changelog: 'Novedades',
+        team: 'Miembros del Equipo',
+        apiKeys: 'Claves API',
+        sync: 'Sincronizar Datos WHMCS',
+        appearance: 'Apariencia e Idioma',
+      },
     },
 
     // Errors

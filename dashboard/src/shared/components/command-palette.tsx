@@ -32,7 +32,7 @@ const buildRegistry = (extra: {
   toggleTheme: () => void
   signOut: () => void
 }): CommandItem[] => [
-  // Pages
+  // ── Pages ──
   { id: 'page-dashboard',    kind: 'page', icon: 'dashboard',    labelKey: 'nav.dashboard',    to: '/',              keywords: ['home', 'inicio', 'panel', 'overview'] },
   { id: 'page-revenue',      kind: 'page', icon: 'paid',         labelKey: 'nav.revenue',      to: '/revenue',       keywords: ['mrr', 'arr', 'ingresos', 'money', 'income'] },
   { id: 'page-forecasting',  kind: 'page', icon: 'trending_up',  labelKey: 'nav.forecasting',  to: '/forecasting',   keywords: ['forecast', 'prediction', 'pronóstico', 'growth', 'projection'] },
@@ -45,10 +45,27 @@ const buildRegistry = (extra: {
   { id: 'page-billing',      kind: 'page', icon: 'credit_card',  labelKey: 'nav.billing',      to: '/settings/billing', keywords: ['plan', 'subscription', 'facturación', 'upgrade'], adminOnly: true },
   { id: 'page-profile',      kind: 'page', icon: 'person',       labelKey: 'nav.profile',      to: '/profile',       keywords: ['account', 'perfil', 'user', 'password'] },
 
-  // Actions
+  // ── Subsections ──
+  { id: 'sub-transactions',      kind: 'page', icon: 'receipt_long',     labelKey: 'commandPalette.sub.transactions',     to: '/revenue',       keywords: ['facturas', 'invoices', 'transacciones', 'paid', 'unpaid'] },
+  { id: 'sub-pending-invoices',  kind: 'page', icon: 'pending',          labelKey: 'commandPalette.sub.pendingInvoices',  to: '/revenue',       keywords: ['pendientes', 'unpaid', 'impagadas', 'cobro'] },
+  { id: 'sub-mrr-movement',     kind: 'page', icon: 'swap_vert',        labelKey: 'commandPalette.sub.mrrMovement',      to: '/',              keywords: ['movimiento', 'new mrr', 'expansion', 'contraction', 'churn mrr'] },
+  { id: 'sub-churn',            kind: 'page', icon: 'person_remove',    labelKey: 'commandPalette.sub.churn',             to: '/clients',       keywords: ['churn', 'lost', 'perdidos', 'cancellations', 'bajas'] },
+  { id: 'sub-top-clients',      kind: 'page', icon: 'star',             labelKey: 'commandPalette.sub.topClients',        to: '/clients',       keywords: ['mejores', 'top', 'revenue', 'ingresos'] },
+  { id: 'sub-expiring-domains',  kind: 'page', icon: 'schedule',        labelKey: 'commandPalette.sub.expiringDomains',  to: '/domains',       keywords: ['expiring', 'renewal', 'vencimiento', 'renovación', 'caducan'] },
+  { id: 'sub-categories',       kind: 'page', icon: 'category',         labelKey: 'commandPalette.sub.categories',        to: '/products',      keywords: ['categorías', 'groups', 'grupos', 'clasificar'] },
+  { id: 'sub-scenarios',        kind: 'page', icon: 'analytics',        labelKey: 'commandPalette.sub.scenarios',         to: '/forecasting',   keywords: ['optimista', 'pessimistic', 'baseline', 'scenarios', 'escenarios'] },
+  { id: 'sub-report-mrr',       kind: 'page', icon: 'table_chart',      labelKey: 'commandPalette.sub.reportMrr',        to: '/reports',       keywords: ['informe mrr', 'report', 'export mrr'] },
+  { id: 'sub-report-revenue',   kind: 'page', icon: 'table_chart',      labelKey: 'commandPalette.sub.reportRevenue',    to: '/reports',       keywords: ['informe ingresos', 'report revenue', 'export revenue'] },
+  { id: 'sub-changelog',        kind: 'page', icon: 'new_releases',     labelKey: 'commandPalette.sub.changelog',         to: '/settings',      keywords: ['novedades', 'changelog', 'version', 'whats new', 'actualizaciones'] },
+  { id: 'sub-team',             kind: 'page', icon: 'group_add',        labelKey: 'commandPalette.sub.team',              to: '/settings',      keywords: ['equipo', 'team', 'invite', 'invitar', 'members', 'miembros'], adminOnly: true },
+  { id: 'sub-api-keys',         kind: 'page', icon: 'key',              labelKey: 'commandPalette.sub.apiKeys',           to: '/settings',      keywords: ['api key', 'token', 'clave', 'integración'], adminOnly: true },
+  { id: 'sub-sync',             kind: 'page', icon: 'sync',             labelKey: 'commandPalette.sub.sync',              to: '/sync',          keywords: ['sincronizar', 'sync', 'whmcs', 'actualizar datos'], adminOnly: true },
+  { id: 'sub-appearance',       kind: 'setting', icon: 'palette',       labelKey: 'commandPalette.sub.appearance',        to: '/settings',      keywords: ['apariencia', 'appearance', 'theme', 'tema', 'idioma', 'language', 'moneda', 'currency'] },
+
+  // ── Actions ──
   { id: 'action-logout',     kind: 'action', icon: 'logout',     labelKey: 'commandPalette.logout',        onSelect: extra.signOut,      keywords: ['cerrar sesión', 'sign out', 'salir'] },
 
-  // Settings
+  // ── Settings ──
   { id: 'setting-theme',     kind: 'setting', icon: 'dark_mode',  labelKey: 'commandPalette.toggleTheme',  onSelect: extra.toggleTheme,  keywords: ['dark', 'light', 'modo oscuro', 'appearance', 'tema'] },
 ]
 

@@ -1506,6 +1506,23 @@ export const en = {
       toggleTheme: 'Toggle dark/light mode',
       logout: 'Log out',
       syncNow: 'Sync data now',
+      sub: {
+        transactions: 'Revenue Transactions',
+        pendingInvoices: 'Pending Invoices',
+        mrrMovement: 'MRR Movement',
+        churn: 'Churned Clients',
+        topClients: 'Top Clients by Revenue',
+        expiringDomains: 'Expiring Domains',
+        categories: 'Product Categories',
+        scenarios: 'Forecast Scenarios',
+        reportMrr: 'MRR Report',
+        reportRevenue: 'Revenue Report',
+        changelog: 'Changelog / What\'s New',
+        team: 'Team Members',
+        apiKeys: 'API Keys',
+        sync: 'Sync WHMCS Data',
+        appearance: 'Appearance & Language',
+      },
     },
 
     // Errors
