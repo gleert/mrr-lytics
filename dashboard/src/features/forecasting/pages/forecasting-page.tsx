@@ -35,7 +35,7 @@ const BILLING_CYCLE_COLORS = [
 export function ForecastingPage() {
   const { t } = useTranslation()
   const { data: stats, isLoading } = useForecastingStats()
-  const { formatCurrency, formatCurrencyCompact, formatPercent, formatNumber } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact, formatPercent } = useCurrency()
 
   // Get bucket type label based on the analysis granularity
   const getBucketLabel = (bucketType: string | undefined) => {
