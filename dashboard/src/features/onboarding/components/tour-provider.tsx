@@ -31,7 +31,7 @@ interface TourProviderProps {
 
 export function TourProvider({ children, onOpenSidebar }: TourProviderProps) {
   const { user } = useAuth()
-  const { userRole } = useFilters()
+  const { userRole, allInstances } = useFilters()
   const location = useLocation()
 
   const [showWelcome, setShowWelcome] = React.useState(false)
@@ -48,10 +48,11 @@ export function TourProvider({ children, onOpenSidebar }: TourProviderProps) {
     return tourDef.steps.filter((s) => !s.adminOnly || isAdmin)
   }, [activeTourId, isAdmin])
 
-  // Auto-show welcome modal for brand new users (only on dashboard)
+  // Auto-show welcome modal for brand new users (only on dashboard, only if instances exist)
   React.useEffect(() => {
     if (!user || isWelcomeShown(user)) return
     if (location.pathname !== '/') return
+    if (allInstances.length === 0) return
 
     const timer = setTimeout(() => {
       setShowWelcome(true)
@@ -62,6 +63,7 @@ export function TourProvider({ children, onOpenSidebar }: TourProviderProps) {
   // Auto-trigger page tours when navigating to a page for the first time
   React.useEffect(() => {
     if (!user || activeTourId || showWelcome) return
+    if (allInstances.length === 0) return
 
     const tourId = routeToTourId[location.pathname]
     if (!tourId) return
