@@ -103,24 +103,24 @@ export function ProfilePage() {
       <Section title={t('profile.accountInfo')} description={t('profile.accountInfoDesc')}>
         <Card>
           <CardContent className="py-6">
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={t('profile.avatar')}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-border"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center">
                     <Icon name="person" size="2xl" className="text-primary" />
                   </div>
                 )}
               </div>
 
               {/* Info */}
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-3 text-center sm:text-left">
                 <div>
                   <p className="text-sm text-muted">{t('profile.email')}</p>
                   <p className="font-medium">{email}</p>
@@ -163,7 +163,7 @@ export function ProfilePage() {
                 {tenants.map((tenant) => (
                   <div
                     key={tenant.tenant_id}
-                    className="flex items-start gap-4 rounded-lg border border-border p-4"
+                    className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:gap-4"
                   >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                       <Icon name="apartment" size="lg" className="text-primary" />
@@ -301,9 +301,9 @@ export function ProfilePage() {
       <Section title={t('onboarding.restartTour')} description={t('onboarding.restartTourDesc')}>
         <Card>
           <CardContent className="py-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <Icon name="tour" size="lg" className="text-primary" />
                 </div>
                 <div>
@@ -311,7 +311,7 @@ export function ProfilePage() {
                   <p className="text-sm text-muted">{t('onboarding.restartTourDesc')}</p>
                 </div>
               </div>
-              <Button variant="outline" onClick={restartAllTours}>
+              <Button variant="outline" onClick={restartAllTours} className="w-full sm:w-auto">
                 <Icon name="replay" size="sm" className="mr-2" />
                 {t('onboarding.welcome.startTour')}
               </Button>
@@ -324,12 +324,12 @@ export function ProfilePage() {
       <Section title={t('profile.dangerZone')} description={t('profile.dangerZoneDesc')}>
         <Card className="border-destructive/50">
           <CardContent className="py-6">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+            <div className="flex flex-col gap-4 p-4 rounded-lg bg-destructive/5 border border-destructive/20 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-destructive">{t('profile.deleteAccount')}</p>
                 <p className="text-sm text-muted">{t('profile.deleteAccountDesc')}</p>
               </div>
-              <Button variant="destructive" disabled>
+              <Button variant="destructive" disabled className="w-full sm:w-auto">
                 {t('profile.deleteAccount')}
               </Button>
             </div>
