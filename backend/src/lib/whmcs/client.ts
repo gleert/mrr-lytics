@@ -59,13 +59,25 @@ export class WhmcsClient {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}))
-        throw new Error(
-          errorBody.error?.message || `WHMCS API error: ${response.status} ${response.statusText}`
-        )
+        const bodyText = await response.text().catch(() => '')
+        // Try to parse as JSON, otherwise show the raw response
+        try {
+          const errorBody = JSON.parse(bodyText)
+          throw new Error(errorBody.error?.message || `WHMCS API error: ${response.status} ${response.statusText}`)
+        } catch {
+          const preview = bodyText.substring(0, 200).replace(/\n/g, ' ').trim()
+          throw new Error(`WHMCS API returned ${response.status} ${response.statusText}. Response: ${preview || '(empty)'}`)
+        }
       }
 
-      const data: WhmcsApiResponse = await response.json()
+      const bodyText = await response.text()
+      let data: WhmcsApiResponse
+      try {
+        data = JSON.parse(bodyText)
+      } catch {
+        const preview = bodyText.substring(0, 200).replace(/\n/g, ' ').trim()
+        throw new Error(`WHMCS API returned non-JSON response. Expected JSON but got: ${preview || '(empty)'}`)
+      }
 
       if (!data.success) {
         throw new Error(data.error?.message || 'WHMCS API returned unsuccessful response')
