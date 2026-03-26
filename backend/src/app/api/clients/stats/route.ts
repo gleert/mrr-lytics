@@ -188,10 +188,23 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, count]) => ({ date, count }))
 
-    // Calculate client counts by status
+    // Build set of all client IDs that have ever had at least one service
+    const { data: allServicesForClients } = await supabase
+      .from('whmcs_hosting')
+      .select('client_id, instance_id')
+      .in('instance_id', instanceIds)
+
+    const allClientsWithService = new Set<string>()
+    allServicesForClients?.forEach(s => {
+      allClientsWithService.add(`${s.instance_id}:${s.client_id}`)
+    })
+
+    // Calculate client counts by status (filter spam from Closed)
     const activeClients = clients?.filter(c => c.status === 'Active') || []
     const inactiveClients = clients?.filter(c => c.status === 'Inactive') || []
-    const closedClients = clients?.filter(c => c.status === 'Closed') || []
+    const closedClients = clients?.filter(c =>
+      c.status === 'Closed' && allClientsWithService.has(`${c.instance_id}:${c.whmcs_id}`)
+    ) || []
 
     // Calculate MRR per client (for ARPU)
     const clientMrr: Record<number, number> = {}
@@ -215,9 +228,12 @@ export async function GET(request: NextRequest) {
     const averageLifetimeMonths = 24
     const ltv = arpu * averageLifetimeMonths
 
+    // Total real clients = active + inactive + closed (with services only)
+    const totalRealClients = activeClients.length + inactiveClients.length + closedClients.length
+
     // Calculate retention rate
-    const retentionRate = clients.length > 0
-      ? Math.round((activeClients.length / clients.length) * 10000) / 100
+    const retentionRate = totalRealClients > 0
+      ? Math.round((activeClients.length / totalRealClients) * 10000) / 100
       : 0
 
     // Net client growth
@@ -273,7 +289,7 @@ export async function GET(request: NextRequest) {
     const revenueInPeriod = paidInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
 
     return success({
-      total_clients: clients?.length || 0,
+      total_clients: totalRealClients,
       active_clients: activeClients.length,
       inactive_clients: inactiveClients.length,
       closed_clients: closedClients.length,
