@@ -328,20 +328,35 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Get client summary from materialized view (sum across all instances)
-  const { data: clientData } = await supabase
-    .from('mv_client_summary')
-    .select('active_clients, inactive_clients, closed_clients, total_clients')
+  // Get all clients
+  const { data: allClients } = await supabase
+    .from('whmcs_clients')
+    .select('whmcs_id, instance_id, status')
     .in('instance_id', instanceIds)
 
-  // Sum client counts across all instances
-  const clientSummary = (clientData || []).reduce(
-    (acc, row) => ({
-      active: acc.active + (row.active_clients || 0),
-      inactive: acc.inactive + (row.inactive_clients || 0),
-      closed: acc.closed + (row.closed_clients || 0),
-      total: acc.total + (row.total_clients || 0),
-    }),
+  // Get client IDs that have at least one service (to filter spam)
+  const { data: clientServices } = await supabase
+    .from('whmcs_hosting')
+    .select('client_id, instance_id')
+    .in('instance_id', instanceIds)
+
+  const clientsWithService = new Set<string>()
+  clientServices?.forEach(s => {
+    clientsWithService.add(`${s.instance_id}:${s.client_id}`)
+  })
+
+  // Count by status, excluding Closed clients without services
+  const clientSummary = (allClients || []).reduce(
+    (acc, c) => {
+      if (c.status === 'Active') acc.active++
+      else if (c.status === 'Inactive') acc.inactive++
+      else if (c.status === 'Closed') {
+        if (clientsWithService.has(`${c.instance_id}:${c.whmcs_id}`)) acc.closed++
+        else return acc // skip spam
+      }
+      acc.total++
+      return acc
+    },
     { active: 0, inactive: 0, closed: 0, total: 0 }
   )
 
