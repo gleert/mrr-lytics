@@ -42,7 +42,7 @@ const buildRegistry = (extra: {
   { id: 'page-connectors',   kind: 'page', icon: 'cable',        labelKey: 'nav.connectors',   to: '/connectors',    keywords: ['webhooks', 'slack', 'email', 'integrations', 'conectores'], adminOnly: true },
   { id: 'page-reports',      kind: 'page', icon: 'description',  labelKey: 'nav.reports',      to: '/reports',       keywords: ['export', 'csv', 'excel', 'informes', 'download'] },
   { id: 'page-settings',     kind: 'page', icon: 'settings',     labelKey: 'nav.settings',     to: '/settings',      keywords: ['config', 'preferences', 'configuración', 'whmcs', 'instances'], adminOnly: true },
-  { id: 'page-billing',      kind: 'page', icon: 'credit_card',  labelKey: 'nav.billing',      to: '/settings/billing', keywords: ['plan', 'subscription', 'facturación', 'upgrade'], adminOnly: true },
+  { id: 'page-billing',      kind: 'page', icon: 'credit_card',  labelKey: 'nav.billing',      to: '/settings?tab=billing', keywords: ['plan', 'subscription', 'facturación', 'upgrade'], adminOnly: true },
   { id: 'page-profile',      kind: 'page', icon: 'person',       labelKey: 'nav.profile',      to: '/profile',       keywords: ['account', 'perfil', 'user', 'password'] },
 
   // ── Subsections ──
@@ -56,11 +56,11 @@ const buildRegistry = (extra: {
   { id: 'sub-scenarios',        kind: 'page', icon: 'analytics',        labelKey: 'commandPalette.sub.scenarios',         to: '/forecasting',   keywords: ['optimista', 'pessimistic', 'baseline', 'scenarios', 'escenarios'] },
   { id: 'sub-report-mrr',       kind: 'page', icon: 'table_chart',      labelKey: 'commandPalette.sub.reportMrr',        to: '/reports',       keywords: ['informe mrr', 'report', 'export mrr'] },
   { id: 'sub-report-revenue',   kind: 'page', icon: 'table_chart',      labelKey: 'commandPalette.sub.reportRevenue',    to: '/reports',       keywords: ['informe ingresos', 'report revenue', 'export revenue'] },
-  { id: 'sub-changelog',        kind: 'page', icon: 'new_releases',     labelKey: 'commandPalette.sub.changelog',         to: '/settings',      keywords: ['novedades', 'changelog', 'version', 'whats new', 'actualizaciones'] },
-  { id: 'sub-team',             kind: 'page', icon: 'group_add',        labelKey: 'commandPalette.sub.team',              to: '/settings',      keywords: ['equipo', 'team', 'invite', 'invitar', 'members', 'miembros'], adminOnly: true },
-  { id: 'sub-api-keys',         kind: 'page', icon: 'key',              labelKey: 'commandPalette.sub.apiKeys',           to: '/settings',      keywords: ['api key', 'token', 'clave', 'integración'], adminOnly: true },
+  { id: 'sub-changelog',        kind: 'page', icon: 'new_releases',     labelKey: 'commandPalette.sub.changelog',         to: '/settings?tab=changelog', keywords: ['novedades', 'changelog', 'version', 'whats new', 'actualizaciones'] },
+  { id: 'sub-team',             kind: 'page', icon: 'group_add',        labelKey: 'commandPalette.sub.team',              to: '/settings?tab=team',      keywords: ['equipo', 'team', 'invite', 'invitar', 'members', 'miembros'], adminOnly: true },
+  { id: 'sub-api-keys',         kind: 'page', icon: 'key',              labelKey: 'commandPalette.sub.apiKeys',           to: '/settings?tab=workspace', keywords: ['api key', 'token', 'clave', 'integración'], adminOnly: true },
   { id: 'sub-sync',             kind: 'page', icon: 'sync',             labelKey: 'commandPalette.sub.sync',              to: '/sync',          keywords: ['sincronizar', 'sync', 'whmcs', 'actualizar datos'], adminOnly: true },
-  { id: 'sub-appearance',       kind: 'setting', icon: 'palette',       labelKey: 'commandPalette.sub.appearance',        to: '/settings',      keywords: ['apariencia', 'appearance', 'theme', 'tema', 'idioma', 'language', 'moneda', 'currency'] },
+  { id: 'sub-appearance',       kind: 'setting', icon: 'palette',       labelKey: 'commandPalette.sub.appearance',        to: '/settings?tab=general', keywords: ['apariencia', 'appearance', 'theme', 'tema', 'idioma', 'language', 'moneda', 'currency'] },
 
   // ── Actions ──
   { id: 'action-logout',     kind: 'action', icon: 'logout',     labelKey: 'commandPalette.logout',        onSelect: extra.signOut,      keywords: ['cerrar sesión', 'sign out', 'salir'] },

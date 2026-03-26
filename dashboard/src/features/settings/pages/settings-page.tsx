@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/shared/lib/utils'
 import { Icon } from '@/shared/components/ui/icon'
 import { GeneralSection } from '../components/general-section'
@@ -24,7 +25,14 @@ const TABS: { id: SettingsTab; icon: string; labelKey: string }[] = [
 export function SettingsPage() {
   const { t } = useTranslation()
 
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(() => {
+    // URL param takes priority, then localStorage
+    const fromUrl = searchParams.get('tab')
+    if (fromUrl && TABS.some((tab) => tab.id === fromUrl)) {
+      return fromUrl as SettingsTab
+    }
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored && TABS.some((tab) => tab.id === stored)) {
       return stored as SettingsTab
@@ -32,9 +40,19 @@ export function SettingsPage() {
     return 'general'
   })
 
+  // React to URL param changes (e.g. from command palette)
+  React.useEffect(() => {
+    const fromUrl = searchParams.get('tab')
+    if (fromUrl && TABS.some((tab) => tab.id === fromUrl) && fromUrl !== activeTab) {
+      setActiveTab(fromUrl as SettingsTab)
+      localStorage.setItem(STORAGE_KEY, fromUrl)
+    }
+  }, [searchParams])
+
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab)
     localStorage.setItem(STORAGE_KEY, tab)
+    setSearchParams({ tab }, { replace: true })
   }
 
   return (
