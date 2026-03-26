@@ -157,13 +157,11 @@ export function ProfilePage() {
       {/* Organization / Tenant Info */}
       {tenants.length > 0 && (
         <Section title={t('profile.organization')} description={t('profile.organizationDesc')}>
-          <Card>
-            <CardContent className="py-6">
               <div className="space-y-4">
                 {tenants.map((tenant) => (
                   <div
                     key={tenant.tenant_id}
-                    className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:gap-4"
+                    className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-start sm:gap-4"
                   >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                       <Icon name="apartment" size="lg" className="text-primary" />
@@ -212,8 +210,6 @@ export function ProfilePage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
         </Section>
       )}
 
@@ -322,19 +318,15 @@ export function ProfilePage() {
 
       {/* Danger Zone */}
       <Section title={t('profile.dangerZone')} description={t('profile.dangerZoneDesc')}>
-        <Card className="border-destructive/50">
-          <CardContent className="py-6">
-            <div className="flex flex-col gap-4 p-4 rounded-lg bg-destructive/5 border border-destructive/20 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium text-destructive">{t('profile.deleteAccount')}</p>
-                <p className="text-sm text-muted">{t('profile.deleteAccountDesc')}</p>
-              </div>
-              <Button variant="destructive" disabled className="w-full sm:w-auto">
-                {t('profile.deleteAccount')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4 p-4 rounded-xl bg-destructive/5 border border-destructive/30 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-medium text-destructive">{t('profile.deleteAccount')}</p>
+            <p className="text-sm text-muted">{t('profile.deleteAccountDesc')}</p>
+          </div>
+          <Button variant="destructive" disabled className="w-full sm:w-auto">
+            {t('profile.deleteAccount')}
+          </Button>
+        </div>
       </Section>
     </div>
   )
