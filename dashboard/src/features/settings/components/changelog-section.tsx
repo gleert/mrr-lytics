@@ -24,6 +24,20 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.3.0',
+    date: '2026-03-26',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v230.invoiceStatuses' },
+      { type: 'feature', text: 'changelog.entries.v230.statusFilter' },
+      { type: 'improvement', text: 'changelog.entries.v230.intlFormatting' },
+      { type: 'improvement', text: 'changelog.entries.v230.revenueUnpaid' },
+      { type: 'improvement', text: 'changelog.entries.v230.mobileSettings' },
+      { type: 'improvement', text: 'changelog.entries.v230.mobileProfile' },
+      { type: 'fix', text: 'changelog.entries.v230.spamClients' },
+      { type: 'fix', text: 'changelog.entries.v230.compactCurrency' },
+    ],
+  },
+  {
     version: '2.2.0',
     date: '2026-03-24',
     changes: [

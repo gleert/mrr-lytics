@@ -732,6 +732,16 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v230: {
+          invoiceStatuses: 'Revenue transactions now show invoice status (Paid, Unpaid, Cancelled, Refunded)',
+          statusFilter: 'New status filter in transactions table to filter by invoice payment status',
+          intlFormatting: 'All numbers, currencies, and percentages use Intl.NumberFormat with tenant locale',
+          revenueUnpaid: 'Revenue stats, breakdown, and trends now include unpaid invoices',
+          mobileSettings: 'Settings page blocks (appearance, language, currency) stack properly on mobile',
+          mobileProfile: 'Profile page sections (account info, organization, danger zone) responsive on mobile',
+          spamClients: 'Spam clients (Closed without services) excluded from churn metrics and client counts',
+          compactCurrency: 'Compact currency format uses universal k/M suffixes instead of locale-specific words',
+        },
         v220: {
           hubspotConnector: 'HubSpot CRM outbound connector — push contacts, lifecycle updates, and notes',
           salesforceConnector: 'Salesforce CRM outbound connector — push contacts, tasks, and status updates',

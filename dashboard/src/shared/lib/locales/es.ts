@@ -729,6 +729,16 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v230: {
+          invoiceStatuses: 'Las transacciones de ingresos ahora muestran el estado de la factura (Paid, Unpaid, Cancelled, Refunded)',
+          statusFilter: 'Nuevo filtro de estado en la tabla de transacciones para filtrar por estado de pago',
+          intlFormatting: 'Todos los números, monedas y porcentajes usan Intl.NumberFormat con el locale del tenant',
+          revenueUnpaid: 'Estadísticas, desglose y tendencias de ingresos ahora incluyen facturas no pagadas',
+          mobileSettings: 'Los bloques de configuración (apariencia, idioma, moneda) se apilan correctamente en móvil',
+          mobileProfile: 'Las secciones del perfil (info de cuenta, organización, zona de peligro) adaptadas a móvil',
+          spamClients: 'Clientes spam (cerrados sin servicios) excluidos de métricas de churn y conteos de clientes',
+          compactCurrency: 'Formato compacto de moneda usa sufijos universales k/M en vez de palabras por locale',
+        },
         v220: {
           hubspotConnector: 'Conector CRM HubSpot de salida — envía contactos, actualizaciones de ciclo de vida y notas',
           salesforceConnector: 'Conector CRM Salesforce de salida — envía contactos, tareas y actualizaciones de estado',
