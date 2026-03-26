@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { cn, formatPercent } from '@/shared/lib/utils'
+import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
 
 interface KPICardProps {
@@ -56,7 +56,7 @@ export function KPICard({
   accentColor = 'primary',
 }: KPICardProps) {
   const { t } = useTranslation()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatPercent, formatNumber } = useCurrency()
   const colors = accentColors[accentColor]
 
   const formattedValue = React.useMemo(() => {
@@ -65,9 +65,9 @@ export function KPICard({
       case 'currency':
         return formatCurrency(value)
       case 'percent':
-        return `${value.toFixed(2)}%`
+        return formatPercent(value, { decimals: 2 })
       default:
-        return value.toLocaleString()
+        return formatNumber(value)
     }
   }, [value, format, formatCurrency])
 
@@ -124,7 +124,7 @@ export function KPICard({
               )}
             >
               <TrendIcon className="h-3 w-3" />
-              {formatPercent(changePercent)}
+              {formatPercent(changePercent, { sign: true })}
             </div>
             <span className="text-xs text-muted-foreground">{changeLabel || t('common.vsPreviousPeriod')}</span>
           </div>

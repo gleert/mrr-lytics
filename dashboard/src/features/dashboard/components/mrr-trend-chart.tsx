@@ -22,7 +22,7 @@ export function MRRTrendChart() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data, isLoading } = useMRRTrend()
-  const { formatCurrency, symbol } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact, formatNumber } = useCurrency()
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
@@ -207,7 +207,7 @@ export function MRRTrendChart() {
           <div className="flex items-center gap-2 text-amber-400">
             <Icon name="warning" size="sm" />
             <span>
-              {t('dashboard.mrrTrendFallbackWarning', { pct: uncategorizedPct.toFixed(0) })}
+              {t('dashboard.mrrTrendFallbackWarning', { pct: formatNumber(uncategorizedPct, { maximumFractionDigits: 0 }) })}
             </span>
           </div>
           <button
@@ -260,7 +260,7 @@ export function MRRTrendChart() {
                   tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                   tickLine={false}
                   axisLine={{ stroke: 'var(--color-border)' }}
-                  tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => formatCurrencyCompact(value)}
                 />
                 <Tooltip
                   content={

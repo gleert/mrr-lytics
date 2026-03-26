@@ -35,7 +35,7 @@ const BILLING_CYCLE_COLORS = [
 export function ForecastingPage() {
   const { t } = useTranslation()
   const { data: stats, isLoading } = useForecastingStats()
-  const { formatCurrency, symbol } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact, formatPercent, formatNumber } = useCurrency()
 
   // Get bucket type label based on the analysis granularity
   const getBucketLabel = (bucketType: string | undefined) => {
@@ -290,7 +290,7 @@ export function ForecastingPage() {
                         tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                         tickLine={false}
                         axisLine={{ stroke: 'var(--color-border)' }}
-                        tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
+                        tickFormatter={(value) => formatCurrencyCompact(value)}
                       />
                       <Tooltip
                         cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
@@ -391,7 +391,7 @@ export function ForecastingPage() {
                         tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                         tickLine={false}
                         axisLine={{ stroke: 'var(--color-border)' }}
-                        tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
+                        tickFormatter={(value) => formatCurrencyCompact(value)}
                       />
                       <YAxis
                         type="category"
@@ -444,7 +444,7 @@ export function ForecastingPage() {
                         <span className="font-medium">{item.name}</span>
                         <span className="text-muted">{item.count} {t('forecasting.services')}</span>
                         <span className="text-muted">·</span>
-                        <span className="font-medium">{pct.toFixed(1)}%</span>
+                        <span className="font-medium">{formatPercent(pct)}</span>
                       </div>
                     )
                   })}
@@ -497,7 +497,7 @@ export function ForecastingPage() {
                       {formatCurrency(data.mrr, { maximumFractionDigits: 0 })}
                     </p>
                     <p className={`text-xs sm:text-sm font-medium tabular-nums ${growthColor}`}>
-                      {data.growth >= 0 ? '+' : ''}{data.growth.toFixed(1)}%
+                      {formatPercent(data.growth, { sign: true })}
                     </p>
                   </div>
                 ))}

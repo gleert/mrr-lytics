@@ -12,7 +12,8 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Icon } from '@/shared/components/ui/icon'
-import { cn, formatCurrency } from '@/shared/lib/utils'
+import { cn } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 import { useRevenueBreakdown, type BreakdownGroupBy } from '../hooks/use-revenue-stats'
 
 const CHART_COLORS = [
@@ -42,6 +43,7 @@ const GROUP_BY_OPTIONS: GroupByOption[] = [
 
 export function RevenueBreakdownChart() {
   const { t } = useTranslation()
+  const { formatCurrency, formatCurrencyCompact } = useCurrency()
   const [groupBy, setGroupBy] = React.useState<BreakdownGroupBy>('category')
   const { data, isLoading } = useRevenueBreakdown(groupBy)
 
@@ -132,7 +134,7 @@ export function RevenueBreakdownChart() {
                   tick={{ fill: 'var(--color-muted)', fontSize: 12 }}
                   tickLine={false}
                   axisLine={{ stroke: 'var(--color-border)' }}
-                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => formatCurrencyCompact(value)}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-surface-hover)' }} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>

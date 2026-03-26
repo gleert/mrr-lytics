@@ -8,7 +8,7 @@ import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 export function TopProductsTable() {
   const { t } = useTranslation()
   const { data, isLoading } = useTopProducts(5)
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatPercent } = useCurrency()
 
   return (
     <div className="rounded-xl border border-border bg-surface">
@@ -62,7 +62,7 @@ export function TopProductsTable() {
                         />
                       </div>
                       <span className="text-xs text-muted w-10 text-right">
-                        {product.percentage.toFixed(1)}%
+                        {formatPercent(product.percentage)}
                       </span>
                     </div>
                   </div>
@@ -121,7 +121,7 @@ export function TopProductsTable() {
                             />
                           </div>
                           <span className="text-sm text-muted w-12 text-right">
-                            {product.percentage.toFixed(1)}%
+                            {formatPercent(product.percentage)}
                           </span>
                         </div>
                       </td>

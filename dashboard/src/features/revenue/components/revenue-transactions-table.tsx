@@ -4,7 +4,8 @@ import { Icon } from '@/shared/components/ui/icon'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useRevenueTransactions, type TransactionFilters } from '../hooks/use-revenue-stats'
-import { formatCurrency, formatDate, cn } from '@/shared/lib/utils'
+import { formatDate, cn } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 
 const TYPE_COLORS: Record<string, string> = {
   Hosting: 'bg-primary-500/10 text-primary-400',
@@ -20,6 +21,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export function RevenueTransactionsTable() {
   const { t } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [sortBy, setSortBy] = useState('date')

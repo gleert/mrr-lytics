@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 import type { ReportType } from '../hooks/use-report-export'
 
 interface ReportDefinition {
@@ -33,6 +34,7 @@ interface ReportSelectorProps {
 
 export function ReportSelector({ selected, onSelect, selectedTotalRows, selectedIsLoading }: ReportSelectorProps) {
   const { t } = useTranslation()
+  const { formatNumber } = useCurrency()
 
   return (
     <div className="space-y-3">
@@ -76,7 +78,7 @@ export function ReportSelector({ selected, onSelect, selectedTotalRows, selected
                       <span className="inline-flex items-center h-4 w-10 rounded-full bg-white/10 animate-pulse" />
                     ) : (
                       <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold tabular-nums', badgeBg, badgeText)}>
-                        {selectedTotalRows?.toLocaleString()}
+                        {selectedTotalRows != null ? formatNumber(selectedTotalRows) : ''}
                       </span>
                     )
                   )}

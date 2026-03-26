@@ -56,7 +56,7 @@ const TLD_COLORS = [
 export function DomainsPage() {
   const { t } = useTranslation()
   const { data: stats, isLoading: statsLoading } = useDomainStats()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatNumber, formatPercent } = useCurrency()
   
   const [statusFilter, setStatusFilter] = useState('Active')
   const [tldFilter, setTldFilter] = useState('all')
@@ -131,7 +131,7 @@ export function DomainsPage() {
     const lostEntry   = payload.find(p => p.name === 'lost')
     const activeVal   = activeEntry?.value ?? 0
     const lostVal     = lostEntry?.value   ?? 0
-    const retentionPct = activeVal > 0 ? ((activeVal / (activeVal + lostVal)) * 100).toFixed(1) : '—'
+    const retentionPct = activeVal > 0 ? formatPercent((activeVal / (activeVal + lostVal)) * 100) : '—'
 
     return (
       <div className="rounded-xl border border-border bg-background shadow-xl px-4 py-3 min-w-[180px]">
@@ -142,18 +142,18 @@ export function DomainsPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
               <span className="text-sm text-muted">{t('domains.activeDomains')}</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">{activeVal.toLocaleString()}</span>
+            <span className="text-sm font-semibold text-foreground">{formatNumber(activeVal)}</span>
           </div>
           <div className="flex items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />
               <span className="text-sm text-muted">{t('domains.lostDomains')}</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">{lostVal.toLocaleString()}</span>
+            <span className="text-sm font-semibold text-foreground">{formatNumber(lostVal)}</span>
           </div>
           <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
             <span className="text-xs text-muted">{t('domains.retentionRate')}</span>
-            <span className="text-xs font-bold text-emerald-400">{retentionPct}%</span>
+            <span className="text-xs font-bold text-emerald-400">{retentionPct}</span>
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@ export function DomainsPage() {
     const name  = entry.payload.name
     const value = entry.payload.value
     const total = stats?.total_domains ?? 0
-    const pct   = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
+    const pct   = total > 0 ? (value / total) * 100 : 0
     const color = STATUS_COLORS[name] || '#9CA3AF'
 
     return (
@@ -180,11 +180,11 @@ export function DomainsPage() {
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-sm text-muted">{t('domains.totalDomains')}</span>
-          <span className="text-sm font-bold text-foreground">{value.toLocaleString()}</span>
+          <span className="text-sm font-bold text-foreground">{formatNumber(value)}</span>
         </div>
         <div className="flex items-center justify-between gap-6 mt-1">
           <span className="text-sm text-muted">{t('domains.shareOf')}</span>
-          <span className="text-sm font-bold" style={{ color }}>{pct}%</span>
+          <span className="text-sm font-bold" style={{ color }}>{formatPercent(pct)}</span>
         </div>
       </div>
     )
@@ -199,7 +199,7 @@ export function DomainsPage() {
     const name  = entry.payload.name
     const value = entry.payload.value
     const total = stats?.total_domains ?? 0
-    const pct   = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
+    const pct   = total > 0 ? (value / total) * 100 : 0
     const tldIndex = stats?.tld_breakdown?.findIndex(t => t.name === name) ?? 0
     const color = TLD_COLORS[tldIndex % TLD_COLORS.length] || '#8B5CF6'
 
@@ -211,11 +211,11 @@ export function DomainsPage() {
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-sm text-muted">{t('domains.totalDomains')}</span>
-          <span className="text-sm font-bold text-foreground">{value.toLocaleString()}</span>
+          <span className="text-sm font-bold text-foreground">{formatNumber(value)}</span>
         </div>
         <div className="flex items-center justify-between gap-6 mt-1">
           <span className="text-sm text-muted">{t('domains.shareOf')}</span>
-          <span className="text-sm font-bold" style={{ color }}>{pct}%</span>
+          <span className="text-sm font-bold" style={{ color }}>{formatPercent(pct)}</span>
         </div>
       </div>
     )

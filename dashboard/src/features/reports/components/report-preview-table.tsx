@@ -51,13 +51,15 @@ function TableSkeleton({ columnCount }: { columnCount: number }) {
 function formatCell(
   value: unknown,
   format: string | undefined,
-  formatCurrencyFn: (n: number) => string
+  formatCurrencyFn: (n: number) => string,
+  formatPercentFn: (n: number) => string,
+  formatNumberFn: (n: number) => string
 ): string {
   if (value === null || value === undefined) return '—'
   if (format === 'boolean') return value ? 'Yes' : 'No'
   if (format === 'currency') return formatCurrencyFn(Number(value))
-  if (format === 'percent') return `${Number(value).toFixed(1)}%`
-  if (format === 'number') return Number(value).toLocaleString()
+  if (format === 'percent') return formatPercentFn(Number(value))
+  if (format === 'number') return formatNumberFn(Number(value))
   return String(value)
 }
 
@@ -74,7 +76,7 @@ function computeColumnTotal(rows: ReportRow[], key: string): number {
 
 export function ReportPreviewTable({ rows, columns, isLoading, totalRows, isAtLimit }: ReportPreviewTableProps) {
   const { t } = useTranslation()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatPercent, formatNumber } = useCurrency()
 
   // Pre-compute column totals for % of total
   const columnTotals = Object.fromEntries(
@@ -167,10 +169,10 @@ export function ReportPreviewTable({ rows, columns, isLoading, totalRows, isAtLi
                           : 'text-left text-foreground'
                       )}
                     >
-                      {formatCell(value, col.format, formatCurrency)}
+                      {formatCell(value, col.format, formatCurrency, (n) => formatPercent(n), formatNumber)}
                       {pct !== null && (
                         <span className="ml-1.5 text-muted font-normal">
-                          {pct.toFixed(0)}%
+                          {formatPercent(pct, { decimals: 0 })}
                         </span>
                       )}
                     </td>

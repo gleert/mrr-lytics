@@ -8,10 +8,11 @@ import { RevenueChart } from '../components/revenue-chart'
 import { ChurnChart } from '../components/churn-chart'
 import { DateRangePicker, type DateRange } from '../components/date-range-picker'
 import { useMetrics, useMetricsHistory } from '@/features/dashboard/hooks/use-metrics'
-import { formatCurrency } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 
 export function MetricsPage() {
   const { t } = useTranslation()
+  const { formatCurrency, formatPercent } = useCurrency()
   const { data: metrics, isLoading, error } = useMetrics()
   const { data: history, isLoading: historyLoading } = useMetricsHistory(90) // 90 days for metrics page
   const [dateRange, setDateRange] = React.useState<DateRange>('last_3_months')
@@ -114,7 +115,7 @@ export function MetricsPage() {
               <CardContent className="pt-6">
                 <p className="text-sm font-medium text-muted">Churn Rate (30d)</p>
                 <p className="mt-1 text-2xl font-semibold text-warning">
-                  {(metrics?.churn.churn_rate ?? 0).toFixed(2)}%
+                  {formatPercent(metrics?.churn.churn_rate ?? 0, { decimals: 2 })}
                 </p>
               </CardContent>
             </Card>

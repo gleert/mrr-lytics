@@ -9,7 +9,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { formatCurrency } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
 interface MRRChartProps {
@@ -18,6 +18,7 @@ interface MRRChartProps {
 }
 
 export function MRRChart({ data, loading }: MRRChartProps) {
+  const { formatCurrency } = useCurrency()
   if (loading) {
     return (
       <Card>

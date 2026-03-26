@@ -10,6 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
+import { useCurrency } from '@/shared/hooks/use-currency'
 
 interface ChurnChartProps {
   data: Array<{ date: string; rate: number; churned: number }>
@@ -17,6 +18,8 @@ interface ChurnChartProps {
 }
 
 export function ChurnChart({ data, loading }: ChurnChartProps) {
+  const { formatPercent, formatNumber } = useCurrency()
+
   if (loading) {
     return (
       <Card>
@@ -81,12 +84,12 @@ export function ChurnChart({ data, loading }: ChurnChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={(value) => formatPercent(value, { decimals: 0 })}
               />
               <Tooltip
                 content={
                   <ChartTooltip
-                    valueFormatter={(v, key) => key === 'rate' ? `${v.toFixed(2)}%` : String(Math.round(v))}
+                    valueFormatter={(v, key) => key === 'rate' ? formatPercent(v, { decimals: 2 }) : formatNumber(Math.round(v))}
                   />
                 }
               />

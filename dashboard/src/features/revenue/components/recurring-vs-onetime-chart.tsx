@@ -18,7 +18,7 @@ import { ChartSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function RecurringVsOnetimeChart() {
   const { t } = useTranslation()
-  const { formatCurrencyCompact, symbol } = useCurrency()
+  const { formatCurrencyCompact, formatPercent } = useCurrency()
   const { data, isLoading } = useRevenueTrend()
 
   // Sum totals across the whole period
@@ -66,7 +66,7 @@ export function RecurringVsOnetimeChart() {
                   {formatCurrencyCompact(recurring)}
                 </p>
                 <p className="text-sm text-primary-400 font-medium">
-                  {recurringPct.toFixed(1)}%
+                  {formatPercent(recurringPct)}
                 </p>
               </div>
               <div className="text-center">
@@ -81,7 +81,7 @@ export function RecurringVsOnetimeChart() {
                   {formatCurrencyCompact(onetime)}
                 </p>
                 <p className="text-sm font-medium text-emerald-400">
-                  {onetimePct.toFixed(1)}%
+                  {formatPercent(onetimePct)}
                 </p>
               </div>
             </div>
@@ -137,7 +137,7 @@ export function RecurringVsOnetimeChart() {
                       tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
                       tickLine={false}
                       axisLine={{ stroke: 'var(--color-border)' }}
-                      tickFormatter={(v) => `${symbol}${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v) => formatCurrencyCompact(v)}
                       width={48}
                     />
                     <Tooltip

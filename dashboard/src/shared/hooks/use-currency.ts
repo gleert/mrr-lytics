@@ -2,22 +2,15 @@ import { useCallback } from 'react'
 import { useFilters, type Currency, CURRENCY_CONFIG } from '@/app/providers'
 
 /**
- * Hook to get current currency settings and formatting function
- * 
- * Usage:
- * ```tsx
- * const { currency, locale, formatCurrency } = useCurrency()
- * 
- * // Format a value
- * <span>{formatCurrency(1234.56)}</span>
- * ```
+ * Hook to get current currency settings and locale-aware formatting functions.
+ * All formatters use Intl.NumberFormat with the tenant's locale and currency.
  */
 export function useCurrency() {
   const { getCurrentCurrency, getCurrentLocale } = useFilters()
-  
+
   const currency = getCurrentCurrency()
   const locale = getCurrentLocale()
-  
+
   const formatCurrency = useCallback((
     amount: number,
     options?: {
@@ -34,15 +27,6 @@ export function useCurrency() {
   }, [currency, locale])
 
   const formatCurrencyCompact = useCallback((amount: number): string => {
-    // For large numbers, show abbreviated (e.g., 1.2k, 1.5M)
-    if (Math.abs(amount) >= 1000000) {
-      return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-        notation: 'compact',
-        maximumFractionDigits: 1,
-      }).format(amount)
-    }
     if (Math.abs(amount) >= 1000) {
       return new Intl.NumberFormat(locale, {
         style: 'currency',
@@ -61,6 +45,28 @@ export function useCurrency() {
     return formatted
   }, [formatCurrency])
 
+  const formatNumber = useCallback((
+    value: number,
+    options?: Intl.NumberFormatOptions
+  ): string => {
+    return new Intl.NumberFormat(locale, options).format(value)
+  }, [locale])
+
+  const formatPercent = useCallback((
+    value: number,
+    options?: { decimals?: number; sign?: boolean }
+  ): string => {
+    const decimals = options?.decimals ?? 1
+    const sign = options?.sign ?? false
+    const formatted = new Intl.NumberFormat(locale, {
+      style: 'percent',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value / 100)
+    if (sign && value > 0) return `+${formatted}`
+    return formatted
+  }, [locale])
+
   return {
     currency,
     locale,
@@ -68,6 +74,8 @@ export function useCurrency() {
     formatCurrency,
     formatCurrencyCompact,
     formatCurrencyWithSign,
+    formatNumber,
+    formatPercent,
   }
 }
 

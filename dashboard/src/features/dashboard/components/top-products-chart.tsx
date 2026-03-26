@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { formatCurrency } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 import type { RevenueByProduct } from '@/shared/types'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
 
@@ -28,6 +28,8 @@ const COLORS = [
 ]
 
 export function TopProductsChart({ data, loading }: TopProductsChartProps) {
+  const { formatCurrency } = useCurrency()
+
   if (loading) {
     return (
       <Card>

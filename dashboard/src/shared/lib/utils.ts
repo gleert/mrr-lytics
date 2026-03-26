@@ -20,13 +20,19 @@ export function formatCurrency(
 
 export function formatNumber(
   value: number,
-  options?: Intl.NumberFormatOptions
+  options?: Intl.NumberFormatOptions & { locale?: string }
 ): string {
-  return new Intl.NumberFormat('en-US', options).format(value)
+  const { locale, ...intlOptions } = options ?? {}
+  return new Intl.NumberFormat(locale, intlOptions).format(value)
 }
 
-export function formatPercent(value: number, decimals = 1): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`
+export function formatPercent(value: number, decimals = 1, locale?: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+    signDisplay: 'exceptZero',
+  }).format(value / 100)
 }
 
 export function formatDate(

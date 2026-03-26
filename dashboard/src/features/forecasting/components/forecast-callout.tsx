@@ -9,7 +9,7 @@ interface ForecastCalloutProps {
 
 export function ForecastCallout({ stats }: ForecastCalloutProps) {
   const { t } = useTranslation()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatPercent, formatNumber } = useCurrency()
 
   const isPositive = stats.scenarios.baseline.growth >= 0
   const mainValue = isPositive
@@ -35,7 +35,7 @@ export function ForecastCallout({ stats }: ForecastCalloutProps) {
               {formatCurrency(mrr, { maximumFractionDigits: 0 })}
             </span>
             <span className="text-xs text-white/70 tabular-nums">
-              {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+              {formatPercent(growth, { sign: true })}
             </span>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function ForecastCallout({ stats }: ForecastCalloutProps) {
             </p>
             <p className="text-white/70 text-sm">
               {t('forecasting.calloutGainSub', {
-                growth: growthValue.toFixed(1),
+                growth: formatNumber(growthValue, { maximumFractionDigits: 1 }),
                 baseline: formatCurrency(stats.scenarios.baseline.mrr, { maximumFractionDigits: 0 }),
               })}
             </p>
@@ -93,7 +93,7 @@ export function ForecastCallout({ stats }: ForecastCalloutProps) {
           </p>
           <p className="text-white/70 text-sm">
             {t('forecasting.calloutLossSub', {
-              growth: Math.abs(growthValue).toFixed(1),
+              growth: formatNumber(Math.abs(growthValue), { maximumFractionDigits: 1 }),
               baseline: formatCurrency(stats.scenarios.baseline.mrr, { maximumFractionDigits: 0 }),
             })}
           </p>

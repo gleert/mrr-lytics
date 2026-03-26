@@ -38,7 +38,7 @@ export function DailyCommittedMRRChart() {
   const { t } = useTranslation()
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodDays>(30)
   const { data, isLoading } = useDailyMRR(selectedPeriod)
-  const { formatCurrency, symbol } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact } = useCurrency()
 
   // Transform data for stacked area chart
   const chartData = useMemo(() => {
@@ -158,7 +158,7 @@ export function DailyCommittedMRRChart() {
                   tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                   tickLine={false}
                   axisLine={{ stroke: 'var(--color-border)' }}
-                  tickFormatter={(value) => `${symbol}${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => formatCurrencyCompact(value)}
                 />
                 <Tooltip
                   content={

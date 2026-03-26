@@ -31,7 +31,7 @@ interface ProductStatsProps {
 
 export function ProductStats({ products, productGroups, isLoading: productsLoading }: ProductStatsProps) {
   const { t } = useTranslation()
-  const { formatCurrency, symbol } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact, formatPercent } = useCurrency()
   const { data: topProducts, isLoading: topLoading } = useTopProducts(10)
   const { data: mrrBreakdown, isLoading: breakdownLoading } = useMRRBreakdown()
 
@@ -133,7 +133,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={{ stroke: 'var(--color-border)' }}
-                      tickFormatter={(v) => `${symbol}${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v) => formatCurrencyCompact(v)}
                     />
                     <YAxis
                       type="category"
@@ -175,7 +175,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                     <span className="font-medium truncate max-w-[100px]">{p.name}</span>
                     <span className="text-muted">{p.active_services} srv</span>
                     <span className="text-muted">·</span>
-                    <span className="font-medium">{p.percentage.toFixed(1)}%</span>
+                    <span className="font-medium">{formatPercent(p.percentage)}</span>
                   </div>
                 ))}
               </div>
@@ -214,7 +214,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={{ stroke: 'var(--color-border)' }}
-                      tickFormatter={(v) => `${symbol}${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v) => formatCurrencyCompact(v)}
                     />
                     <YAxis
                       type="category"
@@ -252,7 +252,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                 <Icon name="info" size="sm" className="text-muted shrink-0" />
                 <span className="text-muted">
                   {mrrBreakdown.using_categories
-                    ? t('products.stats.categoriesActive', { pct: (100 - mrrBreakdown.uncategorized_mrr_pct).toFixed(0) })
+                    ? t('products.stats.categoriesActive', { pct: formatPercent(100 - mrrBreakdown.uncategorized_mrr_pct, { decimals: 0 }) })
                     : t('products.stats.categoriesInactive')}
                 </span>
               </div>
@@ -279,7 +279,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       <div className="w-16 h-1.5 rounded-full bg-surface-elevated overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }} />
                       </div>
-                      <span className="text-xs text-muted w-10 text-right">{pct.toFixed(0)}%</span>
+                      <span className="text-xs text-muted w-10 text-right">{formatPercent(pct, { decimals: 0 })}</span>
                     </div>
                   )
                 })}
@@ -302,7 +302,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                       <div className="w-16 h-1.5 rounded-full bg-surface-elevated overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: COLORS[(i + 3) % COLORS.length] }} />
                       </div>
-                      <span className="text-xs text-muted w-10 text-right">{pct.toFixed(0)}%</span>
+                      <span className="text-xs text-muted w-10 text-right">{formatPercent(pct, { decimals: 0 })}</span>
                     </div>
                   )
                 })}

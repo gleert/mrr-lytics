@@ -16,7 +16,7 @@ interface Insight {
 
 export function QuickInsights({ metrics }: QuickInsightsProps) {
   const { t } = useTranslation()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatNumber } = useCurrency()
 
   const insights = useMemo(() => {
     const items: Insight[] = []
@@ -26,13 +26,13 @@ export function QuickInsights({ metrics }: QuickInsightsProps) {
       if (metrics.mrr.mrr_change > 0) {
         items.push({
           icon: 'trending_up',
-          text: t('dashboard.insights.mrrGrew', { pct: metrics.mrr.mrr_change.toFixed(1) }),
+          text: t('dashboard.insights.mrrGrew', { pct: formatNumber(metrics.mrr.mrr_change, { maximumFractionDigits: 1 }) }),
           color: 'text-emerald-400',
         })
       } else if (metrics.mrr.mrr_change < 0) {
         items.push({
           icon: 'trending_down',
-          text: t('dashboard.insights.mrrDeclined', { pct: Math.abs(metrics.mrr.mrr_change).toFixed(1) }),
+          text: t('dashboard.insights.mrrDeclined', { pct: formatNumber(Math.abs(metrics.mrr.mrr_change), { maximumFractionDigits: 1 }) }),
           color: 'text-red-400',
         })
       }
@@ -42,13 +42,13 @@ export function QuickInsights({ metrics }: QuickInsightsProps) {
     if (metrics.churn.churn_rate > 5) {
       items.push({
         icon: 'warning',
-        text: t('dashboard.insights.highChurn', { rate: metrics.churn.churn_rate.toFixed(1) }),
+        text: t('dashboard.insights.highChurn', { rate: formatNumber(metrics.churn.churn_rate, { maximumFractionDigits: 1 }) }),
         color: 'text-amber-400',
       })
     } else if (metrics.churn.churn_rate <= 2 && metrics.churn.churn_rate >= 0) {
       items.push({
         icon: 'verified',
-        text: t('dashboard.insights.lowChurn', { rate: metrics.churn.churn_rate.toFixed(1) }),
+        text: t('dashboard.insights.lowChurn', { rate: formatNumber(metrics.churn.churn_rate, { maximumFractionDigits: 1 }) }),
         color: 'text-emerald-400',
       })
     }
@@ -78,13 +78,13 @@ export function QuickInsights({ metrics }: QuickInsightsProps) {
     if (metrics.clients.active_change !== undefined && metrics.clients.active_change > 5) {
       items.push({
         icon: 'group_add',
-        text: t('dashboard.insights.clientsGrowing', { pct: metrics.clients.active_change.toFixed(1) }),
+        text: t('dashboard.insights.clientsGrowing', { pct: formatNumber(metrics.clients.active_change, { maximumFractionDigits: 1 }) }),
         color: 'text-emerald-400',
       })
     }
 
     return items.slice(0, 4) // Max 4 insights
-  }, [metrics, t, formatCurrency])
+  }, [metrics, t, formatCurrency, formatNumber])
 
   if (insights.length === 0) return null
 

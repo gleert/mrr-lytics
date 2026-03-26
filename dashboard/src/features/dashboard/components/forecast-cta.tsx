@@ -10,7 +10,7 @@ export function ForecastCTA() {
   const navigate = useNavigate()
   const { data: stats, isLoading: forecastLoading } = useForecastingStats()
   const { data: metrics, isLoading: metricsLoading } = useMetrics()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatNumber } = useCurrency()
 
   if (forecastLoading || metricsLoading || !stats?.scenarios) return null
 
@@ -57,11 +57,11 @@ export function ForecastCTA() {
           <p className="text-white/70 text-sm">
             {isPositive
               ? t('forecasting.calloutGainSub', {
-                  growth: growthValue.toFixed(1),
+                  growth: formatNumber(growthValue, { maximumFractionDigits: 1 }),
                   baseline: formatCurrency(stats.scenarios.baseline.mrr, { maximumFractionDigits: 0 }),
                 })
               : t('forecasting.calloutLossSub', {
-                  growth: Math.abs(growthValue).toFixed(1),
+                  growth: formatNumber(Math.abs(growthValue), { maximumFractionDigits: 1 }),
                   baseline: formatCurrency(stats.scenarios.baseline.mrr, { maximumFractionDigits: 0 }),
                 })
             }
@@ -94,8 +94,8 @@ export function ForecastCTA() {
           </p>
           <p className="text-white/70 text-sm">
             {revenueChange >= 0
-              ? t('dashboard.revenueCta.subUp', { percent: revenueChange.toFixed(1) })
-              : t('dashboard.revenueCta.subDown', { percent: Math.abs(revenueChange).toFixed(1) })
+              ? t('dashboard.revenueCta.subUp', { percent: formatNumber(revenueChange, { maximumFractionDigits: 1 }) })
+              : t('dashboard.revenueCta.subDown', { percent: formatNumber(Math.abs(revenueChange), { maximumFractionDigits: 1 }) })
             }
           </p>
         </div>

@@ -31,7 +31,7 @@ const ALL_BREAKDOWN_OPTIONS: { value: BreakdownGroupBy; labelKey: string; icon: 
 export function RevenuePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { formatCurrencyCompact, symbol } = useCurrency()
+  const { formatCurrencyCompact } = useCurrency()
   const { data: stats, isLoading } = useRevenueStats()
 
   // Default to 'source' — safe default that always has data.
@@ -320,7 +320,7 @@ export function RevenuePage() {
                     tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                     tickLine={false}
                     axisLine={{ stroke: 'var(--color-border)' }}
-                    tickFormatter={(v) => `${symbol}${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v) => formatCurrencyCompact(v)}
                     width={52}
                   />
                   <Tooltip content={<CustomTooltip />} />

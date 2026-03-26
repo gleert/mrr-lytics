@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { ChartTooltip } from '@/shared/components/chart-tooltip'
-import { formatCurrency } from '@/shared/lib/utils'
+import { useCurrency } from '@/shared/hooks/use-currency'
 
 interface RevenueChartProps {
   data: Array<{ product_name: string; mrr: number; active_count: number; percentage: number }>
@@ -27,6 +27,8 @@ const COLORS = [
 ]
 
 export function RevenueChart({ data, loading }: RevenueChartProps) {
+  const { formatCurrency } = useCurrency()
+
   if (loading) {
     return (
       <Card>

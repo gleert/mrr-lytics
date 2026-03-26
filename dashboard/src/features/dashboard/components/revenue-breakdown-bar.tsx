@@ -10,7 +10,7 @@ export function RevenueBreakdownBar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data, isLoading } = useMRRBreakdown()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, formatPercent } = useCurrency()
 
   return (
     <div className="rounded-xl border border-border bg-surface">
@@ -51,7 +51,7 @@ export function RevenueBreakdownBar() {
           <Icon name="info" size="sm" className="text-warning shrink-0" />
           <p className="text-xs text-muted flex-1">
             {t('dashboard.revenueBreakdownFallbackWarning', {
-              pct: data.uncategorized_mrr_pct.toFixed(0),
+              pct: formatPercent(data.uncategorized_mrr_pct, { decimals: 0 }),
             })}
           </p>
           <button
@@ -100,7 +100,7 @@ export function RevenueBreakdownBar() {
                   )}>
                     <p className="font-medium text-sm">{group.name}</p>
                     <p className="text-xs text-muted">
-                      {formatCurrency(group.mrr)} ({group.percentage.toFixed(1)}%)
+                      {formatCurrency(group.mrr)} ({formatPercent(group.percentage)})
                     </p>
                     <p className="text-xs text-muted">
                       {group.count} {t('dashboard.services')}
@@ -110,7 +110,7 @@ export function RevenueBreakdownBar() {
                   {group.percentage >= 8 && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-xs font-medium text-white drop-shadow-sm">
-                        {group.percentage.toFixed(0)}%
+                        {formatPercent(group.percentage, { decimals: 0 })}
                       </span>
                     </div>
                   )}
