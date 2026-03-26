@@ -132,9 +132,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get churned clients — use synced_at as proxy for close date (WHMCS doesn't expose a close date)
-    const { data: churnedClients, error: churnedError } = await supabase
+    const { data: churnedClientsRaw, error: churnedError } = await supabase
       .from('whmcs_clients')
-      .select('id, synced_at')
+      .select('id, whmcs_id, instance_id, synced_at')
       .in('instance_id', instanceIds)
       .eq('status', 'Closed')
       .gte('synced_at', startDate.toISOString())
@@ -142,6 +142,26 @@ export async function GET(request: NextRequest) {
 
     if (churnedError) {
       throw new Error('Failed to fetch churned clients')
+    }
+
+    // Filter out spam/empty clients: only count churned if they had at least 1 service
+    let churnedClients = churnedClientsRaw
+    if (churnedClientsRaw && churnedClientsRaw.length > 0) {
+      const churnedWhmcsIds = churnedClientsRaw.map(c => c.whmcs_id)
+      const { data: churnedServices } = await supabase
+        .from('whmcs_hosting')
+        .select('client_id, instance_id')
+        .in('instance_id', instanceIds)
+        .in('client_id', churnedWhmcsIds)
+
+      const clientsWithAnyService = new Set<string>()
+      churnedServices?.forEach(s => {
+        clientsWithAnyService.add(`${s.instance_id}:${s.client_id}`)
+      })
+
+      churnedClients = churnedClientsRaw.filter(c =>
+        clientsWithAnyService.has(`${c.instance_id}:${c.whmcs_id}`)
+      )
     }
 
     // Build time-series buckets for new clients
