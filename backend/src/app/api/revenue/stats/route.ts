@@ -53,15 +53,14 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get all paid invoices in period (need whmcs_id to join with invoice_items)
+    // Get all invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total, subtotal, status, datepaid')
+      .select('whmcs_id, total, subtotal, status, datepaid, date')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', startDate.toISOString())
-      .lte('datepaid', endDate.toISOString())
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString())
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -190,10 +189,9 @@ export async function GET(request: NextRequest) {
       .from('whmcs_invoices')
       .select('whmcs_id, total')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', prevStartDate.toISOString())
-      .lte('datepaid', prevEndDate.toISOString())
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', prevStartDate.toISOString())
+      .lte('date', prevEndDate.toISOString())
 
     const prevTotalRevenue = prevInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
 

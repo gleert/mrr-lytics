@@ -53,15 +53,14 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get paid invoices in period (need whmcs_id to join with invoice_items)
+    // Get invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
       .select('whmcs_id')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', startDate.toISOString())
-      .lte('datepaid', endDate.toISOString())
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString())
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)

@@ -60,15 +60,14 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Step 1: Get paid invoices within the period (ordered by most recent)
+    // Step 1: Get invoices within the period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, instance_id, invoicenum, datepaid, status')
+      .select('whmcs_id, instance_id, invoicenum, datepaid, date, status')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', startDate.toISOString())
-      .order('datepaid', { ascending: false })
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString())
+      .order('date', { ascending: false })
       .limit(500)
 
     if (invoicesError) {
@@ -89,10 +88,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Create invoice lookup
-    const invoiceMap = new Map<string, { invoicenum: string; datepaid: string }>()
+    const invoiceMap = new Map<string, { invoicenum: string; datepaid: string; date: string; status: string }>()
     const invoiceWhmcsIds = invoices.map(inv => {
       const key = `${inv.instance_id}:${inv.whmcs_id}`
-      invoiceMap.set(key, { invoicenum: inv.invoicenum, datepaid: inv.datepaid })
+      invoiceMap.set(key, { invoicenum: inv.invoicenum, datepaid: inv.datepaid, date: inv.date, status: inv.status })
       return inv.whmcs_id
     })
 
@@ -164,7 +163,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: item.id,
-        date: invoice?.datepaid || '',
+        date: invoice?.datepaid || invoice?.date || '',
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
         client_name: clientMap.get(clientKey) || 'Unknown Client',
         product_name: productMap.get(productKey) || item.description || 'Unknown',

@@ -63,16 +63,15 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get paid invoices in period
+    // Get invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total, datepaid')
+      .select('whmcs_id, total, datepaid, date, status')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .not('datepaid', 'is', null)
-      .gte('datepaid', startDate.toISOString())
-      .lte('datepaid', endDate.toISOString())
-      .order('datepaid', { ascending: true })
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString())
+      .order('date', { ascending: true })
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -172,7 +171,7 @@ export async function GET(request: NextRequest) {
     const trendMap = new Map<string, Map<string, number>>()
 
     for (const invoice of invoices) {
-      const key = getDateKey(invoice.datepaid)
+      const key = getDateKey(invoice.datepaid || invoice.date)
       const groups = invoiceGroups.get(invoice.whmcs_id)
 
       if (!groups || groups.size === 0) {
