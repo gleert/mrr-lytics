@@ -27,13 +27,16 @@ export function useCurrency() {
   }, [currency, locale])
 
   const formatCurrencyCompact = useCallback((amount: number): string => {
-    if (Math.abs(amount) >= 1000) {
-      return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-        notation: 'compact',
-        maximumFractionDigits: 1,
-      }).format(amount)
+    const abs = Math.abs(amount)
+    const sign = amount < 0 ? '-' : ''
+    const sym = CURRENCY_CONFIG[currency].symbol
+    if (abs >= 1_000_000) {
+      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(abs / 1_000_000)
+      return `${sign}${sym}${val}M`
+    }
+    if (abs >= 1_000) {
+      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(abs / 1_000)
+      return `${sign}${sym}${val}k`
     }
     return formatCurrency(amount)
   }, [currency, locale, formatCurrency])
