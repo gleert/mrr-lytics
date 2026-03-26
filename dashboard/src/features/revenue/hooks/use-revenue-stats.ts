@@ -85,6 +85,7 @@ export interface RevenueTransaction {
   date: string
   invoice_id: number
   invoice_num: string
+  invoice_status: string
   client_id: number
   client_name: string
   category: string | null
@@ -98,6 +99,7 @@ export interface TransactionFilters {
   type?: string
   category?: string
   source?: string
+  status?: string
   amount_min?: number
   amount_max?: number
   start_date?: string
@@ -150,6 +152,7 @@ export function useRevenueTransactions(
       if (filters.type) params.type = filters.type
       if (filters.category) params.category = filters.category
       if (filters.source) params.source = filters.source
+      if (filters.status) params.status = filters.status
       if (filters.amount_min !== undefined) params.amount_min = String(filters.amount_min)
       if (filters.amount_max !== undefined) params.amount_max = String(filters.amount_max)
       if (filters.start_date) params.start_date = filters.start_date

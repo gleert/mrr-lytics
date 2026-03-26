@@ -12,6 +12,7 @@ interface RevenueTransaction {
   date: string
   invoice_id: number
   invoice_num: string
+  invoice_status: string
   client_id: number
   client_name: string
   category: string | null
@@ -35,6 +36,7 @@ interface RevenueTransaction {
  * - amount_max: Maximum amount filter
  * - start_date: Start date filter (ISO format)
  * - end_date: End date filter (ISO format)
+ * - status: Filter by invoice status (Paid, Unpaid, Cancelled, Refunded, Collections, all) - default: all
  * - sort_by: Sort field (date, amount, client_name) - default: date
  * - sort_order: Sort order (asc, desc) - default: desc
  */
@@ -76,6 +78,7 @@ export async function GET(request: NextRequest) {
     const amountMax = searchParams.get('amount_max') ? parseFloat(searchParams.get('amount_max')!) : null
     const startDate = searchParams.get('start_date') || null
     const endDate = searchParams.get('end_date') || null
+    const statusFilter = searchParams.get('status') || 'all'
 
     // Parse sorting
     const sortBy = searchParams.get('sort_by') || 'date'
@@ -169,25 +172,29 @@ export async function GET(request: NextRequest) {
       console.error('Invoices query error:', invoicesError)
     }
 
-    // Create invoice lookup map and filter for paid only
+    // Create invoice lookup map
     const invoiceMap = new Map<string, { whmcs_id: number; invoicenum: string; date: string; datepaid: string; status: string }>()
-    const paidInvoiceKeys = new Set<string>()
-    
+    const matchingInvoiceKeys = new Set<string>()
+
     invoices?.forEach(inv => {
       const key = `${inv.instance_id}:${inv.whmcs_id}`
       invoiceMap.set(key, inv)
-      if (inv.status === 'Paid') {
-        // Apply date filters
-        if (startDate && inv.datepaid && inv.datepaid < startDate) return
-        if (endDate && inv.datepaid && inv.datepaid > endDate) return
-        paidInvoiceKeys.add(key)
-      }
+
+      // Filter by status
+      if (statusFilter !== 'all' && inv.status !== statusFilter) return
+
+      // Apply date filters (use datepaid for Paid, date for others)
+      const refDate = inv.status === 'Paid' ? inv.datepaid : inv.date
+      if (startDate && refDate && refDate < startDate) return
+      if (endDate && refDate && refDate > endDate) return
+
+      matchingInvoiceKeys.add(key)
     })
 
-    // Filter items to only those with paid invoices
+    // Filter items to those with matching invoices
     const items = allItems.filter(item => {
       const key = `${item.instance_id}:${item.invoice_id}`
-      return paidInvoiceKeys.has(key)
+      return matchingInvoiceKeys.has(key)
     })
 
     // Get total count for pagination (approximate since we're filtering client-side)
@@ -276,9 +283,10 @@ export async function GET(request: NextRequest) {
 
       return {
         id: item.id,
-        date: invoice?.datepaid || invoice?.date || '',
+        date: invoice?.status === 'Paid' ? (invoice.datepaid || invoice.date || '') : (invoice?.date || ''),
         invoice_id: invoice?.whmcs_id || item.invoice_id,
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
+        invoice_status: invoice?.status || 'Unknown',
         client_id: item.client_id,
         client_name: clientMap.get(clientKey) || 'Unknown Client',
         category: categoryName,

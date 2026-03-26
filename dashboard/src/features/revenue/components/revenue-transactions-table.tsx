@@ -19,6 +19,18 @@ const TYPE_COLORS: Record<string, string> = {
   Invoice: 'bg-gray-500/10 text-gray-400',
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  Paid: 'bg-emerald-500/10 text-emerald-400',
+  Unpaid: 'bg-amber-500/10 text-amber-400',
+  Cancelled: 'bg-gray-500/10 text-gray-400',
+  Refunded: 'bg-blue-500/10 text-blue-400',
+  Collections: 'bg-red-500/10 text-red-400',
+  'Payment Pending': 'bg-amber-500/10 text-amber-400',
+  Draft: 'bg-gray-500/10 text-muted',
+}
+
+const INVOICE_STATUSES = ['Paid', 'Unpaid', 'Cancelled', 'Refunded', 'Collections']
+
 export function RevenueTransactionsTable() {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
@@ -33,6 +45,7 @@ export function RevenueTransactionsTable() {
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedSource, setSelectedSource] = useState<string>('')
+  const [selectedStatus, setSelectedStatus] = useState<string>('')
   const [amountMin, setAmountMin] = useState<string>('')
   const [amountMax, setAmountMax] = useState<string>('')
 
@@ -49,6 +62,7 @@ export function RevenueTransactionsTable() {
     if (selectedType) newFilters.type = selectedType
     if (selectedCategory) newFilters.category = selectedCategory
     if (selectedSource) newFilters.source = selectedSource
+    if (selectedStatus) newFilters.status = selectedStatus
     if (amountMin) newFilters.amount_min = parseFloat(amountMin)
     if (amountMax) newFilters.amount_max = parseFloat(amountMax)
     setFilters(newFilters)
@@ -61,6 +75,7 @@ export function RevenueTransactionsTable() {
     setSelectedType('')
     setSelectedCategory('')
     setSelectedSource('')
+    setSelectedStatus('')
     setAmountMin('')
     setAmountMax('')
     setFilters({})
@@ -137,7 +152,7 @@ export function RevenueTransactionsTable() {
       {/* Filters Panel */}
       {showFilters && (
         <div className="p-4 border-b border-border bg-surface-elevated/50">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* Type Filter */}
             <div>
               <label className="block text-xs font-medium text-muted mb-1.5">
@@ -197,6 +212,27 @@ export function RevenueTransactionsTable() {
                 <option value="">{t('revenue.transactions.allSources')}</option>
                 <option value="recurring">{t('revenue.transactions.sourceRecurring')}</option>
                 <option value="onetime">{t('revenue.transactions.sourceOnetime')}</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                {t('revenue.transactions.status', 'Status')}
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className={cn(
+                  'w-full h-9 rounded-lg bg-background px-3 text-sm',
+                  'border border-border',
+                  'focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20'
+                )}
+              >
+                <option value="">{t('revenue.transactions.allStatuses', 'All statuses')}</option>
+                {INVOICE_STATUSES.map((status) => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
               </select>
             </div>
 
@@ -265,6 +301,9 @@ export function RevenueTransactionsTable() {
                 {t('revenue.transactions.invoice')}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted">
+                {t('revenue.transactions.status', 'Status')}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted">
                 {t('revenue.transactions.client')}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted">
@@ -296,6 +335,7 @@ export function RevenueTransactionsTable() {
                 <tr key={i} className="border-b border-border last:border-0">
                   <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-14" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
@@ -305,7 +345,7 @@ export function RevenueTransactionsTable() {
               ))
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center">
+                <td colSpan={8} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted">
                     <Icon name="receipt_long" size="xl" className="opacity-50" />
                     <p>{t('revenue.transactions.noTransactions')}</p>
@@ -318,6 +358,14 @@ export function RevenueTransactionsTable() {
                   <td className="px-4 py-3 text-sm">{formatDate(tx.date)}</td>
                   <td className="px-4 py-3">
                     <span className="text-sm font-mono text-primary-400">#{tx.invoice_num}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                      STATUS_COLORS[tx.invoice_status] || 'bg-gray-500/10 text-gray-400'
+                    )}>
+                      {tx.invoice_status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-sm font-medium truncate max-w-[200px]" title={tx.client_name}>
                     {tx.client_name}

@@ -311,7 +311,7 @@ export const es = {
       // Transactions
       transactions: {
         title: 'Transacciones de Ingresos',
-        desc: 'Lista detallada de todos los items de facturas pagadas',
+        desc: 'Lista detallada de todos los items de facturas',
         searchPlaceholder: 'Buscar transacciones...',
         date: 'Fecha',
         invoice: 'Factura',
@@ -320,9 +320,11 @@ export const es = {
         product: 'Producto',
         type: 'Tipo',
         amount: 'Importe',
+        status: 'Estado',
         allTypes: 'Todos los tipos',
         allCategories: 'Todas las categorías',
         allSources: 'Todas las fuentes',
+        allStatuses: 'Todos los estados',
         sourceRecurring: 'Recurrente',
         sourceOnetime: 'Único',
         amountRange: 'Rango de importe',

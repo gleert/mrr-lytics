@@ -311,7 +311,7 @@ export const en = {
       // Transactions
       transactions: {
         title: 'Revenue Transactions',
-        desc: 'Detailed list of all paid invoice items',
+        desc: 'Detailed list of all invoice items',
         searchPlaceholder: 'Search transactions...',
         date: 'Date',
         invoice: 'Invoice',
@@ -320,9 +320,11 @@ export const en = {
         product: 'Product',
         type: 'Type',
         amount: 'Amount',
+        status: 'Status',
         allTypes: 'All types',
         allCategories: 'All categories',
         allSources: 'All sources',
+        allStatuses: 'All statuses',
         sourceRecurring: 'Recurring',
         sourceOnetime: 'One-time',
         amountRange: 'Amount range',
