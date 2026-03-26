@@ -59,6 +59,20 @@ import {
 import type { WhmcsApiResponse } from './types'
 
 /**
+ * Decode HTML entities from WHMCS strings (e.g. "&amp;" → "&")
+ */
+function decodeHtmlEntities(str: string | null | undefined): string | null {
+  if (!str) return null
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#39;/g, "'")
+}
+
+/**
  * Sanitize a date string from WHMCS
  * Handles invalid dates like "0000-00-00" which PostgreSQL doesn't accept
  */
@@ -421,9 +435,9 @@ async function syncAllTables(
       data.data.clients.map((c) => ({
         instance_id: instanceId,
         whmcs_id: c.id,
-        firstname: c.firstname || null,
-        lastname: c.lastname || null,
-        companyname: c.companyname || null,
+        firstname: decodeHtmlEntities(c.firstname) || null,
+        lastname: decodeHtmlEntities(c.lastname) || null,
+        companyname: decodeHtmlEntities(c.companyname) || null,
         email: c.email || null,
         currency: c.currency,
         defaultgateway: c.defaultgateway,
@@ -448,9 +462,9 @@ async function syncAllTables(
       const payload = {
         client_id: c.id,
         email: c.email || '',
-        first_name: c.firstname || '',
-        last_name: c.lastname || '',
-        company_name: c.companyname || null,
+        first_name: decodeHtmlEntities(c.firstname) || '',
+        last_name: decodeHtmlEntities(c.lastname) || '',
+        company_name: decodeHtmlEntities(c.companyname) || null,
         instance_id: instanceId,
         instance_name: instance.name,
       }
@@ -506,7 +520,7 @@ async function syncAllTables(
         instance_id: instanceId,
         whmcs_id: p.id,
         gid: p.gid,
-        name: p.name,
+        name: decodeHtmlEntities(p.name) || p.name,
         type: p.type,
         paytype: p.paytype,
         hidden: p.hidden,
@@ -525,7 +539,7 @@ async function syncAllTables(
       data.data.product_groups.map((g) => ({
         instance_id: instanceId,
         whmcs_id: g.id,
-        name: g.name,
+        name: decodeHtmlEntities(g.name) || g.name,
         slug: g.slug,
         hidden: g.hidden,
         synced_at: new Date().toISOString(),
