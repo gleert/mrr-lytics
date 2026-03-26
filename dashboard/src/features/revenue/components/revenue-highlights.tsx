@@ -10,7 +10,7 @@ interface RevenueHighlightsProps {
 
 export function RevenueHighlights({ stats }: RevenueHighlightsProps) {
   const { t } = useTranslation()
-  const { formatCurrency, formatNumber } = useCurrency()
+  const { formatCurrency } = useCurrency()
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
