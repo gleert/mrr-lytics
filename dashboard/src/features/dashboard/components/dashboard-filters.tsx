@@ -154,13 +154,13 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
     : t(PERIOD_PRESETS.find(p => p.value === period)?.labelKey || 'filters.30d')
 
   const PeriodDropdownContent = () => (
-    <div className="absolute right-0 top-full mt-1 z-40 min-w-[180px] rounded-lg border border-border bg-background shadow-lg">
+    <div className="absolute right-0 top-full mt-1 z-40 min-w-[210px] rounded-lg border border-border bg-background shadow-lg">
       <div className="p-1">
         {PERIOD_PRESETS.map((preset) => (
           <button
             key={preset.value}
             className={cn(
-              "w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm text-left transition-colors",
+              "w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm text-left transition-colors whitespace-nowrap",
               preset.value === period
                 ? "bg-primary-500/10 text-primary-400"
                 : "hover:bg-surface-hover"
@@ -238,7 +238,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 min-w-[180px] justify-between"
+          className="gap-2 min-w-[210px] justify-between"
           onClick={() => setInstanceDropdownOpen(!instanceDropdownOpen)}
           disabled={isLoadingTenants}
         >
