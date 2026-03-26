@@ -71,14 +71,14 @@ export interface DomainsListResponse {
 }
 
 export function useDomainStats() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['domains', 'stats', instanceKey, period],
+    queryKey: ['domains', 'stats', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')

@@ -54,13 +54,13 @@ export interface TopClientsResponse {
 }
 
 export function useTopClients(limit = 6, sortBy: 'revenue' | 'mrr' = 'revenue') {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
   const instanceKey = currentInstance?.instance_id || 'all'
 
   return useQuery({
-    queryKey: ['clients', 'top-clients', instanceKey, period, limit, sortBy],
+    queryKey: ['clients', 'top-clients', instanceKey, period, customDateRange, limit, sortBy],
     queryFn: async () => {
-      const params: Record<string, string> = { period, limit: String(limit), sort_by: sortBy }
+      const params: Record<string, string> = { ...getPeriodParams(), limit: String(limit), sort_by: sortBy }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) params.instance_ids = instanceIds.join(',')
       const response = await api.get<{ success: boolean; data: TopClientsResponse }>('/api/clients/top-clients', params)
@@ -72,14 +72,14 @@ export function useTopClients(limit = 6, sortBy: 'revenue' | 'mrr' = 'revenue') 
 }
 
 export function useClientStats() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['clients', 'stats', instanceKey, period],
+    queryKey: ['clients', 'stats', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       // Pass comma-separated instance IDs (supports multiple)
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {

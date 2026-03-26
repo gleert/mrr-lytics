@@ -44,14 +44,14 @@ export interface RevenueBreakdown {
 export type BreakdownGroupBy = 'category' | 'source' | 'type'
 
 export function useRevenueStats() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['revenue', 'stats', instanceKey, period],
+    queryKey: ['revenue', 'stats', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
@@ -65,14 +65,14 @@ export function useRevenueStats() {
 }
 
 export function useRevenueBreakdown(groupBy: BreakdownGroupBy) {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['revenue', 'breakdown', instanceKey, period, groupBy],
+    queryKey: ['revenue', 'breakdown', instanceKey, period, customDateRange, groupBy],
     queryFn: async () => {
-      const params: Record<string, string> = { period, group_by: groupBy }
+      const params: Record<string, string> = { ...getPeriodParams(), group_by: groupBy }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
@@ -248,14 +248,14 @@ export interface RevenueBreakdownTrendResponse {
  * Hook to fetch revenue over time broken down by category/source/type
  */
 export function useRevenueBreakdownTrend(groupBy: BreakdownGroupBy = 'category') {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
 
   const instanceKey = currentInstance?.instance_id || 'all'
 
   return useQuery({
-    queryKey: ['revenue', 'breakdown-trend', instanceKey, period, groupBy],
+    queryKey: ['revenue', 'breakdown-trend', instanceKey, period, customDateRange, groupBy],
     queryFn: async () => {
-      const params: Record<string, string> = { period, group_by: groupBy }
+      const params: Record<string, string> = { ...getPeriodParams(), group_by: groupBy }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
@@ -291,14 +291,14 @@ export interface RevenueTrendResponse {
  * Hook to fetch revenue trend over time (recurring vs one-time)
  */
 export function useRevenueTrend() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['revenue', 'trend', instanceKey, period],
+    queryKey: ['revenue', 'trend', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {

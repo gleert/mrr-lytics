@@ -30,14 +30,14 @@ export function useMetrics() {
 }
 
 export function useMRRMetrics() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['metrics', 'mrr', instanceKey, period],
+    queryKey: ['metrics', 'mrr', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
@@ -51,14 +51,14 @@ export function useMRRMetrics() {
 }
 
 export function useChurnMetrics() {
-  const { currentInstance, period, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['metrics', 'churn', instanceKey, period],
+    queryKey: ['metrics', 'churn', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = { period }
+      const params: Record<string, string> = { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')

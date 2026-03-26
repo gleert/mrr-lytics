@@ -1087,7 +1087,12 @@ export const es = {
       '180d': '6 meses',
       '365d': '12 meses',
       '730d': '2 años',
+      mtd: 'Mes actual',
       ytd: 'Año actual',
+      custom: 'Rango personalizado',
+      from: 'Desde',
+      to: 'Hasta',
+      apply: 'Aplicar',
     },
 
     // WHMCS Instances

@@ -5,6 +5,47 @@ import { Icon } from '@/shared/components/ui/icon'
 import { useFilters, PERIOD_PRESETS, type WhmcsInstance, type PeriodPreset } from '@/app/providers'
 import { cn } from '@/shared/lib/utils'
 
+function CustomDateInputs() {
+  const { t } = useTranslation()
+  const { customDateRange, setCustomDateRange } = useFilters()
+  const [start, setStart] = React.useState(customDateRange?.start || '')
+  const [end, setEnd] = React.useState(customDateRange?.end || '')
+
+  const handleApply = () => {
+    if (start && end) {
+      setCustomDateRange(start, end)
+    }
+  }
+
+  return (
+    <div className="p-3 border-t border-border space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs text-muted mb-1">{t('filters.from')}</label>
+          <input
+            type="date"
+            value={start}
+            onChange={e => setStart(e.target.value)}
+            className="w-full h-8 rounded-md border border-border bg-background px-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">{t('filters.to')}</label>
+          <input
+            type="date"
+            value={end}
+            onChange={e => setEnd(e.target.value)}
+            className="w-full h-8 rounded-md border border-border bg-background px-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+      </div>
+      <Button size="sm" className="w-full" onClick={handleApply} disabled={!start || !end}>
+        {t('filters.apply')}
+      </Button>
+    </div>
+  )
+}
+
 interface DashboardFiltersProps {
   showPeriod?: boolean
 }
@@ -52,7 +93,10 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
     setPeriodDropdownOpen(false)
   }
 
-  const currentPeriodLabel = t(PERIOD_PRESETS.find(p => p.value === period)?.labelKey || 'filters.30d')
+  const { customDateRange } = useFilters()
+  const currentPeriodLabel = period === 'custom' && customDateRange
+    ? `${customDateRange.start} — ${customDateRange.end}`
+    : t(PERIOD_PRESETS.find(p => p.value === period)?.labelKey || 'filters.30d')
 
   // Don't show instance filter if user has only 1 instance
   if (!hasMultipleInstances) {
@@ -86,7 +130,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
           </Button>
 
           {periodDropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 z-40 min-w-[150px] rounded-lg border border-border bg-background shadow-lg">
+            <div className="absolute right-0 top-full mt-1 z-40 min-w-[200px] rounded-lg border border-border bg-background shadow-lg">
               <div className="p-1">
                 {PERIOD_PRESETS.map((preset) => (
                   <button
@@ -97,12 +141,13 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
                         ? "bg-primary-500/10 text-primary-400"
                         : "hover:bg-surface-hover"
                     )}
-                    onClick={() => handlePeriodSelect(preset.value)}
+                    onClick={() => preset.value !== 'custom' ? handlePeriodSelect(preset.value) : handlePeriodSelect('custom')}
                   >
                     {t(preset.labelKey)}
                   </button>
                 ))}
               </div>
+              {period === 'custom' && <CustomDateInputs />}
             </div>
           )}
         </div>
@@ -255,7 +300,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
           </Button>
 
           {periodDropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 z-40 min-w-[150px] rounded-lg border border-border bg-background shadow-lg">
+            <div className="absolute right-0 top-full mt-1 z-40 min-w-[200px] rounded-lg border border-border bg-background shadow-lg">
               <div className="p-1">
                 {PERIOD_PRESETS.map((preset) => (
                   <button
@@ -266,12 +311,13 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
                         ? "bg-primary-500/10 text-primary-400"
                         : "hover:bg-surface-hover"
                     )}
-                    onClick={() => handlePeriodSelect(preset.value)}
+                    onClick={() => preset.value !== 'custom' ? handlePeriodSelect(preset.value) : handlePeriodSelect('custom')}
                   >
                     {t(preset.labelKey)}
                   </button>
                 ))}
               </div>
+              {period === 'custom' && <CustomDateInputs />}
             </div>
           )}
         </div>

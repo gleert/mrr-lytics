@@ -2,7 +2,7 @@
  * Date range helpers for metrics filtering
  */
 
-export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'ytd' | 'all'
+export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'mtd' | 'ytd' | 'all'
 
 export interface DateRange {
   startDate: Date
@@ -62,6 +62,10 @@ export function parseDateRange(
       startDate = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000)
       days = 730
       break
+    case 'mtd':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1
+      break
     case 'ytd':
       startDate = new Date(now.getFullYear(), 0, 1)
       days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -99,6 +103,7 @@ export function getPeriodLabel(period: PeriodPreset): string {
     '180d': 'Last 6 months',
     '365d': 'Last 12 months',
     '730d': 'Last 2 years',
+    mtd: 'This month',
     ytd: 'Year to date',
     all: 'All time',
   }

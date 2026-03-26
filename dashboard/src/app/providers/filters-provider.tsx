@@ -4,17 +4,19 @@ import { api } from '@/shared/lib/api'
 import { useAuth } from './auth-provider'
 
 // Period presets
-export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'ytd'
+export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'mtd' | 'ytd' | 'custom'
 
 export const PERIOD_PRESETS: { value: PeriodPreset; labelKey: string }[] = [
   { value: 'today', labelKey: 'filters.today' },
   { value: '7d',   labelKey: 'filters.7d' },
+  { value: 'mtd',  labelKey: 'filters.mtd' },
   { value: '30d',  labelKey: 'filters.30d' },
   { value: '90d',  labelKey: 'filters.90d' },
   { value: '180d', labelKey: 'filters.180d' },
   { value: '365d', labelKey: 'filters.365d' },
   { value: '730d', labelKey: 'filters.730d' },
   { value: 'ytd',  labelKey: 'filters.ytd' },
+  { value: 'custom', labelKey: 'filters.custom' },
 ]
 
 // WHMCS Instance type
@@ -61,16 +63,19 @@ interface FiltersState {
   
   // Period
   period: PeriodPreset
+  customDateRange: { start: string; end: string } | null
 
   // Account state
   isTenantDeleted: boolean
-  
+
   // Actions
   setCurrentInstance: (instance: WhmcsInstance | null) => void
   setPeriod: (period: PeriodPreset) => void
+  setCustomDateRange: (start: string, end: string) => void
   
   // Helpers
   getSelectedInstanceIds: () => string[] // Returns array of instance IDs for API calls
+  getPeriodParams: () => Record<string, string> // Returns period or start_date+end_date for API calls
   
   // Tenant helpers (for categories which are tenant-level)
   getCurrentTenantId: () => string | null // Returns current tenant ID (or first tenant if multiple)
@@ -104,6 +109,9 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
     }
     return '30d'
   })
+
+  // Custom date range for 'custom' period
+  const [customDateRange, setCustomDateRangeState] = React.useState<{ start: string; end: string } | null>(null)
 
   // null means "all instances" selected
   const [currentInstance, setCurrentInstanceState] = React.useState<WhmcsInstance | null>(null)
@@ -200,6 +208,14 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
   const setPeriod = React.useCallback((newPeriod: PeriodPreset) => {
     setPeriodState(newPeriod)
     localStorage.setItem(STORAGE_KEY_PERIOD, newPeriod)
+    if (newPeriod !== 'custom') setCustomDateRangeState(null)
+  }, [])
+
+  // Set custom date range and switch to custom period
+  const setCustomDateRange = React.useCallback((start: string, end: string) => {
+    setCustomDateRangeState({ start, end })
+    setPeriodState('custom')
+    localStorage.setItem(STORAGE_KEY_PERIOD, 'custom')
   }, [])
 
   // Get instance IDs for API calls
@@ -210,6 +226,14 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
     // "All" selected - return all instance IDs
     return allInstances.map(i => i.instance_id)
   }, [currentInstance, allInstances])
+
+  // Get period params for API calls
+  const getPeriodParams = React.useCallback((): Record<string, string> => {
+    if (period === 'custom' && customDateRange) {
+      return { start_date: customDateRange.start, end_date: customDateRange.end }
+    }
+    return { period }
+  }, [period, customDateRange])
 
   // Get current tenant (helper)
   const getCurrentTenant = React.useCallback((): TenantWithInstances | null => {
@@ -250,16 +274,19 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
       hasMultipleInstances,
       isTenantDeleted,
       period,
+      customDateRange,
       setCurrentInstance,
       setPeriod,
+      setCustomDateRange,
       getSelectedInstanceIds,
+      getPeriodParams,
       getCurrentTenantId,
       getCurrentCurrency,
       getCurrentLocale,
       getCurrentTenant,
       userRole: (getCurrentTenant()?.role || 'viewer') as 'admin' | 'viewer',
     }),
-    [tenants, allInstances, currentInstance, isLoadingTenants, hasMultipleInstances, isTenantDeleted, period, setCurrentInstance, setPeriod, getSelectedInstanceIds, getCurrentTenantId, getCurrentCurrency, getCurrentLocale, getCurrentTenant]
+    [tenants, allInstances, currentInstance, isLoadingTenants, hasMultipleInstances, isTenantDeleted, period, customDateRange, setCurrentInstance, setPeriod, setCustomDateRange, getSelectedInstanceIds, getPeriodParams, getCurrentTenantId, getCurrentCurrency, getCurrentLocale, getCurrentTenant]
   )
 
   return (
