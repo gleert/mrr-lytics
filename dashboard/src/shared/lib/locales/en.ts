@@ -1104,6 +1104,7 @@ export const en = {
       title: 'WHMCS Instances',
       subtitle: 'Manage your WHMCS installations and sync settings',
       addInstance: 'Add Instance',
+      syncManagement: 'Sync management',
       editInstance: 'Edit Instance',
       deleteInstance: 'Delete Instance',
       noInstances: 'No WHMCS instances configured yet',

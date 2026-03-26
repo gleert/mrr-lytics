@@ -1100,6 +1100,7 @@ export const es = {
       title: 'Instancias WHMCS',
       subtitle: 'Gestiona tus instalaciones WHMCS y configuración de sincronización',
       addInstance: 'Añadir Instancia',
+      syncManagement: 'Gestión de sincronización',
       editInstance: 'Editar Instancia',
       deleteInstance: 'Eliminar Instancia',
       noInstances: 'No hay instancias WHMCS configuradas',

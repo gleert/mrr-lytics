@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
@@ -110,7 +111,13 @@ export function InstancesSection() {
         title={t('instances.title')} 
         description={t('instances.subtitle')}
       >
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end gap-2 mb-4">
+          <Link to="/sync">
+            <Button variant="outline" size="sm">
+              <Icon name="sync" size="md" className="mr-2" />
+              {t('instances.syncManagement', 'Sync management')}
+            </Button>
+          </Link>
           <Button onClick={handleAdd} size="sm">
             <Icon name="add" size="md" className="mr-2" />
             {t('instances.addInstance')}
