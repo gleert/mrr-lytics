@@ -6,6 +6,7 @@ export interface TeamMember {
   user_id: string
   email: string
   full_name: string | null
+  avatar_url: string | null
   role: 'admin' | 'viewer'
   is_default: boolean
   joined_at: string

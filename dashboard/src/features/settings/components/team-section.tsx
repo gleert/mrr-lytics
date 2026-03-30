@@ -168,11 +168,20 @@ export function TeamSection() {
                         {/* Member info */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary-500/20 flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary-500">
-                                {(member.full_name || member.email).charAt(0).toUpperCase()}
-                              </span>
-                            </div>
+                            {member.avatar_url ? (
+                              <img
+                                src={member.avatar_url}
+                                alt=""
+                                className="w-9 h-9 rounded-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-primary-500/20 flex items-center justify-center">
+                                <span className="text-sm font-medium text-primary-500">
+                                  {(member.full_name || member.email).charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-foreground">

@@ -10,6 +10,7 @@ interface TeamMember {
   user_id: string
   email: string
   full_name: string | null
+  avatar_url: string | null
   role: string
   joined_at: string
   last_sign_in: string | null
@@ -66,6 +67,7 @@ export async function GET() {
       user_id: m.id,
       email: m.email || authUserMap.get(m.id)?.email || 'Unknown',
       full_name: m.full_name || authUserMap.get(m.id)?.user_metadata?.full_name || null,
+      avatar_url: authUserMap.get(m.id)?.user_metadata?.avatar_url || null,
       role: m.role,
       joined_at: m.created_at,
       last_sign_in: authUserMap.get(m.id)?.last_sign_in_at || m.last_login_at || null,
