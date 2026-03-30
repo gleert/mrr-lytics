@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     // Step 2: Get invoice items for those paid invoices, sorted by amount
     const { data: items, error: itemsError } = await supabase
       .from('whmcs_invoice_items')
-      .select('id, instance_id, invoice_id, client_id, description, amount, relid')
+      .select('id, instance_id, invoice_id, client_id, type, description, amount, relid')
       .in('instance_id', instanceIds)
       .in('invoice_id', [...new Set(invoiceWhmcsIds)])
       .gt('amount', 0)
@@ -124,9 +124,9 @@ export async function GET(request: NextRequest) {
 
     const topItems = items
 
-    // Get client and product info
+    // Get client and hosting info
     const clientIds = [...new Set(topItems.map(i => i.client_id))]
-    const productIds = [...new Set(topItems.filter(i => i.relid).map(i => i.relid))]
+    const hostingRelIds = [...new Set(topItems.filter(i => i.type === 'Hosting' && i.relid).map(i => i.relid))]
 
     const { data: clients } = await supabase
       .from('whmcs_clients')
@@ -134,6 +134,20 @@ export async function GET(request: NextRequest) {
       .in('instance_id', instanceIds)
       .in('whmcs_id', clientIds.length > 0 ? clientIds : [0])
 
+    // For Hosting items: relid → whmcs_hosting → packageid → whmcs_products
+    const { data: hostings } = await supabase
+      .from('whmcs_hosting')
+      .select('whmcs_id, instance_id, packageid')
+      .in('instance_id', instanceIds)
+      .in('whmcs_id', hostingRelIds.length > 0 ? hostingRelIds : [0])
+
+    const hostingMap = new Map<string, number>()
+    hostings?.forEach(h => {
+      const key = `${h.instance_id}:${h.whmcs_id}`
+      if (h.packageid) hostingMap.set(key, h.packageid)
+    })
+
+    const productIds = [...new Set(hostings?.map(h => h.packageid).filter(Boolean) || [])]
     const { data: products } = await supabase
       .from('whmcs_products')
       .select('whmcs_id, instance_id, name')
@@ -158,15 +172,25 @@ export async function GET(request: NextRequest) {
     const transactions: TopTransaction[] = topItems.map(item => {
       const invoiceKey = `${item.instance_id}:${item.invoice_id}`
       const clientKey = `${item.instance_id}:${item.client_id}`
-      const productKey = `${item.instance_id}:${item.relid}`
       const invoice = invoiceMap.get(invoiceKey)
+
+      // Resolve product name: only look up whmcs_products for Hosting items
+      let productName = item.description || 'Unknown'
+      if (item.type === 'Hosting' && item.relid) {
+        const hostingKey = `${item.instance_id}:${item.relid}`
+        const packageId = hostingMap.get(hostingKey)
+        if (packageId) {
+          const productKey = `${item.instance_id}:${packageId}`
+          productName = productMap.get(productKey) || productName
+        }
+      }
 
       return {
         id: item.id,
         date: invoice?.datepaid || invoice?.date || '',
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
         client_name: clientMap.get(clientKey) || 'Unknown Client',
-        product_name: productMap.get(productKey) || item.description || 'Unknown',
+        product_name: productName,
         amount: Number(item.amount) || 0,
       }
     })

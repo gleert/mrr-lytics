@@ -200,9 +200,12 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination (approximate since we're filtering client-side)
     const count = items.length
 
-    // Get unique client IDs and product IDs for lookups
+    // Get unique client IDs for lookups
     const clientIds = [...new Set(items?.map(i => i.client_id) || [])]
-    const productIds = [...new Set(items?.filter(i => i.relid).map(i => i.relid) || [])]
+
+    // For Hosting items, relid points to whmcs_hosting, not whmcs_products directly
+    const hostingTypes = ['Hosting']
+    const hostingRelIds = [...new Set(items?.filter(i => hostingTypes.includes(i.type) && i.relid).map(i => i.relid) || [])]
 
     // Fetch client names
     const { data: clients } = await supabase
@@ -210,6 +213,23 @@ export async function GET(request: NextRequest) {
       .select('whmcs_id, instance_id, firstname, lastname, companyname')
       .in('instance_id', instanceIds)
       .in('whmcs_id', clientIds.length > 0 ? clientIds : [0])
+
+    // Fetch hosting records to resolve relid → packageid → product
+    const { data: hostings } = await supabase
+      .from('whmcs_hosting')
+      .select('whmcs_id, instance_id, packageid')
+      .in('instance_id', instanceIds)
+      .in('whmcs_id', hostingRelIds.length > 0 ? hostingRelIds : [0])
+
+    // Build hosting → product ID map
+    const hostingMap = new Map<string, number>()
+    hostings?.forEach(h => {
+      const key = `${h.instance_id}:${h.whmcs_id}`
+      if (h.packageid) hostingMap.set(key, h.packageid)
+    })
+
+    // Collect actual product IDs from hosting lookups
+    const productIds = [...new Set(hostings?.map(h => h.packageid).filter(Boolean) || [])]
 
     // Fetch product names and categories
     const { data: products } = await supabase
@@ -263,23 +283,34 @@ export async function GET(request: NextRequest) {
     // Transform results
     let transactions: RevenueTransaction[] = (items || []).map(item => {
       const clientKey = `${item.instance_id}:${item.client_id}`
-      const productKey = `${item.instance_id}:${item.relid}`
       const invoiceKey = `${item.instance_id}:${item.invoice_id}`
-      const product = productMap.get(productKey)
-      const groupKey = product?.gid ? `${item.instance_id}:${product.gid}` : null
       const invoice = invoiceMap.get(invoiceKey)
 
-      // Get category from mapping or fall back to product group
-      let categoryName = categoryMap.get(productKey) || null
-      if (!categoryName && groupKey) {
-        categoryName = groupMap.get(groupKey) || null
-      }
-
-      // Determine product name
       let productName = item.description || 'Unknown'
-      if (product?.name) {
-        productName = product.name
+      let categoryName: string | null = null
+
+      if (item.type === 'Hosting' && item.relid) {
+        // Hosting: relid → whmcs_hosting → packageid → whmcs_products
+        const hostingKey = `${item.instance_id}:${item.relid}`
+        const packageId = hostingMap.get(hostingKey)
+        if (packageId) {
+          const productKey = `${item.instance_id}:${packageId}`
+          const product = productMap.get(productKey)
+          if (product?.name) productName = product.name
+
+          // Category from mapping or product group
+          categoryName = categoryMap.get(productKey) || null
+          if (!categoryName && product?.gid) {
+            const groupKey = `${item.instance_id}:${product.gid}`
+            categoryName = groupMap.get(groupKey) || null
+          }
+        }
+      } else if (item.type === 'Domain' || item.type === 'DomainRegister' || item.type === 'DomainTransfer') {
+        categoryName = 'Domains'
+      } else if (item.type === 'Setup') {
+        categoryName = 'Setup Fees'
       }
+      // For Item, Addon, Invoice, Late Fee, etc.: use description as product name (already set above)
 
       return {
         id: item.id,
