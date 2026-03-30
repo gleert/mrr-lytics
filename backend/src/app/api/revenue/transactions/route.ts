@@ -13,6 +13,7 @@ interface RevenueTransaction {
   invoice_id: number
   invoice_num: string
   invoice_status: string
+  invoice_total: number
   client_id: number
   client_name: string
   category: string | null
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
     // Fetch invoice data for these specific invoices (limited set)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, instance_id, invoicenum, date, datepaid, status')
+      .select('whmcs_id, instance_id, invoicenum, date, datepaid, status, total')
       .in('instance_id', instanceIds)
       .in('whmcs_id', invoiceIds)
 
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create invoice lookup map
-    const invoiceMap = new Map<string, { whmcs_id: number; invoicenum: string; date: string; datepaid: string; status: string }>()
+    const invoiceMap = new Map<string, { whmcs_id: number; invoicenum: string; date: string; datepaid: string; status: string; total: number }>()
     const matchingInvoiceKeys = new Set<string>()
 
     invoices?.forEach(inv => {
@@ -318,6 +319,7 @@ export async function GET(request: NextRequest) {
         invoice_id: invoice?.whmcs_id || item.invoice_id,
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
         invoice_status: invoice?.status || 'Unknown',
+        invoice_total: Number(invoice?.total) || 0,
         client_id: item.client_id,
         client_name: clientMap.get(clientKey) || 'Unknown Client',
         category: categoryName,

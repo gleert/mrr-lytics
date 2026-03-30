@@ -330,6 +330,7 @@ export const es = {
         product: 'Producto',
         type: 'Tipo',
         amount: 'Importe',
+        invoiceTotal: 'Total Fact.',
         status: 'Estado',
         allTypes: 'Todos los tipos',
         allCategories: 'Todas las categorías',

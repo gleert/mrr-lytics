@@ -330,6 +330,7 @@ export const en = {
         product: 'Product',
         type: 'Type',
         amount: 'Amount',
+        invoiceTotal: 'Inv. Total',
         status: 'Status',
         allTypes: 'All types',
         allCategories: 'All categories',

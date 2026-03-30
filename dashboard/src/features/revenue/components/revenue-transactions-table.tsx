@@ -326,6 +326,9 @@ export function RevenueTransactionsTable() {
                   )}
                 </div>
               </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted">
+                {t('revenue.transactions.invoiceTotal')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -341,11 +344,12 @@ export function RevenueTransactionsTable() {
                   <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
                   <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-20 ml-auto" /></td>
+                  <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-20 ml-auto" /></td>
                 </tr>
               ))
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center">
+                <td colSpan={9} className="px-4 py-12 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted">
                     <Icon name="receipt_long" size="xl" className="opacity-50" />
                     <p>{t('revenue.transactions.noTransactions')}</p>
@@ -386,6 +390,9 @@ export function RevenueTransactionsTable() {
                   </td>
                   <td className="px-4 py-3 text-sm text-right font-medium">
                     {formatCurrency(tx.amount)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right text-muted">
+                    {formatCurrency(tx.invoice_total)}
                   </td>
                 </tr>
               ))
