@@ -92,6 +92,7 @@ export interface RevenueTransaction {
   invoice_id: number
   invoice_num: string
   invoice_status: string
+  invoice_total: number
   client_id: number
   client_name: string
   category: string | null
