@@ -24,6 +24,14 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.3.1',
+    date: '2026-03-30',
+    changes: [
+      { type: 'fix', text: 'changelog.entries.v231.productNameFix' },
+      { type: 'feature', text: 'changelog.entries.v231.invoiceTotalColumn' },
+    ],
+  },
+  {
     version: '2.3.0',
     date: '2026-03-26',
     changes: [
@@ -246,11 +254,7 @@ export function ChangelogSection() {
               {/* Version header */}
               <div className="flex items-center gap-3 mb-4">
                 {/* Timeline dot */}
-                <div className="relative z-10 hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-primary-500/20 border-2 border-primary-500 shrink-0">
-                  <span className="text-xs font-bold text-primary-400">
-                    {entry.version.split('.')[1]}
-                  </span>
-                </div>
+                <div className="relative z-10 hidden sm:flex items-center justify-center w-3.5 h-3.5 rounded-full bg-primary-500 shrink-0 ml-[13px]" />
                 <div className="flex items-baseline gap-3 flex-wrap">
                   <h3 className="text-lg font-semibold">
                     v{entry.version}

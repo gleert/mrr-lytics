@@ -743,6 +743,10 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v231: {
+          productNameFix: 'Fixed product names in transactions showing wrong product due to mismatched ID lookups (e.g. billable items showing "CDN" instead of actual description)',
+          invoiceTotalColumn: 'Added invoice total column to transactions table so line item amounts can be compared against the full invoice',
+        },
         v230: {
           invoiceStatuses: 'Revenue transactions now show invoice status (Paid, Unpaid, Cancelled, Refunded)',
           statusFilter: 'New status filter in transactions table to filter by invoice payment status',

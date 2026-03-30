@@ -740,6 +740,10 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v231: {
+          productNameFix: 'Corregido nombres de productos en transacciones que mostraban el producto incorrecto por IDs cruzados (ej. billable items mostrando "CDN" en vez de la descripción real)',
+          invoiceTotalColumn: 'Añadida columna de total de factura en la tabla de transacciones para comparar importes de línea con el total de la factura',
+        },
         v230: {
           invoiceStatuses: 'Las transacciones de ingresos ahora muestran el estado de la factura (Paid, Unpaid, Cancelled, Refunded)',
           statusFilter: 'Nuevo filtro de estado en la tabla de transacciones para filtrar por estado de pago',
