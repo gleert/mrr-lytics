@@ -6,8 +6,6 @@ import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useTheme, useFilters, useToast, type Currency, CURRENCY_CONFIG } from '@/app/providers'
-import { changeLanguage, getCurrentLanguage } from '@/shared/lib/i18n'
-import { supportedLanguages, languageNames, type SupportedLanguage } from '@/shared/lib/locales'
 import { api } from '@/shared/lib/api'
 
 const SUPPORTED_CURRENCIES: Currency[] = ['EUR', 'USD', 'GBP']
@@ -17,7 +15,6 @@ export function GeneralSection() {
   const { theme, setTheme } = useTheme()
   const { getCurrentTenant, getCurrentCurrency } = useFilters()
   const toast = useToast()
-  const currentLanguage = getCurrentLanguage()
   const queryClient = useQueryClient()
 
   const currentTenant = getCurrentTenant()
@@ -41,14 +38,7 @@ export function GeneralSection() {
     },
   })
 
-  const handleLanguageChange = (lang: SupportedLanguage) => {
-    if (lang !== currentLanguage) {
-      changeLanguage(lang)
-      toast.success(t('settings.languageUpdated'))
-    }
-  }
-
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     if (newTheme !== theme) {
       setTheme(newTheme)
       toast.success(t('settings.themeUpdated'))
@@ -192,36 +182,6 @@ export function GeneralSection() {
                 >
                   {t('settings.system')}
                 </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Section>
-
-      {/* Language */}
-      <Section title={t('settings.language')} description={t('settings.languageDesc')}>
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium">{t('settings.displayLanguage')}</p>
-                <p className="text-sm text-muted">
-                  {t('languages.' + currentLanguage)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {supportedLanguages.map((lang) => (
-                  <Button
-                    key={lang}
-                    variant={i18n.language === lang ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLanguageChange(lang)}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {i18n.language === lang && <Check className="mr-2 h-4 w-4" />}
-                    {languageNames[lang]}
-                  </Button>
-                ))}
               </div>
             </div>
           </CardContent>

@@ -9,6 +9,8 @@ import { Section } from '@/shared/components/ui/section'
 import { useAuth, useToast, useFilters } from '@/app/providers'
 import { supabase } from '@/shared/lib/supabase'
 import { useTour } from '@/features/onboarding'
+import { changeLanguage, getCurrentLanguage } from '@/shared/lib/i18n'
+import { supportedLanguages, languageNames, type SupportedLanguage } from '@/shared/lib/locales'
 
 interface ProfileFormData {
   fullName: string
@@ -27,6 +29,15 @@ export function ProfilePage() {
   const toast = useToast()
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+
+  const currentLanguage = getCurrentLanguage()
+
+  const handleLanguageChange = (lang: SupportedLanguage) => {
+    if (lang !== currentLanguage) {
+      changeLanguage(lang)
+      toast.success(t('settings.languageUpdated'))
+    }
+  }
 
   const profileForm = useForm<ProfileFormData>({
     defaultValues: {
@@ -292,6 +303,33 @@ export function ProfilePage() {
           </Card>
         </Section>
       )}
+
+      {/* Language */}
+      <Section title={t('settings.language')} description={t('settings.languageDesc')}>
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium">{t('settings.selectLanguage')}</p>
+                <p className="text-sm text-muted">{languageNames[currentLanguage]}</p>
+              </div>
+              <div className="flex gap-2">
+                {supportedLanguages.map((lang) => (
+                  <Button
+                    key={lang}
+                    variant={currentLanguage === lang ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLanguageChange(lang)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {languageNames[lang]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Section>
 
       {/* Onboarding Tour */}
       <Section title={t('onboarding.restartTour')} description={t('onboarding.restartTourDesc')}>
