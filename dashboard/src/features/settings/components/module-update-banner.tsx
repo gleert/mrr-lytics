@@ -19,7 +19,8 @@ export function ModuleUpdateBanner() {
         <span className="text-warning truncate">
           <strong>Módulo WHMCS desactualizado</strong>
           {' · '}
-          {names} — v{installedVersion} → v{latestVersion}
+          {names}
+          {installedVersion ? ` — v${installedVersion} → v${latestVersion}` : ` — actualizar a v${latestVersion}`}
           {releaseNotes ? ` · ${releaseNotes}` : ''}
         </span>
       </div>

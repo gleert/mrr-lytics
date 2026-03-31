@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { api } from '@/shared/lib/api'
 import { useInstances } from './use-instances'
 
 interface ModuleVersionInfo {
@@ -11,20 +12,22 @@ interface ModuleVersionInfo {
 function useLatestModuleVersion() {
   return useQuery({
     queryKey: ['module-version'],
-    queryFn: async (): Promise<ModuleVersionInfo> => {
-      const res = await fetch('/api/module/version')
-      if (!res.ok) throw new Error('Failed to fetch module version')
-      return res.json()
-    },
+    queryFn: () => api.get<ModuleVersionInfo>('/api/module/version'),
     staleTime: 24 * 60 * 60 * 1000, // 24h
     retry: false,
   })
 }
 
+export interface OutdatedInstance {
+  id: string
+  name: string
+  installedVersion: string | null // null = old module that doesn't report version
+}
+
 export interface ModuleUpdateInfo {
   hasOutdatedInstances: boolean
   latestVersion: string
-  outdatedInstances: Array<{ id: string; name: string; installedVersion: string }>
+  outdatedInstances: OutdatedInstance[]
   downloadUrl: string
   releaseNotes: string
 }
@@ -41,15 +44,18 @@ export function useModuleUpdate(): { data: ModuleUpdateInfo | null; isLoading: b
     return { data: null, isLoading: false }
   }
 
-  const outdatedInstances = instances
+  const outdatedInstances: OutdatedInstance[] = instances
     .filter((inst) => {
-      if (!inst.module_version) return false
+      // Instance never synced — skip, we don't know its version
+      if (!inst.last_sync_at) return false
+      // module_version is null → old module version that doesn't report version → outdated
+      if (!inst.module_version) return true
       return compareVersions(inst.module_version, latestInfo.version) < 0
     })
     .map((inst) => ({
       id: inst.id,
       name: inst.name,
-      installedVersion: inst.module_version!,
+      installedVersion: inst.module_version,
     }))
 
   return {
@@ -64,7 +70,7 @@ export function useModuleUpdate(): { data: ModuleUpdateInfo | null; isLoading: b
   }
 }
 
-/** Returns -1, 0, or 1 like strcmp */
+/** Returns -1, 0, or 1 */
 function compareVersions(a: string, b: string): number {
   const pa = a.split('.').map(Number)
   const pb = b.split('.').map(Number)
