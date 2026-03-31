@@ -13,10 +13,10 @@ export function ModuleUpdateBanner() {
   const installedVersion = outdatedInstances[0].installedVersion
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2 text-sm bg-warning/10 border-b border-warning/20">
+    <div className="flex items-center justify-between gap-4 px-4 py-2 text-sm bg-amber-50 border-b border-amber-200 dark:bg-warning/10 dark:border-warning/20">
       <div className="flex items-center gap-2 min-w-0">
-        <Icon name="system_update" size="md" className="text-warning shrink-0" />
-        <span className="text-warning truncate">
+        <Icon name="system_update" size="md" className="text-amber-700 dark:text-warning shrink-0" />
+        <span className="text-amber-700 dark:text-warning truncate">
           <strong>Módulo WHMCS desactualizado</strong>
           {' · '}
           {names}
@@ -25,7 +25,7 @@ export function ModuleUpdateBanner() {
         </span>
       </div>
       <a href={downloadUrl} target="_blank" rel="noreferrer" className="shrink-0">
-        <Button size="sm" variant="outline" className="border-warning/50 text-warning hover:bg-warning/10">
+        <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-100 dark:border-warning/50 dark:text-warning dark:hover:bg-warning/10">
           Descargar v{latestVersion}
         </Button>
       </a>

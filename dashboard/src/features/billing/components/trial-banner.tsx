@@ -29,8 +29,8 @@ export function TrialBanner() {
   return (
     <div className={`
       flex items-center justify-between gap-4 px-4 py-2 text-sm
-      ${isUrgent 
-        ? 'bg-warning/10 border-b border-warning/20' 
+      ${isUrgent
+        ? 'bg-amber-50 border-b border-amber-200 dark:bg-warning/10 dark:border-warning/20'
         : 'bg-primary-500/10 border-b border-primary-500/20'
       }
     `}>
@@ -38,9 +38,9 @@ export function TrialBanner() {
         <Icon 
           name={isUrgent ? 'schedule' : 'auto_awesome'} 
           size="md" 
-          className={isUrgent ? 'text-warning' : 'text-primary-400'} 
+          className={isUrgent ? 'text-amber-700 dark:text-warning' : 'text-primary-400'}
         />
-        <span className={isUrgent ? 'text-warning' : 'text-primary-400'}>
+        <span className={isUrgent ? 'text-amber-700 dark:text-warning' : 'text-primary-400'}>
           {isExpired
             ? t('billing.trialExpiredBanner', 'Your free trial has expired — upgrade to continue')
             : daysRemaining === 0
