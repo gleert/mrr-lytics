@@ -24,6 +24,23 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.3.2',
+    date: '2026-03-31',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v232.clientClosureDate' },
+      { type: 'feature', text: 'changelog.entries.v232.moduleUpdateBanner' },
+      { type: 'feature', text: 'changelog.entries.v232.dateFilterPresets' },
+      { type: 'improvement', text: 'changelog.entries.v232.languageInProfile' },
+      { type: 'improvement', text: 'changelog.entries.v232.showHiddenProducts' },
+      { type: 'improvement', text: 'changelog.entries.v232.invoiceSortable' },
+      { type: 'improvement', text: 'changelog.entries.v232.totalInvoicesKpi' },
+      { type: 'fix', text: 'changelog.entries.v232.domainKpis' },
+      { type: 'fix', text: 'changelog.entries.v232.currencyDecimals' },
+      { type: 'fix', text: 'changelog.entries.v232.warningBannerContrast' },
+      { type: 'fix', text: 'changelog.entries.v232.dailyMrrChartLabels' },
+    ],
+  },
+  {
     version: '2.3.1',
     date: '2026-03-30',
     changes: [

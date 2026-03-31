@@ -741,6 +741,19 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v232: {
+          clientClosureDate: 'Fecha de abandono del cliente extraída del log de actividad de WHMCS ("Status changed to Closed") y guardada como closed_at',
+          moduleUpdateBanner: 'Banner de actualización del módulo WHMCS en el dashboard y en el panel de administración cuando la versión instalada está desactualizada',
+          dateFilterPresets: 'Filtros de fecha reemplazados por opciones de calendario: este mes (por defecto), mes pasado, este trimestre, trimestre pasado, este año, año pasado, año a fecha',
+          languageInProfile: 'Selector de idioma movido de Configuración a la página de Perfil',
+          showHiddenProducts: 'La página de productos ahora muestra los productos ocultos por defecto',
+          invoiceSortable: 'La columna de factura en la tabla de transacciones de ingresos ahora es ordenable',
+          totalInvoicesKpi: 'KPI renombrado de "Facturas Pagadas" a "Total Facturas" para reflejar el conteo real',
+          domainKpis: 'KPIs de dominios usan conteos directos en BD (Activos, Pendientes, Por expirar, Expirados) — eliminada tarjeta Total, corregido conteo preciso para más de 10k registros',
+          currencyDecimals: 'Corregido error RangeError al formatear moneda con maximumFractionDigits: 0',
+          warningBannerContrast: 'Los banners de aviso (módulo desactualizado, prueba, productos sin categoría) ahora tienen contraste correcto en modo claro',
+          dailyMrrChartLabels: 'El gráfico de MRR comprometido diario ahora muestra etiquetas de fecha distribuidas uniformemente en el eje X',
+        },
         v231: {
           productNameFix: 'Corregido nombres de productos en transacciones que mostraban el producto incorrecto por IDs cruzados (ej. billable items mostrando "CDN" en vez de la descripción real)',
           invoiceTotalColumn: 'Añadida columna de total de factura en la tabla de transacciones para comparar importes de línea con el total de la factura',

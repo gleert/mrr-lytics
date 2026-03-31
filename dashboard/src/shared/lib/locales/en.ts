@@ -744,6 +744,19 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v232: {
+          clientClosureDate: 'Client abandonment date tracked from WHMCS activity log ("Status changed to Closed") and stored as closed_at',
+          moduleUpdateBanner: 'WHMCS module update banner in dashboard and admin panel when installed version is outdated',
+          dateFilterPresets: 'Date filter presets replaced with calendar-based options: this month (default), last month, this quarter, last quarter, this year, last year, year to date',
+          languageInProfile: 'Language selector moved from Settings to Profile page',
+          showHiddenProducts: 'Products page now shows hidden products by default',
+          invoiceSortable: 'Invoice column in revenue transactions table is now sortable',
+          totalInvoicesKpi: 'Revenue KPI renamed from "Paid Invoices" to "Total Invoices" to reflect actual count',
+          domainKpis: 'Domain KPIs now use direct DB counts (Active, Pending, Expiring Soon, Expired) — removed Total card, fixed count accuracy beyond 10k rows',
+          currencyDecimals: 'Fixed RangeError crash when formatting currency with maximumFractionDigits: 0',
+          warningBannerContrast: 'Warning banners (module update, trial, uncategorized products) now have proper contrast in light mode',
+          dailyMrrChartLabels: 'Daily committed MRR chart X-axis now shows evenly distributed date labels instead of only first/last',
+        },
         v231: {
           productNameFix: 'Fixed product names in transactions showing wrong product due to mismatched ID lookups (e.g. billable items showing "CDN" instead of actual description)',
           invoiceTotalColumn: 'Added invoice total column to transactions table so line item amounts can be compared against the full invoice',
