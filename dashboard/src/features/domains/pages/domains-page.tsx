@@ -246,14 +246,7 @@ export function DomainsPage() {
           <h2 className="text-xl font-semibold text-foreground">{t('domains.statusSectionTitle')}</h2>
           <p className="text-muted">{t('domains.statusSectionDesc')}</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <KPICard
-            title={t('domains.totalDomains')}
-            value={stats?.total_domains ?? 0}
-            loading={statsLoading}
-            icon={<Icon name="language" size="2xl" />}
-            accentColor="primary"
-          />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
             title={t('domains.activeDomains')}
             value={stats?.active_domains ?? 0}
@@ -269,18 +262,18 @@ export function DomainsPage() {
             accentColor="warning"
           />
           <KPICard
-            title={t('domains.expiredDomains')}
-            value={stats?.expired_domains ?? 0}
-            loading={statsLoading}
-            icon={<Icon name="cancel" size="2xl" />}
-            accentColor="error"
-          />
-          <KPICard
             title={t('domains.expiringSoon')}
             value={stats?.expiring_soon ?? 0}
             loading={statsLoading}
             icon={<Icon name="schedule" size="2xl" />}
             accentColor="warning"
+          />
+          <KPICard
+            title={t('domains.expiredDomains')}
+            value={stats?.expired_domains ?? 0}
+            loading={statsLoading}
+            icon={<Icon name="cancel" size="2xl" />}
+            accentColor="error"
           />
         </div>
       </div>
