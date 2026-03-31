@@ -20,7 +20,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 class DataExtractor
 {
-    const VERSION = '1.3.0';
+    const VERSION = '1.3.2';
 
     /**
      * Record limit per table
@@ -685,14 +685,13 @@ class DataExtractor
         }
 
         try {
+            // Note: intentionally NOT filtering by $this->since — closure events are
+            // historical facts; we need all of them regardless of last sync time.
+            // The backend upsert uses .is('closed_at', null) so this is idempotent.
             $query = Capsule::table('tblactivitylog')
                 ->select(['id', 'userid', 'date', 'description'])
                 ->where('userid', '>', 0)
                 ->where('description', 'like', '%Status changed to Closed%');
-
-            if ($this->since !== null) {
-                $query->where('date', '>=', $this->since);
-            }
 
             $results = $query->orderBy('id', 'asc')
                 ->limit($this->limit)

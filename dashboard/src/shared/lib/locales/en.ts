@@ -746,6 +746,16 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v233: {
+          recurringBillableItems: 'Recurring billable items (maintenance, managed services) are now included in MRR and ARR calculations',
+          churnWasActiveAt: 'Health score churn rate now uses date-driven wasActiveAt logic for an accurate 30-day window instead of sync-time detection',
+          clientsRealChurnDates: 'Clients stats and churn chart now use real closure dates and respect the selected time-range filter',
+          clientsPagination: 'Numeric pagination on the clients list replaces previous/next buttons',
+          moduleUpdateBannerSync: 'Module update banner now clears immediately after a successful sync without requiring a page reload',
+          transactionsDate: 'Transactions table always shows the invoice creation date (was inconsistently showing payment date for paid invoices)',
+          churnedClientsChart: 'Churned clients chart now correctly displays data when filtering by time range',
+          syncCacheInvalidation: 'Dashboard metrics refresh immediately after sync instead of showing stale cached values for up to 2 minutes',
+        },
         v232: {
           clientClosureDate: 'Client abandonment date tracked from WHMCS activity log ("Status changed to Closed") and stored as closed_at',
           moduleUpdateBanner: 'WHMCS module update banner in dashboard and admin panel when installed version is outdated',

@@ -5,6 +5,7 @@ import { getAuthContext, requireScope } from '@/lib/auth'
 import { syncInstance, syncTenantInstances, type WhmcsInstance } from '@/lib/whmcs/sync'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError, BadRequestError, NotFoundError } from '@/utils/errors'
+import { invalidateCache } from '@/lib/cache'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -84,6 +85,11 @@ export async function POST(request: NextRequest) {
         triggered_by: 'manual',
       })
 
+      if (singleResult.success) {
+        invalidateCache('daily:metrics:')
+        invalidateCache('prev:metrics:')
+      }
+
       return success({
         message: singleResult.success ? 'Sync completed' : 'Sync failed',
         total: 1,
@@ -124,6 +130,11 @@ export async function POST(request: NextRequest) {
     } catch (catError) {
       // Log but don't fail the sync if category setup fails
       console.warn('Failed to auto-generate categories:', catError)
+    }
+
+    if (result.succeeded > 0) {
+      invalidateCache('daily:metrics:')
+      invalidateCache('prev:metrics:')
     }
 
     return success({

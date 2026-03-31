@@ -238,7 +238,7 @@ function useReportData(type: ReportType, statusFilter?: ClientStatusFilter | Dom
       if (type === 'products') {
         const res = await api.get<{ success: boolean; data: { products: Array<{
           name: string; active_services: number; mrr: number; percentage: number
-        }>} }>('/api/metrics/top-products', { ...base, limit: '50' })
+        }>} }>('/api/metrics/top-products', { ...base, limit: '500' })
         return res.data.products.map(p => ({
           name: p.name,
           active_services: p.active_services,

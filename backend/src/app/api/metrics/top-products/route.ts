@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 5, 1), 20)
+    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 5, 1), 500)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

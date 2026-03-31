@@ -20,7 +20,7 @@ if (!defined('WHMCS')) {
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
-define('MRRLYTICS_VERSION', '1.3.0');
+define('MRRLYTICS_VERSION', '1.3.2');
 define('MRRLYTICS_VERSION_CHECK_URL', 'https://app.mrrlytics.com/api/module/version');
 
 /**
@@ -208,10 +208,124 @@ function mrrlytics_checkForUpdate()
 }
 
 /**
+ * Auto-update the module by downloading and extracting the latest ZIP.
+ *
+ * @param  string $downloadUrl  Trusted URL returned by mrrlytics_checkForUpdate()
+ * @return array{success: bool, message: string}
+ */
+function mrrlytics_autoUpdate($downloadUrl)
+{
+    // 1. Validate URL is from trusted source (Supabase storage only)
+    if (!preg_match('#^https://[a-z0-9]+\.supabase\.co/#', $downloadUrl)) {
+        return ['success' => false, 'message' => 'Untrusted download URL.'];
+    }
+
+    $moduleDir = __DIR__;
+    if (!is_writable($moduleDir)) {
+        return ['success' => false, 'message' => 'Module directory is not writable by the web server.'];
+    }
+
+    // 2. Download ZIP to a temp file
+    $tempZip = tempnam(sys_get_temp_dir(), 'mrrlytics_upd_') . '.zip';
+    $ctx = stream_context_create(['http' => ['timeout' => 30, 'ignore_errors' => true]]);
+    $zipContent = @file_get_contents($downloadUrl, false, $ctx);
+    if ($zipContent === false || strlen($zipContent) < 1000) {
+        return ['success' => false, 'message' => 'Failed to download update package. Check server outbound connectivity.'];
+    }
+    file_put_contents($tempZip, $zipContent);
+
+    // 3. Extract ZIP
+    if (!class_exists('ZipArchive')) {
+        @unlink($tempZip);
+        return ['success' => false, 'message' => 'PHP ZipArchive extension is not available on this server.'];
+    }
+    $zip = new ZipArchive();
+    if ($zip->open($tempZip) !== true) {
+        @unlink($tempZip);
+        return ['success' => false, 'message' => 'Failed to open the downloaded ZIP file.'];
+    }
+    $tempExtract = sys_get_temp_dir() . '/mrrlytics_upd_' . time();
+    mkdir($tempExtract, 0755, true);
+    $zip->extractTo($tempExtract);
+    $zip->close();
+    @unlink($tempZip);
+
+    // 4. Find the module root inside the ZIP (may be wrapped in a single subfolder)
+    $sourceDir = $tempExtract;
+    $entries = array_diff(scandir($tempExtract), ['.', '..']);
+    if (count($entries) === 1) {
+        $only = reset($entries);
+        if (is_dir($tempExtract . '/' . $only)) {
+            $sourceDir = $tempExtract . '/' . $only;
+        }
+    }
+
+    // 5. Validate extracted content contains expected entry point
+    if (!file_exists($sourceDir . '/mrrlytics.php')) {
+        mrrlytics_rmdirRecursive($tempExtract);
+        return ['success' => false, 'message' => 'Invalid update package — mrrlytics.php not found inside ZIP.'];
+    }
+
+    // 6. Copy new files over the current module directory
+    mrrlytics_copyRecursive($sourceDir, $moduleDir);
+
+    // 7. Cleanup temp directory
+    mrrlytics_rmdirRecursive($tempExtract);
+
+    // 8. Clear version check cache so the banner re-checks on next page load
+    try {
+        Capsule::table('tbladdonmodules')
+            ->where('module', 'mrrlytics')
+            ->where('setting', 'version_check_cache')
+            ->delete();
+    } catch (\Exception $e) {
+        // Non-fatal — cache will expire naturally
+    }
+
+    return ['success' => true, 'message' => 'Module updated successfully. Reloading…'];
+}
+
+/**
+ * Recursively copy a directory tree from $src to $dst.
+ */
+function mrrlytics_copyRecursive($src, $dst)
+{
+    $dir = opendir($src);
+    while (($file = readdir($dir)) !== false) {
+        if ($file === '.' || $file === '..') {
+            continue;
+        }
+        $srcPath = $src . '/' . $file;
+        $dstPath = $dst . '/' . $file;
+        if (is_dir($srcPath)) {
+            if (!is_dir($dstPath)) {
+                mkdir($dstPath, 0755, true);
+            }
+            mrrlytics_copyRecursive($srcPath, $dstPath);
+        } else {
+            copy($srcPath, $dstPath);
+        }
+    }
+    closedir($dir);
+}
+
+/**
+ * Recursively delete a directory and all its contents.
+ */
+function mrrlytics_rmdirRecursive($dir)
+{
+    foreach (array_diff(scandir($dir), ['.', '..']) as $file) {
+        $path = $dir . '/' . $file;
+        is_dir($path) ? mrrlytics_rmdirRecursive($path) : unlink($path);
+    }
+    rmdir($dir);
+}
+
+/**
  * Addon configuration
  *
  * Defines the addon metadata and configuration fields.
- * 
+ *
  * @return array
  */
 function mrrlytics_config()
@@ -428,6 +542,24 @@ function mrrlytics_upgrade($vars)
  */
 function mrrlytics_output($vars)
 {
+    // Handle auto-update action
+    if (isset($_POST['mrrlytics_action']) && $_POST['mrrlytics_action'] === 'auto_update') {
+        if (isset($_POST['token'])) {
+            $updateInfo = mrrlytics_checkForUpdate();
+            if ($updateInfo['update_available'] && !empty($updateInfo['download_url'])) {
+                $result = mrrlytics_autoUpdate($updateInfo['download_url']);
+                if ($result['success']) {
+                    echo '<div class="alert alert-success"><strong>Updated!</strong> ' . htmlspecialchars($result['message'])
+                        . '<script>setTimeout(function(){ location.reload(); }, 2000);</script></div>';
+                } else {
+                    echo '<div class="alert alert-danger"><strong>Auto-update failed:</strong> ' . htmlspecialchars($result['message']) . '</div>';
+                }
+            } else {
+                echo '<div class="alert alert-info">No update is currently available.</div>';
+            }
+        }
+    }
+
     // Handle regenerate API key action
     if (isset($_POST['mrrlytics_action']) && $_POST['mrrlytics_action'] === 'regenerate_key') {
         // Verify WHMCS token
@@ -473,15 +605,28 @@ function mrrlytics_output($vars)
     // Update check banner
     $updateInfo = mrrlytics_checkForUpdate();
     if ($updateInfo['update_available']) {
-        $downloadLink = !empty($updateInfo['download_url'])
-            ? ' <a href="' . htmlspecialchars($updateInfo['download_url']) . '" target="_blank" class="btn btn-sm btn-primary" style="margin-left:10px;">Download v' . htmlspecialchars($updateInfo['latest_version']) . '</a>'
-            : '';
+        $latestEsc   = htmlspecialchars($updateInfo['latest_version']);
         $releaseNotes = !empty($updateInfo['release_notes'])
             ? '<br><small>' . htmlspecialchars($updateInfo['release_notes']) . '</small>'
             : '';
+
+        $downloadLink  = '';
+        $autoUpdateBtn = '';
+        if (!empty($updateInfo['download_url'])) {
+            $downloadLink = '<a href="' . htmlspecialchars($updateInfo['download_url']) . '" target="_blank" class="btn btn-sm btn-default" style="margin-left:4px;">Download ZIP</a>';
+            if (is_writable(__DIR__)) {
+                $confirmMsg   = addslashes('Auto-update to v' . $updateInfo['latest_version'] . "?\nThis will replace all module files automatically.");
+                $autoUpdateBtn = '<form method="post" style="display:inline;margin-left:4px;" onsubmit="return confirm(\'' . $confirmMsg . '\');">'
+                    . '<input type="hidden" name="token" value="' . generate_token('link') . '">'
+                    . '<input type="hidden" name="mrrlytics_action" value="auto_update">'
+                    . '<button type="submit" class="btn btn-sm btn-primary">Auto-update to v' . $latestEsc . '</button>'
+                    . '</form>';
+            }
+        }
+
         echo '<div class="alert alert-warning" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
-        echo '<span><strong>Update available:</strong> MRRlytics module v' . htmlspecialchars($updateInfo['latest_version']) . ' is ready. You are running v' . MRRLYTICS_VERSION . '.' . $releaseNotes . '</span>';
-        echo $downloadLink;
+        echo '<span><strong>Update available:</strong> MRRlytics module v' . $latestEsc . ' is ready. You are running v' . MRRLYTICS_VERSION . '.' . $releaseNotes . '</span>';
+        echo '<span>' . $autoUpdateBtn . $downloadLink . '</span>';
         echo '</div>';
     }
 

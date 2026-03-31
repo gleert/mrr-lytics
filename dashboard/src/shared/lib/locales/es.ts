@@ -743,6 +743,16 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v233: {
+          recurringBillableItems: 'Los billable items recurrentes (mantenimiento, servicios gestionados) ahora se incluyen en el cálculo del MRR y ARR',
+          churnWasActiveAt: 'La tasa de churn del health score ahora usa lógica wasActiveAt basada en fechas para una ventana de 30 días precisa en lugar de detección por fecha de sincronización',
+          clientsRealChurnDates: 'Las estadísticas de clientes y el gráfico de churn ahora usan fechas de cierre reales y respetan el filtro de rango de tiempo seleccionado',
+          clientsPagination: 'Paginación numérica en la lista de clientes en lugar de los botones anterior/siguiente',
+          moduleUpdateBannerSync: 'El banner de actualización del módulo ahora desaparece inmediatamente tras una sincronización exitosa sin requerir recargar la página',
+          transactionsDate: 'La tabla de transacciones siempre muestra la fecha de creación de la factura (antes mostraba inconsistentemente la fecha de pago para facturas pagadas)',
+          churnedClientsChart: 'El gráfico de clientes perdidos ahora muestra datos correctamente al filtrar por rango de tiempo',
+          syncCacheInvalidation: 'Las métricas del dashboard se actualizan inmediatamente después de la sincronización en lugar de mostrar valores en caché hasta 2 minutos',
+        },
         v232: {
           clientClosureDate: 'Fecha de abandono del cliente extraída del log de actividad de WHMCS ("Status changed to Closed") y guardada como closed_at',
           moduleUpdateBanner: 'Banner de actualización del módulo WHMCS en el dashboard y en el panel de administración cuando la versión instalada está desactualizada',
