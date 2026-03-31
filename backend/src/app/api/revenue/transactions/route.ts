@@ -123,9 +123,11 @@ export async function GET(request: NextRequest) {
       itemsQuery = itemsQuery.in('type', ['Item', 'Addon', 'PromoHosting', 'PromoDomain', 'Invoice', 'Late Fee', 'Setup'])
     }
 
-    // Apply sorting by amount if requested
+    // Apply sorting
     if (sortBy === 'amount') {
       itemsQuery = itemsQuery.order('amount', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'invoice_id') {
+      itemsQuery = itemsQuery.order('invoice_id', { ascending: sortOrder === 'asc' })
     } else {
       itemsQuery = itemsQuery.order('invoice_id', { ascending: false })
     }

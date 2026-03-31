@@ -297,8 +297,16 @@ export function RevenueTransactionsTable() {
                   )}
                 </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted">
-                {t('revenue.transactions.invoice')}
+              <th
+                className="px-4 py-3 text-left text-xs font-medium text-muted cursor-pointer hover:text-foreground"
+                onClick={() => toggleSort('invoice_id')}
+              >
+                <div className="flex items-center gap-1">
+                  {t('revenue.transactions.invoice')}
+                  {sortBy === 'invoice_id' && (
+                    <Icon name={sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'} size="xs" />
+                  )}
+                </div>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted">
                 {t('revenue.transactions.status', 'Status')}
