@@ -11,9 +11,10 @@ interface ModuleVersionInfo {
 
 function useLatestModuleVersion() {
   return useQuery({
-    queryKey: ['module-version'],
+    queryKey: ['module-version', 'v2'],
     queryFn: () => api.get<ModuleVersionInfo>('/api/module/version'),
-    staleTime: 24 * 60 * 60 * 1000, // 24h
+    staleTime: 60 * 60 * 1000, // 1h
+    gcTime: 0, // never persist to localStorage
     retry: false,
   })
 }
