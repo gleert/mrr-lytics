@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
-        .select('instance_id, packageid, amount, billingcycle, monthly_amount')
+        .select('instance_id, packageid, amount, billingcycle')
         .in('instance_id', instanceIds)
         .eq('domainstatus', 'Active'),
       supabase
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // --- Monthly amount helper ---
+    // --- Monthly amount helper (matches mv_mrr_current view exactly) ---
     const toMonthlyAmount = (amount: number, cycle: string): number => {
       const map: Record<string, number> = {
         monthly: 1, quarterly: 3,
@@ -141,7 +141,9 @@ export async function GET(request: NextRequest) {
         annually: 12, yearly: 12,
         biennially: 24, triennially: 36,
       }
-      return amount / (map[cycle?.toLowerCase()] || 1)
+      const divisor = map[cycle?.toLowerCase()]
+      if (!divisor) return 0 // unknown cycle → 0, consistent with mv_mrr_current ELSE 0
+      return amount / divisor
     }
 
     // --- Aggregate MRR by resolved group name + track category coverage ---
@@ -150,8 +152,9 @@ export async function GET(request: NextRequest) {
     let categorizedMRR = 0
 
     hostingServices?.forEach(service => {
-      const monthlyAmount = service.monthly_amount
-        || toMonthlyAmount(Number(service.amount) || 0, service.billingcycle || 'monthly')
+      // Always calculate from amount + billingcycle (same as mv_mrr_current view)
+      // Never use monthly_amount column — it may be stale or differ from the view
+      const monthlyAmount = toMonthlyAmount(Number(service.amount) || 0, service.billingcycle || '')
 
       const productKey = `${service.instance_id}:${service.packageid}`
       const groupId = productToGroupMap.get(productKey)
