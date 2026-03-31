@@ -20,7 +20,7 @@ if (!defined('WHMCS')) {
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
-define('MRRLYTICS_VERSION', '1.2.0');
+define('MRRLYTICS_VERSION', '1.3.0');
 define('MRRLYTICS_VERSION_CHECK_URL', 'https://app.mrrlytics.com/api/module/version');
 
 /**
