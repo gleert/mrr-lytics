@@ -18,11 +18,13 @@ export function useCurrency() {
       maximumFractionDigits?: number
     }
   ): string => {
+    const max = options?.maximumFractionDigits ?? 2
+    const min = options?.minimumFractionDigits ?? Math.min(2, max)
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      minimumFractionDigits: options?.minimumFractionDigits ?? 2,
-      maximumFractionDigits: options?.maximumFractionDigits ?? 2,
+      minimumFractionDigits: min,
+      maximumFractionDigits: max,
     }).format(amount)
   }, [currency, locale])
 
