@@ -241,6 +241,8 @@ export const en = {
       noGroups: 'No product groups synced yet',
       noSearchResults: 'No products match your search',
       noCategories: 'Create categories first',
+      activeServices: 'Active',
+      churnRate: 'Churn ({{days}}d)',
       stats: {
         totalProducts: 'Total Products',
         totalGroups: 'Product Groups',

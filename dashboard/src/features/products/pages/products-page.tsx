@@ -22,6 +22,7 @@ import {
 } from '../hooks/use-products'
 import { ProductRow } from '../components/product-row'
 import { ProductStats } from '../components/product-stats'
+import { useProductsChurn, type ProductChurnData } from '../hooks/use-products-churn'
 
 type ViewMode = 'groups' | 'products'
 
@@ -32,9 +33,11 @@ export function ProductsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>('groups')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [showHidden, setShowHidden] = React.useState(true)
+  const [churnPeriod, setChurnPeriod] = React.useState<30 | 60 | 90>(30)
   const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
 
   const { data: productsData, isLoading: productsLoading } = useProducts(showHidden)
+  const { data: churnData, isLoading: churnLoading } = useProductsChurn(churnPeriod)
   const { data: categories, isLoading: categoriesLoading } = useCategories()
   const createMapping = useCreateCategoryMapping()
   const deleteMapping = useDeleteCategoryMapping()
@@ -72,6 +75,48 @@ export function ProductsPage() {
       g.instance_name?.toLowerCase().includes(query)
     )
   }, [productsData?.product_groups, searchQuery])
+
+  // Per-product churn lookup: "instanceId:whmcsId" → churn stats
+  const churnMap = React.useMemo(() => {
+    const map = new Map<string, ProductChurnData>()
+    churnData?.products.forEach(p => {
+      map.set(`${p.instance_id}:${p.whmcs_id}`, p)
+    })
+    return map
+  }, [churnData])
+
+  // Per-group churn lookup: aggregate product churn by gid
+  const churnByGroupMap = React.useMemo(() => {
+    const grouped = new Map<string, { active: number; churned: number; mrr: number }>()
+    productsData?.products.forEach(p => {
+      if (!p.gid) return
+      const groupKey = `${p.instance_id}:${p.gid}`
+      const churn = churnMap.get(`${p.instance_id}:${p.whmcs_id}`)
+      if (!churn) return
+      const existing = grouped.get(groupKey) || { active: 0, churned: 0, mrr: 0 }
+      grouped.set(groupKey, {
+        active: existing.active + churn.active_services,
+        churned: existing.churned + churn.churned_services,
+        mrr: existing.mrr + churn.churned_mrr,
+      })
+    })
+    const result = new Map<string, ProductChurnData>()
+    grouped.forEach((v, key) => {
+      const colonIdx = key.indexOf(':')
+      const instance_id = key.slice(0, colonIdx)
+      const whmcs_id = Number(key.slice(colonIdx + 1))
+      const total = v.active + v.churned
+      result.set(key, {
+        whmcs_id,
+        instance_id,
+        active_services: v.active,
+        churned_services: v.churned,
+        churned_mrr: Math.round(v.mrr * 100) / 100,
+        churn_rate: total > 0 ? Math.round((v.churned / total) * 10000) / 100 : 0,
+      })
+    })
+    return result
+  }, [productsData?.products, churnMap])
 
   const currentItems = viewMode === 'products' ? filteredProducts : filteredGroups
   const totalCount = viewMode === 'products' 
@@ -227,6 +272,24 @@ export function ProductsPage() {
             <Icon name={showHidden ? 'visibility' : 'visibility_off'} size="sm" />
             {t('products.showHidden')}
           </button>
+
+          {/* Churn period selector */}
+          <div className="flex gap-1 p-0.5 bg-surface rounded-lg border border-border text-xs">
+            {([30, 60, 90] as const).map(d => (
+              <button
+                key={d}
+                onClick={() => setChurnPeriod(d)}
+                className={cn(
+                  'px-2 py-1 rounded-md font-medium transition-colors',
+                  churnPeriod === d
+                    ? 'bg-primary-500 text-white'
+                    : 'text-muted hover:text-foreground'
+                )}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -281,6 +344,12 @@ export function ProductsPage() {
                         </th>
                       </>
                     )}
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider w-20">
+                      {t('products.activeServices')}
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider w-24">
+                      {t('products.churnRate', { days: churnPeriod })}
+                    </th>
                     {isAdmin && (
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider w-48">
                         {t('products.category')}
@@ -310,6 +379,12 @@ export function ProductsPage() {
                         isUpdating={updatingItems.has(itemKey)}
                         showTypeColumns={isProductView}
                         showCategoryColumn={isAdmin}
+                        churnData={
+                          isProductView
+                            ? churnMap.get(`${item.instance_id}:${item.whmcs_id}`) ?? null
+                            : churnByGroupMap.get(`${item.instance_id}:${item.whmcs_id}`) ?? null
+                        }
+                        churnLoading={churnLoading}
                       />
                     )
                   })}

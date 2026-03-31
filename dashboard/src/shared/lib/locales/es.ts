@@ -241,6 +241,8 @@ export const es = {
       noGroups: 'No hay grupos de productos sincronizados aún',
       noSearchResults: 'No hay productos que coincidan',
       noCategories: 'Crea categorías primero',
+      activeServices: 'Activos',
+      churnRate: 'Churn ({{days}}d)',
       stats: {
         totalProducts: 'Total Productos',
         totalGroups: 'Grupos de Productos',

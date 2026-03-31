@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
 import type { Product, ProductGroup, CategoryInfo } from '../hooks/use-products'
+import type { ProductChurnData } from '../hooks/use-products-churn'
 import type { Category } from '@/features/categories'
+
+function getChurnColor(rate: number): string {
+  if (rate < 5) return 'text-success'
+  if (rate < 15) return 'text-warning'
+  return 'text-danger'
+}
 
 interface ProductRowProps {
   item: Product | ProductGroup
@@ -15,6 +22,8 @@ interface ProductRowProps {
   isUpdating?: boolean
   showTypeColumns?: boolean
   showCategoryColumn?: boolean
+  churnData?: ProductChurnData | null
+  churnLoading?: boolean
 }
 
 export function ProductRow({
@@ -27,6 +36,8 @@ export function ProductRow({
   isUpdating,
   showTypeColumns = true,
   showCategoryColumn = true,
+  churnData,
+  churnLoading,
 }: ProductRowProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = React.useState(false)
@@ -138,6 +149,32 @@ export function ProductRow({
           </td>
         </>
       )}
+
+      {/* Active services */}
+      <td className="px-4 py-3 text-right">
+        {churnLoading ? (
+          <div className="h-4 w-8 bg-surface-hover animate-pulse rounded ml-auto" />
+        ) : churnData ? (
+          <span className="text-sm text-foreground font-medium tabular-nums">
+            {churnData.active_services}
+          </span>
+        ) : (
+          <span className="text-sm text-muted">—</span>
+        )}
+      </td>
+
+      {/* Churn rate */}
+      <td className="px-4 py-3 text-right">
+        {churnLoading ? (
+          <div className="h-4 w-10 bg-surface-hover animate-pulse rounded ml-auto" />
+        ) : churnData ? (
+          <span className={cn('text-sm font-medium tabular-nums', getChurnColor(churnData.churn_rate))}>
+            {churnData.churn_rate.toFixed(1)}%
+          </span>
+        ) : (
+          <span className="text-sm text-muted">—</span>
+        )}
+      </td>
 
       {/* Category (admin only) */}
       {showCategoryColumn && (
