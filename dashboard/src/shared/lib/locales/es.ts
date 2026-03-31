@@ -271,7 +271,7 @@ export const es = {
       total: 'Total',
       mrr: 'MRR',
       arr: 'ARR',
-      invoicesCount: 'Facturas Pagadas',
+      invoicesCount: 'Total Facturas',
       revenueChart: 'Ingresos en el Tiempo',
       revenueChartDesc: 'Seguimiento de tendencias y crecimiento de ingresos',
       comingSoon: 'Gráficos próximamente',
