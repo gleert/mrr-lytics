@@ -267,7 +267,6 @@ export function MRRTrendChart() {
                     <ChartTooltip
                       labelFormatter={formatMonth}
                       valueFormatter={(v) => formatCurrency(v)}
-                      showTotal
                     />
                   }
                 />
