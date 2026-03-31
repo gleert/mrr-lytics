@@ -25,7 +25,7 @@ export function ModuleUpdateBanner() {
         </span>
       </div>
       <a href={downloadUrl} target="_blank" rel="noreferrer" className="shrink-0">
-        <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-100 dark:border-warning/50 dark:text-warning dark:hover:bg-warning/10">
+        <Button size="sm" variant="outline" className="border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 dark:border-warning/30 dark:bg-warning/15 dark:text-warning dark:hover:bg-warning/25">
           Descargar v{latestVersion}
         </Button>
       </a>

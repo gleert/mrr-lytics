@@ -32,7 +32,7 @@ export function UncategorizedProductsBanner() {
       </div>
       <button
         onClick={() => navigate('/products')}
-        className="sm:shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-100 text-amber-700 text-xs font-semibold hover:bg-amber-200 active:scale-95 transition-all dark:border-warning/30 dark:bg-warning/15 dark:text-warning dark:hover:bg-warning/25"
+        className="sm:shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors dark:border-warning/30 dark:bg-warning/15 dark:text-warning dark:hover:bg-warning/25"
       >
         {t('dashboard.uncategorizedBanner.cta')}
         <Icon name="arrow_forward" size="sm" />

@@ -53,10 +53,13 @@ export function TrialBanner() {
       </div>
 
       <Link to="/settings/billing">
-        <Button 
-          size="sm" 
-          variant={isUrgent ? 'default' : 'outline'}
-          className={isUrgent ? '' : 'border-primary-500/50 text-primary-400 hover:bg-primary-500/10'}
+        <Button
+          size="sm"
+          variant="outline"
+          className={isUrgent
+            ? 'border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 dark:border-warning/30 dark:bg-warning/15 dark:text-warning dark:hover:bg-warning/25'
+            : 'border-primary-500/50 text-primary-400 hover:bg-primary-500/10'
+          }
         >
           {t('billing.upgadeNow', 'Upgrade Now')}
         </Button>
