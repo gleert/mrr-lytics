@@ -20,6 +20,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 class DataExtractor
 {
+    const VERSION = '1.2.0';
+
     /**
      * Record limit per table
      * 
@@ -212,6 +214,7 @@ class DataExtractor
         }
         
         return [
+            'module_version' => self::VERSION,
             'whmcs_version' => $whmcsVersion,
             'php_version'   => PHP_VERSION,
             'timezone'      => date_default_timezone_get(),

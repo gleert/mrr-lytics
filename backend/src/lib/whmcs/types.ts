@@ -14,6 +14,7 @@ export interface WhmcsApiResponse {
 }
 
 export interface WhmcsMeta {
+  module_version?: string
   whmcs_version: string
   php_version: string
   timezone: string

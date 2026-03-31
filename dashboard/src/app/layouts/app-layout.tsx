@@ -4,6 +4,7 @@ import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Backdrop } from '@/shared/components/ui/backdrop'
 import { TrialBanner, TrialExpiredWall, useSubscription } from '@/features/billing'
+import { ModuleUpdateBanner } from '@/features/settings/components/module-update-banner'
 import { useMobile } from '@/shared/hooks'
 import { CommandPaletteProvider } from '@/shared/components/command-palette'
 import { TourProvider } from '@/features/onboarding'
@@ -113,6 +114,7 @@ export function AppLayout() {
             onMenuClick={handleMenuClick}
           />
           <TrialBanner />
+          <ModuleUpdateBanner />
           {/* Trial expired wall - allow billing page through */}
           {subscriptionData?.subscription.trial_expired && !location.pathname.includes('/settings/billing') && (
             <TrialExpiredWall />

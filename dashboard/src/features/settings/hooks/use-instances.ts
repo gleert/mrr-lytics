@@ -14,6 +14,7 @@ export interface WhmcsInstanceFull {
   sync_interval_hours: number
   last_sync_at: string | null
   status: 'active' | 'inactive' | 'error'
+  module_version: string | null
   settings: Record<string, unknown>
   created_at: string
   updated_at: string

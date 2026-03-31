@@ -264,12 +264,13 @@ export async function syncInstance(
       })
       .eq('id', syncLog.id)
 
-    // Update instance last_sync_at
+    // Update instance last_sync_at and module_version
     await supabase
       .from('whmcs_instances')
       .update({
         last_sync_at: new Date().toISOString(),
         status: 'active',
+        ...(whmcsData.meta.module_version ? { module_version: whmcsData.meta.module_version } : {}),
       })
       .eq('id', instance.id)
 
