@@ -57,15 +57,14 @@ export async function GET(request: NextRequest) {
     )
 
     // Get date range — start (months-1) months ago so the last iteration is the current month
-    const endDate = new Date()
     const startDate = new Date()
     startDate.setMonth(startDate.getMonth() - months + 1)
     startDate.setDate(1) // Start of month
 
-    // Get all hosting services
+    // Get all hosting services (all statuses — we need cancelled/terminated for churn)
     const { data: hostingServices, error: hostingError } = await supabase
       .from('whmcs_hosting')
-      .select('id, instance_id, amount, billingcycle, monthly_amount, domainstatus, regdate, terminationdate')
+      .select('id, instance_id, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
       .in('instance_id', instanceIds)
 
     if (hostingError) {
@@ -73,86 +72,41 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to fetch hosting data')
     }
 
-    // Helper to convert billing cycle to monthly amount
+    // Monthly amount — same formula as mv_mrr_current view (no monthly_amount shortcut)
     const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const cycleLower = cycle?.toLowerCase() || 'monthly'
-      switch (cycleLower) {
-        case 'monthly': return amount
-        case 'quarterly': return amount / 3
-        case 'semi-annually':
-        case 'semiannually': return amount / 6
-        case 'annually':
-        case 'yearly': return amount / 12
-        case 'biennially': return amount / 24
-        case 'triennially': return amount / 36
-        default: return amount
+      const map: Record<string, number> = {
+        monthly: 1, quarterly: 3,
+        'semi-annually': 6, semiannually: 6,
+        annually: 12, yearly: 12,
+        biennially: 24, triennially: 36,
       }
+      const divisor = map[cycle?.toLowerCase()]
+      if (!divisor) return 0
+      return amount / divisor
     }
 
-    // Get monthly amount for a service
-    const getMonthlyAmount = (service: typeof hostingServices[0]): number => {
-      return service.monthly_amount || toMonthlyAmount(
-        Number(service.amount) || 0,
-        service.billingcycle || 'monthly'
-      )
-    }
+    const getMonthlyAmount = (service: typeof hostingServices[0]): number =>
+      toMonthlyAmount(Number(service.amount) || 0, service.billingcycle || '')
 
-    // Check if service was active at a specific date
+    // Was service active at end of a given date?
+    // Rules (date-driven, NOT relying on current domainstatus for historical dates):
+    //   1. regdate must exist and be <= date
+    //   2. terminationdate, if set, must be > date (not yet terminated)
+    //   3. If no terminationdate: active only if current status is Active/Suspended
     const wasActiveAt = (service: typeof hostingServices[0], date: Date): boolean => {
-      const regDate = service.regdate && service.regdate !== '0000-00-00' ? new Date(service.regdate) : null
-      const termDate = service.terminationdate && service.terminationdate !== '0000-00-00' ? new Date(service.terminationdate) : null
+      const regDate = service.regdate && service.regdate !== '0000-00-00'
+        ? new Date(service.regdate) : null
+      const termDate = service.terminationdate && service.terminationdate !== '0000-00-00'
+        ? new Date(service.terminationdate) : null
 
-      // Not yet registered
-      if (regDate && regDate > date) {
-        return false
-      }
+      if (!regDate || regDate > date) return false
+      if (termDate && termDate <= date) return false
 
-      // Already terminated
-      if (termDate && termDate <= date) {
-        return false
-      }
+      // Service has a termination date in the future → was active at this date
+      if (termDate && termDate > date) return true
 
-      // Must be Active or Suspended to count
-      if (!['Active', 'Suspended'].includes(service.domainstatus)) {
-        // If terminated in the future, it was active at this date
-        if (termDate && termDate > date) {
-          return true
-        }
-        return false
-      }
-
-      return true
-    }
-
-    // Calculate MRR at end of month
-    const calculateMRRAtDate = (date: Date): number => {
-      let mrr = 0
-      hostingServices?.forEach(service => {
-        if (wasActiveAt(service, date)) {
-          mrr += getMonthlyAmount(service)
-        }
-      })
-      return mrr
-    }
-
-    // Track services for movement calculation
-    interface ServiceSnapshot {
-      id: string
-      amount: number
-      active: boolean
-    }
-
-    const getServicesSnapshot = (date: Date): Map<string, ServiceSnapshot> => {
-      const snapshot = new Map<string, ServiceSnapshot>()
-      hostingServices?.forEach(service => {
-        const active = wasActiveAt(service, date)
-        snapshot.set(service.id, {
-          id: service.id,
-          amount: getMonthlyAmount(service),
-          active,
-        })
-      })
-      return snapshot
+      // No termination date: use current status as proxy
+      return ['Active', 'Suspended'].includes(service.domainstatus)
     }
 
     // Generate monthly movement data
@@ -161,75 +115,34 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < months; i++) {
       const monthDate = new Date(startDate)
       monthDate.setMonth(startDate.getMonth() + i)
-      
-      // Start of this month
-      const monthStart = new Date(monthDate)
-      monthStart.setDate(1)
-      
-      // End of this month
-      const monthEnd = new Date(monthDate)
-      monthEnd.setMonth(monthEnd.getMonth() + 1)
-      monthEnd.setDate(0)
-      monthEnd.setHours(23, 59, 59, 999)
 
-      // End of previous month (for starting MRR)
-      const prevMonthEnd = new Date(monthStart)
-      prevMonthEnd.setDate(0)
-      prevMonthEnd.setHours(23, 59, 59, 999)
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
+      const prevMonthEnd = new Date(monthStart.getTime() - 1)
 
-      const monthKey = monthDate.toISOString().substring(0, 7) // YYYY-MM
-
-      // Get snapshots
-      const prevSnapshot = getServicesSnapshot(prevMonthEnd)
-      const currSnapshot = getServicesSnapshot(monthEnd)
+      const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
 
       let starting_mrr = 0
       let new_mrr = 0
       let churned_mrr = 0
-      let expansion_mrr = 0
-      let contraction_mrr = 0
       let ending_mrr = 0
 
-      // Calculate starting MRR (active at end of previous month)
-      prevSnapshot.forEach((service) => {
-        if (service.active) {
-          starting_mrr += service.amount
-        }
+      hostingServices?.forEach(service => {
+        const wasActive = wasActiveAt(service, prevMonthEnd)
+        const isActive  = wasActiveAt(service, monthEnd)
+        const mrr = getMonthlyAmount(service)
+
+        if (wasActive) starting_mrr += mrr
+        if (isActive)  ending_mrr   += mrr
+
+        if (!wasActive && isActive)   new_mrr     += mrr  // new this month
+        if (wasActive  && !isActive)  churned_mrr += mrr  // churned this month
       })
 
-      // Calculate movements by comparing snapshots
-      currSnapshot.forEach((curr, id) => {
-        const prev = prevSnapshot.get(id)
-
-        if (curr.active) {
-          ending_mrr += curr.amount
-
-          if (!prev || !prev.active) {
-            // New customer or reactivation
-            new_mrr += curr.amount
-          } else if (prev.active) {
-            // Existing customer - check for expansion/contraction
-            const diff = curr.amount - prev.amount
-            if (diff > 0) {
-              expansion_mrr += diff
-            } else if (diff < 0) {
-              contraction_mrr += Math.abs(diff)
-            }
-          }
-        } else if (prev && prev.active) {
-          // Was active, now not - churned
-          churned_mrr += prev.amount
-        }
-      })
-
-      // Check for services in prev but not in curr (shouldn't happen, but just in case)
-      prevSnapshot.forEach((prev, id) => {
-        if (prev.active && !currSnapshot.has(id)) {
-          churned_mrr += prev.amount
-        }
-      })
-
-      const net_change = new_mrr + expansion_mrr - churned_mrr - contraction_mrr
+      // Expansion/contraction require historical price data — not available
+      const expansion_mrr  = 0
+      const contraction_mrr = 0
+      const net_change = new_mrr - churned_mrr
 
       movementData.push({
         month: monthKey,
