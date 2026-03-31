@@ -152,7 +152,7 @@ export function DailyCommittedMRRChart() {
                   tickLine={false}
                   axisLine={{ stroke: 'var(--color-border)' }}
                   tickFormatter={formatDateLabel}
-                  interval="preserveStartEnd"
+                  interval={Math.floor(selectedPeriod / 7)}
                 />
                 <YAxis
                   tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
