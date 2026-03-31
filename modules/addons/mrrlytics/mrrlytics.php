@@ -20,6 +20,9 @@ if (!defined('WHMCS')) {
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
+define('MRRLYTICS_VERSION', '1.2.0');
+define('MRRLYTICS_VERSION_CHECK_URL', 'https://app.mrrlytics.com/api/module/version');
+
 /**
  * Generate a secure random API key
  * 
@@ -132,8 +135,81 @@ if (isset($_GET['mrrlytics_delete'])) {
 }
 
 /**
+ * Check for a newer module version (cached for 24 hours in tbladdonmodules)
+ *
+ * @return array{update_available: bool, latest_version: string, release_notes: string, download_url: string}
+ */
+function mrrlytics_checkForUpdate()
+{
+    $noUpdate = [
+        'update_available' => false,
+        'latest_version'   => MRRLYTICS_VERSION,
+        'release_notes'    => '',
+        'download_url'     => '',
+    ];
+
+    try {
+        // Read cached data from DB
+        $cachedJson = Capsule::table('tbladdonmodules')
+            ->where('module', 'mrrlytics')
+            ->where('setting', 'version_check_cache')
+            ->value('value');
+
+        $cache = $cachedJson ? json_decode($cachedJson, true) : null;
+
+        // Use cache if it's less than 24 hours old
+        if (
+            $cache &&
+            isset($cache['checked_at']) &&
+            (time() - (int) $cache['checked_at']) < 86400
+        ) {
+            $latestVersion = $cache['latest_version'] ?? MRRLYTICS_VERSION;
+            return [
+                'update_available' => version_compare(MRRLYTICS_VERSION, $latestVersion, '<'),
+                'latest_version'   => $latestVersion,
+                'release_notes'    => $cache['release_notes'] ?? '',
+                'download_url'     => $cache['download_url'] ?? '',
+            ];
+        }
+
+        // Fetch from remote
+        $ctx = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+        $response = @file_get_contents(MRRLYTICS_VERSION_CHECK_URL, false, $ctx);
+
+        if ($response === false) {
+            return $noUpdate;
+        }
+
+        $data = json_decode($response, true);
+        if (!$data || !isset($data['version'])) {
+            return $noUpdate;
+        }
+
+        // Store in cache
+        Capsule::table('tbladdonmodules')->updateOrInsert(
+            ['module' => 'mrrlytics', 'setting' => 'version_check_cache'],
+            ['value' => json_encode([
+                'checked_at'     => time(),
+                'latest_version' => $data['version'],
+                'release_notes'  => $data['release_notes'] ?? '',
+                'download_url'   => $data['download_url'] ?? '',
+            ])]
+        );
+
+        return [
+            'update_available' => version_compare(MRRLYTICS_VERSION, $data['version'], '<'),
+            'latest_version'   => $data['version'],
+            'release_notes'    => $data['release_notes'] ?? '',
+            'download_url'     => $data['download_url'] ?? '',
+        ];
+    } catch (\Exception $e) {
+        return $noUpdate;
+    }
+}
+
+/**
  * Addon configuration
- * 
+ *
  * Defines the addon metadata and configuration fields.
  * 
  * @return array
@@ -228,7 +304,7 @@ function mrrlytics_config()
     return [
         'name'        => 'MRRlytics',
         'description' => 'Secure endpoint to export billing and service data in JSON format to analytics platforms.',
-        'version'     => '1.2.0',
+        'version'     => MRRLYTICS_VERSION,
         'author'      => 'MRRlytics Team',
         'language'    => 'english',
         'fields'      => [
@@ -393,7 +469,22 @@ function mrrlytics_output($vars)
     }
     
     $rateLimit = isset($vars['RATE_LIMIT']) ? $vars['RATE_LIMIT'] : '60';
-    
+
+    // Update check banner
+    $updateInfo = mrrlytics_checkForUpdate();
+    if ($updateInfo['update_available']) {
+        $downloadLink = !empty($updateInfo['download_url'])
+            ? ' <a href="' . htmlspecialchars($updateInfo['download_url']) . '" target="_blank" class="btn btn-sm btn-primary" style="margin-left:10px;">Download v' . htmlspecialchars($updateInfo['latest_version']) . '</a>'
+            : '';
+        $releaseNotes = !empty($updateInfo['release_notes'])
+            ? '<br><small>' . htmlspecialchars($updateInfo['release_notes']) . '</small>'
+            : '';
+        echo '<div class="alert alert-warning" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
+        echo '<span><strong>Update available:</strong> MRRlytics module v' . htmlspecialchars($updateInfo['latest_version']) . ' is ready. You are running v' . MRRLYTICS_VERSION . '.' . $releaseNotes . '</span>';
+        echo $downloadLink;
+        echo '</div>';
+    }
+
     // Get usage statistics
     $stats = mrrlytics_getStats();
     
@@ -454,7 +545,7 @@ function mrrlytics_output($vars)
     echo '<tr><td><strong>API Key Configured</strong></td>';
     echo '<td>' . (!empty($apiKey) ? '<span class="label label-success">Yes</span>' : '<span class="label label-danger">No</span>') . '</td></tr>';
     echo '<tr><td><strong>Rate Limit</strong></td><td>' . htmlspecialchars($rateLimit) . ' requests/minute</td></tr>';
-    echo '<tr><td><strong>Version</strong></td><td>1.1.0</td></tr>';
+    echo '<tr><td><strong>Version</strong></td><td>' . MRRLYTICS_VERSION . '</td></tr>';
     echo '</table>';
     echo '</div>';
     

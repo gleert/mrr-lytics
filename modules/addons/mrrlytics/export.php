@@ -70,6 +70,7 @@ class MRRlyticsExporter
             'invoice_items' => 'tblinvoiceitems',
             'clients' => 'tblclients',
             'cancellation_requests' => 'tblcancelrequests',
+            'client_closures'       => 'tblactivitylog',
         ];
         
         $tableIndex = 0;
@@ -130,7 +131,13 @@ class MRRlyticsExporter
             
             while (true) {
                 $query = Capsule::table($table);
-                
+
+                // Apply table-specific filters
+                if ($key === 'client_closures') {
+                    $query->where('userid', '>', 0)
+                          ->where('description', 'like', '%Status changed to Closed%');
+                }
+
                 if (!empty($columns)) {
                     // Try to select specific columns, fall back to * if fails
                     try {
@@ -227,6 +234,9 @@ class MRRlyticsExporter
             ],
             'cancellation_requests' => [
                 'id', 'relid', 'reason', 'type', 'created_at', 'updated_at',
+            ],
+            'client_closures' => [
+                'id', 'userid', 'date', 'description',
             ],
         ];
         

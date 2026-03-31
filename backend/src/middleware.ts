@@ -29,7 +29,7 @@ async function validateImpersonationToken(token: string): Promise<{
 }
 
 // Paths that don't require authentication
-const PUBLIC_PATHS = ['/api/health', '/api/contact']
+const PUBLIC_PATHS = ['/api/health', '/api/contact', '/api/module/version']
 
 // Paths that require admin key instead of tenant key
 const ADMIN_PATHS = ['/api/tenants']

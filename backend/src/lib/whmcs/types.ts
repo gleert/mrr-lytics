@@ -35,6 +35,7 @@ export interface WhmcsMeta {
     invoice_items: number
     clients: number
     cancellation_requests: number
+    client_closures: number
   }
 }
 
@@ -48,6 +49,7 @@ export interface WhmcsData {
   invoice_items: WhmcsInvoiceItem[]
   clients: WhmcsClient[]
   cancellation_requests: WhmcsCancellationRequest[]
+  client_closures: WhmcsClientClosure[]
 }
 
 export interface WhmcsHosting {
@@ -210,4 +212,11 @@ export interface WhmcsCancellationRequest {
   type?: string                 // 'Immediate' or 'End of Billing Period'
   created_at?: string           // When request was created
   updated_at?: string
+}
+
+export interface WhmcsClientClosure {
+  id: number
+  userid: number                // Client ID
+  date: string                  // Timestamp of the status change
+  description: string           // e.g. "Client Status changed to Closed"
 }

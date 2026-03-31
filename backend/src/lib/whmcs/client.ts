@@ -119,6 +119,7 @@ export class WhmcsClient {
           invoice_items: 0,
           clients: 0,
           cancellation_requests: 0,
+          client_closures: 0,
         },
       },
       data: {
@@ -131,6 +132,7 @@ export class WhmcsClient {
         invoice_items: [],
         clients: [],
         cancellation_requests: [],
+        client_closures: [],
       },
     }
 
@@ -150,6 +152,7 @@ export class WhmcsClient {
       allData.data.invoice_items.push(...result.data.invoice_items)
       allData.data.clients.push(...result.data.clients)
       allData.data.cancellation_requests.push(...(result.data.cancellation_requests || []))
+      allData.data.client_closures.push(...(result.data.client_closures || []))
 
       // Update meta from last fetch
       allData.meta = {
@@ -164,6 +167,7 @@ export class WhmcsClient {
           invoice_items: allData.data.invoice_items.length,
           clients: allData.data.clients.length,
           cancellation_requests: allData.data.cancellation_requests.length,
+          client_closures: allData.data.client_closures.length,
         },
       }
 

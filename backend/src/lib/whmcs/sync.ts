@@ -761,6 +761,31 @@ async function syncAllTables(
     counts.cancellation_requests = data.data.cancellation_requests.length
   }
 
+  // Sync client closures — update closed_at on whmcs_clients from activity log
+  if (data.data.client_closures && data.data.client_closures.length > 0) {
+    // Keep only the earliest closure date per client
+    const earliestClosureByClient = new Map<number, string>()
+    for (const entry of data.data.client_closures) {
+      const ts = sanitizeTimestamp(entry.date)
+      if (!ts) continue
+      const existing = earliestClosureByClient.get(entry.userid)
+      if (!existing || ts < existing) {
+        earliestClosureByClient.set(entry.userid, ts)
+      }
+    }
+
+    for (const [whmcsClientId, closedAt] of earliestClosureByClient) {
+      const { error } = await supabase
+        .from('whmcs_clients')
+        .update({ closed_at: closedAt })
+        .eq('instance_id', instanceId)
+        .eq('whmcs_id', whmcsClientId)
+        .is('closed_at', null) // Don't overwrite an already-set date
+      if (error) console.error(`Sync client_closures error (client ${whmcsClientId}):`, error)
+    }
+    counts.client_closures = earliestClosureByClient.size
+  }
+
   return counts
 }
 

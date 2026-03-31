@@ -130,7 +130,11 @@ class DataExtractor
         $data['cancellation_requests'] = $this->safeExtract('cancellation_requests', function() {
             return $this->getCancellationRequests();
         });
-        
+
+        $data['client_closures'] = $this->safeExtract('client_closures', function() {
+            return $this->getClientClosures();
+        });
+
         $response = [
             'success' => empty($this->errors),
             'meta'    => $this->getMeta(),
@@ -652,10 +656,55 @@ class DataExtractor
         
         $results = $this->safeQuery('tblcancelrequests', $columns, 'created_at', 'updated_at');
         $this->recordCounts['cancellation_requests'] = count($results);
-        
+
         return $this->convertToArrays($results);
     }
-    
+
+    /**
+     * Extract client closure events from the activity log (tblactivitylog)
+     *
+     * Filters only entries where the description contains "Status changed to Closed"
+     * to get the exact date each client was closed/churned.
+     *
+     * @return array
+     */
+    private function getClientClosures()
+    {
+        try {
+            $tableExists = Capsule::schema()->hasTable('tblactivitylog');
+            if (!$tableExists) {
+                $this->recordCounts['client_closures'] = 0;
+                return [];
+            }
+        } catch (\Exception $e) {
+            $this->recordCounts['client_closures'] = 0;
+            return [];
+        }
+
+        try {
+            $query = Capsule::table('tblactivitylog')
+                ->select(['id', 'userid', 'date', 'description'])
+                ->where('userid', '>', 0)
+                ->where('description', 'like', '%Status changed to Closed%');
+
+            if ($this->since !== null) {
+                $query->where('date', '>=', $this->since);
+            }
+
+            $results = $query->orderBy('id', 'asc')
+                ->limit($this->limit)
+                ->offset($this->offset)
+                ->get();
+
+            $rows = $this->collectionToArray($results);
+            $this->recordCounts['client_closures'] = count($rows);
+            return $rows;
+
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to query tblactivitylog: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Filter columns to include only those that exist in the table
      * 
