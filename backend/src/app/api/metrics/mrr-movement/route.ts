@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get date range
+    // Get date range — start (months-1) months ago so the last iteration is the current month
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setMonth(startDate.getMonth() - months)
+    startDate.setMonth(startDate.getMonth() - months + 1)
     startDate.setDate(1) // Start of month
 
     // Get all hosting services
