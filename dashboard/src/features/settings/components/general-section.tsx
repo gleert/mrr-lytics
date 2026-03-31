@@ -11,7 +11,7 @@ import { api } from '@/shared/lib/api'
 const SUPPORTED_CURRENCIES: Currency[] = ['EUR', 'USD', 'GBP']
 
 export function GeneralSection() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { getCurrentTenant, getCurrentCurrency } = useFilters()
   const toast = useToast()
