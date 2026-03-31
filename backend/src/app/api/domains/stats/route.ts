@@ -50,14 +50,42 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     const thirtyDaysFromNow = new Date(today)
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+    const todayStr = today.toISOString().split('T')[0]
+    const thirtyDaysStr = thirtyDaysFromNow.toISOString().split('T')[0]
 
-    // Get all domains for these instances
-    // Note: Supabase default limit is 1000, we need to fetch all for accurate stats
-    const { data: domains, error: domainsError, count } = await supabase
+    // Run KPI counts directly in DB (accurate regardless of total row count)
+    const [
+      totalResult,
+      activeResult,
+      pendingResult,
+      expiredResult,
+      expiringSoonResult,
+    ] = await Promise.all([
+      supabase.from('whmcs_domains').select('*', { count: 'exact', head: true })
+        .in('instance_id', instanceIds),
+      supabase.from('whmcs_domains').select('*', { count: 'exact', head: true })
+        .in('instance_id', instanceIds).eq('status', 'Active'),
+      supabase.from('whmcs_domains').select('*', { count: 'exact', head: true })
+        .in('instance_id', instanceIds).in('status', ['Pending', 'Pending Transfer', 'Pending Registration']),
+      supabase.from('whmcs_domains').select('*', { count: 'exact', head: true })
+        .in('instance_id', instanceIds).in('status', ['Expired', 'Cancelled']),
+      supabase.from('whmcs_domains').select('*', { count: 'exact', head: true })
+        .in('instance_id', instanceIds).eq('status', 'Active')
+        .gte('expirydate', todayStr).lte('expirydate', thirtyDaysStr),
+    ])
+
+    const total_domains  = totalResult.count ?? 0
+    const active_domains = activeResult.count ?? 0
+    const pending_domains = pendingResult.count ?? 0
+    const expired_domains = expiredResult.count ?? 0
+    const expiring_soon  = expiringSoonResult.count ?? 0
+
+    // Fetch all domains for charts, tables and derived stats (still needed)
+    const { data: domains, error: domainsError } = await supabase
       .from('whmcs_domains')
-      .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, recurringamount, donotrenew', { count: 'exact' })
+      .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, recurringamount, donotrenew')
       .in('instance_id', instanceIds)
-      .limit(10000) // Increase limit to get all domains
+      .limit(10000)
 
     if (domainsError) {
       console.error('Domains query error:', domainsError)
@@ -74,19 +102,6 @@ export async function GET(request: NextRequest) {
     }
 
     const allDomains = domains || []
-    
-    // Calculate stats - use count from query for accuracy
-    const total_domains = count ?? allDomains.length
-    const active_domains = allDomains.filter(d => d.status === 'Active').length
-    const pending_domains = allDomains.filter(d => d.status === 'Pending' || d.status === 'Pending Transfer').length
-    const expired_domains = allDomains.filter(d => d.status === 'Expired' || d.status === 'Cancelled').length
-    
-    // Expiring in next 30 days
-    const expiring_soon = allDomains.filter(d => {
-      if (!d.expirydate || d.status !== 'Active') return false
-      const expiry = new Date(d.expirydate)
-      return expiry >= today && expiry <= thirtyDaysFromNow
-    }).length
 
     // New domains registered in period - use separate query for accuracy
     const { count: newDomainsCount } = await supabase
