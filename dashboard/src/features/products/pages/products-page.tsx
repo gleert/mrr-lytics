@@ -31,7 +31,7 @@ export function ProductsPage() {
   const isAdmin = userRole === 'admin'
   const [viewMode, setViewMode] = React.useState<ViewMode>('groups')
   const [searchQuery, setSearchQuery] = React.useState('')
-  const [showHidden, setShowHidden] = React.useState(false)
+  const [showHidden, setShowHidden] = React.useState(true)
   const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
 
   const { data: productsData, isLoading: productsLoading } = useProducts(showHidden)
