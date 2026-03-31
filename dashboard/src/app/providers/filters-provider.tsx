@@ -4,19 +4,17 @@ import { api } from '@/shared/lib/api'
 import { useAuth } from './auth-provider'
 
 // Period presets
-export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'mtd' | 'ytd' | 'custom'
+export type PeriodPreset = 'mtd' | 'last_month' | 'this_year' | 'last_year' | 'this_quarter' | 'last_quarter' | 'ytd' | 'custom'
 
 export const PERIOD_PRESETS: { value: PeriodPreset; labelKey: string }[] = [
-  { value: 'today', labelKey: 'filters.today' },
-  { value: '7d',   labelKey: 'filters.7d' },
-  { value: 'mtd',  labelKey: 'filters.mtd' },
-  { value: '30d',  labelKey: 'filters.30d' },
-  { value: '90d',  labelKey: 'filters.90d' },
-  { value: '180d', labelKey: 'filters.180d' },
-  { value: '365d', labelKey: 'filters.365d' },
-  { value: '730d', labelKey: 'filters.730d' },
-  { value: 'ytd',  labelKey: 'filters.ytd' },
-  { value: 'custom', labelKey: 'filters.custom' },
+  { value: 'mtd',           labelKey: 'filters.mtd' },
+  { value: 'last_month',    labelKey: 'filters.last_month' },
+  { value: 'this_quarter',  labelKey: 'filters.this_quarter' },
+  { value: 'last_quarter',  labelKey: 'filters.last_quarter' },
+  { value: 'this_year',     labelKey: 'filters.this_year' },
+  { value: 'last_year',     labelKey: 'filters.last_year' },
+  { value: 'ytd',           labelKey: 'filters.ytd' },
+  { value: 'custom',        labelKey: 'filters.custom' },
 ]
 
 // WHMCS Instance type
@@ -107,7 +105,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
     if (stored && PERIOD_PRESETS.some(p => p.value === stored)) {
       return stored as PeriodPreset
     }
-    return '30d'
+    return 'mtd'
   })
 
   // Custom date range for 'custom' period

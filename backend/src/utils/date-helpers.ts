@@ -2,7 +2,7 @@
  * Date range helpers for metrics filtering
  */
 
-export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'mtd' | 'ytd' | 'all'
+export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | '365d' | '730d' | 'mtd' | 'last_month' | 'this_year' | 'last_year' | 'this_quarter' | 'last_quarter' | 'ytd' | 'all'
 
 export interface DateRange {
   startDate: Date
@@ -66,6 +66,35 @@ export function parseDateRange(
       startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1
       break
+    case 'last_month': {
+      const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const lastOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+      startDate = firstOfLastMonth
+      return { startDate, endDate: lastOfLastMonth, days: lastOfLastMonth.getDate() }
+    }
+    case 'this_quarter': {
+      const q = Math.floor(now.getMonth() / 3)
+      startDate = new Date(now.getFullYear(), q * 3, 1)
+      days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1
+      break
+    }
+    case 'last_quarter': {
+      const q = Math.floor(now.getMonth() / 3)
+      const lqStart = new Date(now.getFullYear(), (q - 1) * 3, 1)
+      const lqEnd = new Date(now.getFullYear(), q * 3, 0, 23, 59, 59, 999)
+      startDate = lqStart
+      return { startDate, endDate: lqEnd, days: Math.ceil((lqEnd.getTime() - lqStart.getTime()) / (1000 * 60 * 60 * 24)) }
+    }
+    case 'this_year':
+      startDate = new Date(now.getFullYear(), 0, 1)
+      days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1
+      break
+    case 'last_year': {
+      const lyStart = new Date(now.getFullYear() - 1, 0, 1)
+      const lyEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
+      startDate = lyStart
+      return { startDate, endDate: lyEnd, days: 365 }
+    }
     case 'ytd':
       startDate = new Date(now.getFullYear(), 0, 1)
       days = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -104,6 +133,11 @@ export function getPeriodLabel(period: PeriodPreset): string {
     '365d': 'Last 12 months',
     '730d': 'Last 2 years',
     mtd: 'This month',
+    last_month: 'Last month',
+    this_quarter: 'This quarter',
+    last_quarter: 'Last quarter',
+    this_year: 'This year',
+    last_year: 'Last year',
     ytd: 'Year to date',
     all: 'All time',
   }
