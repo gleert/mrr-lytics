@@ -701,6 +701,7 @@ export const es = {
       system: 'Sistema',
       language: 'Idioma',
       languageDesc: 'Elige tu idioma preferido',
+      selectLanguage: 'Seleccionar idioma',
       displayLanguage: 'Idioma de Visualización',
       // Currency
       currency: 'Moneda',

@@ -704,6 +704,7 @@ export const en = {
       system: 'System',
       language: 'Language',
       languageDesc: 'Choose your preferred language',
+      selectLanguage: 'Select language',
       displayLanguage: 'Display Language',
       // Currency
       currency: 'Currency',
