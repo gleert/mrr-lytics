@@ -99,7 +99,7 @@ export function DailyCommittedMRRChart() {
               className={cn(
                 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                 selectedPeriod === period
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary-500 text-white shadow-sm'
                   : 'text-muted hover:text-foreground hover:bg-surface'
               )}
             >
