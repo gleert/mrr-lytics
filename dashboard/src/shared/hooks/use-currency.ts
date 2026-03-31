@@ -21,7 +21,7 @@ export function useCurrency() {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      minimumFractionDigits: options?.minimumFractionDigits ?? 0,
+      minimumFractionDigits: options?.minimumFractionDigits ?? 2,
       maximumFractionDigits: options?.maximumFractionDigits ?? 2,
     }).format(amount)
   }, [currency, locale])
