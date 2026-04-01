@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx'
 import { api } from '@/shared/lib/api'
 import { useFilters } from '@/app/providers'
 
-export type ReportType = 'mrr' | 'revenue' | 'clients' | 'domains' | 'churn' | 'products'
+export type ReportType = 'mrr' | 'revenue' | 'clients' | 'domains' | 'churn' | 'products' | 'billable_items'
 
 // ─── Row types ────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,19 @@ export interface ProductRow {
   percentage: number
 }
 
-export type ReportRow = MrrRow | RevenueRow | ClientRow | DomainRow | ChurnRow | ProductRow
+export interface BillableItemReportRow {
+  instance: string
+  description: string
+  client: string
+  amount: number
+  cycle: string
+  status: string
+  monthly_mrr: number
+  category: string
+  due_date: string
+}
+
+export type ReportRow = MrrRow | RevenueRow | ClientRow | DomainRow | ChurnRow | ProductRow | BillableItemReportRow
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -127,6 +139,17 @@ export const REPORT_COLUMNS: Record<ReportType, ReportColumn[]> = {
     { key: 'active_services', labelKey: 'reports.columns.activeServices', format: 'number' },
     { key: 'mrr',             labelKey: 'reports.columns.mrr',            format: 'currency' },
     { key: 'percentage',      labelKey: 'reports.columns.percentage',     format: 'percent' },
+  ],
+  billable_items: [
+    { key: 'instance',    labelKey: 'products.instance' },
+    { key: 'description', labelKey: 'billableItems.table.description' },
+    { key: 'client',      labelKey: 'billableItems.table.client' },
+    { key: 'amount',      labelKey: 'billableItems.table.amount',    format: 'currency' },
+    { key: 'cycle',       labelKey: 'billableItems.table.cycle' },
+    { key: 'status',      labelKey: 'reports.columns.status' },
+    { key: 'monthly_mrr', labelKey: 'billableItems.table.monthlyMrr', format: 'currency' },
+    { key: 'category',    labelKey: 'billableItems.table.category' },
+    { key: 'due_date',    labelKey: 'reports.columns.expiryDate' },
   ],
 }
 
@@ -245,6 +268,27 @@ function useReportData(type: ReportType, statusFilter?: ClientStatusFilter | Dom
           mrr: p.mrr,
           percentage: p.percentage,
         })) as ProductRow[]
+      }
+
+      if (type === 'billable_items') {
+        const res = await api.get<{ success: boolean; data: { items: Array<{
+          instance_name: string; description: string | null; client_name: string | null
+          amount: number; recurcycle: string | null; status: string
+          monthly_mrr: number; category: { name: string } | null; duedate: string | null
+        }> } }>('/api/billable-items', base)
+        return res.data.items
+          .filter(i => i.status !== 'one_time')
+          .map(i => ({
+            instance: i.instance_name,
+            description: i.description || '',
+            client: i.client_name || '',
+            amount: i.amount,
+            cycle: i.recurcycle || '',
+            status: i.status,
+            monthly_mrr: i.monthly_mrr,
+            category: i.category?.name || '',
+            due_date: i.duedate || '',
+          })) as BillableItemReportRow[]
       }
 
       return []

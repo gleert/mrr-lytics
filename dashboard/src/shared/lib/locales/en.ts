@@ -229,7 +229,7 @@ export const en = {
       },
       stats: {
         totalItems: 'Recurring Items',
-        totalMrr: 'MRR Contribution',
+        totalMrr: 'MRR',
         categorized: 'Categorized',
         avgAmount: 'Avg. Amount',
       },
@@ -1533,6 +1533,8 @@ export const en = {
         churnDesc: 'Pending cancellations and MRR at risk',
         products: 'Products & Services',
         productsDesc: 'Top products by MRR with active services count',
+        billable_items: 'Recurring Billable Items',
+        billable_itemsDesc: 'Recurring services contributing to MRR with category and cycle',
       },
       columns: {
         month: 'Month',

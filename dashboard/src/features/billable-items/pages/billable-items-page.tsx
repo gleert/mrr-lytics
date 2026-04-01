@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import * as XLSX from 'xlsx'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Icon } from '@/shared/components/ui/icon'
@@ -107,74 +106,6 @@ export function BillableItemsPage() {
     }
   }
 
-  const [exportOpen, setExportOpen] = React.useState(false)
-  const exportRef = React.useRef<HTMLDivElement>(null)
-  React.useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const exportRows = () => filteredItems.map(item => ({
-    instance: item.instance_name,
-    description: item.description || '',
-    client: item.client_name || '',
-    amount: item.amount,
-    cycle: item.recurcycle || '',
-    status: item.status,
-    monthly_mrr: item.monthly_mrr,
-    category: item.category?.name || '',
-    due_date: item.duedate || '',
-  }))
-
-  const exportColumns = [
-    { key: 'instance',    label: t('products.instance') },
-    { key: 'description', label: t('billableItems.table.description') },
-    { key: 'client',      label: t('billableItems.table.client') },
-    { key: 'amount',      label: t('billableItems.table.amount') },
-    { key: 'cycle',       label: t('billableItems.table.cycle') },
-    { key: 'status',      label: t('common.filter') },
-    { key: 'monthly_mrr', label: t('billableItems.table.monthlyMrr') },
-    { key: 'category',    label: t('billableItems.table.category') },
-    { key: 'due_date',    label: 'Due Date' },
-  ]
-
-  const handleExportCsv = () => {
-    const rows = exportRows()
-    if (!rows.length) return
-    const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`
-    const header = exportColumns.map(c => escape(c.label)).join(',')
-    const lines = rows.map(row =>
-      exportColumns.map(c => escape(String((row as Record<string, unknown>)[c.key] ?? ''))).join(',')
-    )
-    const csv = '\uFEFF' + [header, ...lines].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `billable-items-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-    setExportOpen(false)
-  }
-
-  const handleExportXlsx = () => {
-    const rows = exportRows()
-    if (!rows.length) return
-    const data = [
-      exportColumns.map(c => c.label),
-      ...rows.map(row => exportColumns.map(c => (row as Record<string, unknown>)[c.key] ?? '')),
-    ]
-    const ws = XLSX.utils.aoa_to_sheet(data)
-    ws['!cols'] = exportColumns.map(() => ({ wch: 20 }))
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Billable Items')
-    XLSX.writeFile(wb, `billable-items-${new Date().toISOString().split('T')[0]}.xlsx`)
-    setExportOpen(false)
-  }
-
   return (
     <NoInstancesGuard>
       <div className="space-y-6">
@@ -184,39 +115,7 @@ export function BillableItemsPage() {
             <h1 className="text-2xl font-semibold text-foreground">{t('billableItems.title')}</h1>
             <p className="text-muted">{t('billableItems.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Export dropdown */}
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setExportOpen(v => !v)}
-                disabled={filteredItems.length === 0}
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-border bg-surface hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Icon name="download" size="sm" />
-                {t('common.export')}
-                <Icon name="expand_more" size="sm" />
-              </button>
-              {exportOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-surface-elevated border border-border rounded-lg shadow-xl py-1 z-50">
-                  <button
-                    onClick={handleExportCsv}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-surface-hover transition-colors"
-                  >
-                    <Icon name="description" size="sm" />
-                    CSV
-                  </button>
-                  <button
-                    onClick={handleExportXlsx}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-surface-hover transition-colors"
-                  >
-                    <Icon name="table_view" size="sm" />
-                    Excel (.xlsx)
-                  </button>
-                </div>
-              )}
-            </div>
-            <DashboardFilters showPeriod={true} />
-          </div>
+          <DashboardFilters showPeriod={true} />
         </div>
 
         {/* KPI Stats */}

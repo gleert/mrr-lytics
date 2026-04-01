@@ -1529,6 +1529,8 @@ export const es = {
         churnDesc: 'Cancelaciones pendientes y MRR en riesgo',
         products: 'Productos y Servicios',
         productsDesc: 'Top productos por MRR con número de servicios activos',
+        billable_items: 'Ítems Facturables Recurrentes',
+        billable_itemsDesc: 'Servicios recurrentes que contribuyen al MRR con categoría y ciclo',
       },
       columns: {
         month: 'Mes',

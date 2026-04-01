@@ -14,21 +14,23 @@ interface ReportExportBarProps {
 }
 
 const REPORT_ICONS: Record<ReportType, string> = {
-  mrr:      'trending_up',
-  revenue:  'paid',
-  clients:  'group',
-  domains:  'language',
-  churn:    'trending_down',
-  products: 'inventory_2',
+  mrr:            'trending_up',
+  revenue:        'paid',
+  clients:        'group',
+  domains:        'language',
+  churn:          'trending_down',
+  products:       'inventory_2',
+  billable_items: 'receipt_long',
 }
 
 const REPORT_COLORS: Record<ReportType, string> = {
-  mrr:      'text-primary-400',
-  revenue:  'text-emerald-400',
-  clients:  'text-blue-400',
-  domains:  'text-cyan-400',
-  churn:    'text-red-400',
-  products: 'text-amber-400',
+  mrr:            'text-primary-400',
+  revenue:        'text-emerald-400',
+  clients:        'text-blue-400',
+  domains:        'text-cyan-400',
+  churn:          'text-red-400',
+  products:       'text-amber-400',
+  billable_items: 'text-violet-400',
 }
 
 export function ReportExportBar({ type, totalRows, isLoading, isDownloading, onDownloadCsv, onDownloadXlsx }: ReportExportBarProps) {
