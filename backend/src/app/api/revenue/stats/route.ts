@@ -117,16 +117,34 @@ export async function GET(request: NextRequest) {
     let recurringRevenue = 0
     let onetimeRevenue = 0
 
+    // Fetch recurring billable item whmcs_ids once (used for both periods)
+    const { data: recurringBillableRows } = await supabase
+      .from('whmcs_billable_items')
+      .select('instance_id, whmcs_id')
+      .in('instance_id', instanceIds)
+      .eq('invoice_action', 4)
+      .limit(10000)
+    const recurringBillableSet = new Set(
+      (recurringBillableRows ?? []).map(r => `${r.instance_id}:${r.whmcs_id}`)
+    )
+
+    const isRecurringItem = (type: string | null, relid: number | null, instanceId?: string): boolean => {
+      if (type === 'Item' && relid && instanceId) {
+        return recurringBillableSet.has(`${instanceId}:${relid}`)
+      }
+      return false
+    }
+
     if (invoiceWhmcsIds.length > 0) {
       // Process in batches to avoid query limits
       const BATCH_SIZE = 500
-      const allItems: { type: string | null; amount: string | number | null; description: string | null }[] = []
-      
+      const allItems: { type: string | null; relid: number | null; amount: string | number | null; description: string | null; instance_id: string }[] = []
+
       for (let i = 0; i < invoiceWhmcsIds.length; i += BATCH_SIZE) {
         const batch = invoiceWhmcsIds.slice(i, i + BATCH_SIZE)
         const { data: batchItems, error: itemsError } = await supabase
           .from('whmcs_invoice_items')
-          .select('type, amount, description')
+          .select('type, relid, amount, description, instance_id')
           .in('instance_id', instanceIds)
           .in('invoice_id', batch)
 
@@ -134,24 +152,24 @@ export async function GET(request: NextRequest) {
           console.error('Invoice items query error:', itemsError)
           break
         }
-        
+
         if (batchItems) {
           allItems.push(...batchItems)
         }
       }
 
       // Categorize items
-      // Recurring types: Hosting, Domain (renewals), etc.
+      // Recurring types: Hosting, Domain (renewals), recurring billable items (type=Item + relid in recurringBillableSet)
       // One-time types: Setup, Addon, DomainRegister, etc.
       const recurringTypes = ['Hosting', 'DomainRenew', 'Domain']
-      const onetimeTypes = ['Setup', 'Addon', 'DomainRegister', 'PromoHosting', 'Item']
+      const onetimeTypes = ['Setup', 'Addon', 'DomainRegister', 'PromoHosting']
 
       allItems.forEach(item => {
         const amount = Number(item.amount) || 0
         const type = item.type || ''
-        if (recurringTypes.includes(type)) {
+        if (recurringTypes.includes(type) || isRecurringItem(item.type, item.relid, item.instance_id)) {
           recurringRevenue += amount
-        } else if (onetimeTypes.includes(type)) {
+        } else if (onetimeTypes.includes(type) || type === 'Item') {
           onetimeRevenue += amount
         } else {
           // Default: check description for hints, otherwise treat as one-time
@@ -242,22 +260,22 @@ export async function GET(request: NextRequest) {
     if (prevInvoiceIds.length > 0) {
       const BATCH_SIZE = 500
       const recurringTypes = ['Hosting', 'DomainRenew', 'Domain']
-      const onetimeTypes = ['Setup', 'Addon', 'DomainRegister', 'PromoHosting', 'Item']
+      const onetimeTypes = ['Setup', 'Addon', 'DomainRegister', 'PromoHosting']
 
       for (let i = 0; i < prevInvoiceIds.length; i += BATCH_SIZE) {
         const batch = prevInvoiceIds.slice(i, i + BATCH_SIZE)
         const { data: batchItems } = await supabase
           .from('whmcs_invoice_items')
-          .select('type, amount, description')
+          .select('type, relid, amount, description, instance_id')
           .in('instance_id', instanceIds)
           .in('invoice_id', batch)
 
         batchItems?.forEach(item => {
           const amount = Number(item.amount) || 0
           const type = item.type || ''
-          if (recurringTypes.includes(type)) {
+          if (recurringTypes.includes(type) || isRecurringItem(item.type, item.relid, item.instance_id)) {
             prevRecurringRevenue += amount
-          } else if (onetimeTypes.includes(type)) {
+          } else if (onetimeTypes.includes(type) || type === 'Item') {
             prevOnetimeRevenue += amount
           } else {
             const desc = (item.description || '').toLowerCase()
