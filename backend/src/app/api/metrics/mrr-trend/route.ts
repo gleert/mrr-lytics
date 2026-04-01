@@ -91,10 +91,11 @@ export async function GET(request: NextRequest) {
       { data: products },
       { data: productGroups },
       { data: mappings },
+      { data: billableItems },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
-        .select('instance_id, packageid, amount, billingcycle, monthly_amount, domainstatus, regdate, terminationdate')
+        .select('instance_id, packageid, amount, billingcycle, domainstatus, regdate, terminationdate')
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_products')
@@ -108,6 +109,13 @@ export async function GET(request: NextRequest) {
         .from('category_mappings')
         .select('instance_id, mapping_type, whmcs_id, categories(id, name, color)')
         .in('instance_id', instanceIds),
+      supabase
+        .from('whmcs_billable_items')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .limit(10000),
     ])
 
     if (hostingError) {
@@ -134,6 +142,9 @@ export async function GET(request: NextRequest) {
     // category per product group: `instance:groupWhmcsId` → { name, color }
     const groupCategoryMap = new Map<string, { name: string; color: string }>()
 
+    // category per billable item: `instance:whmcsId` → { name, color }
+    const billableCategoryMap = new Map<string, { name: string; color: string }>()
+
     mappings?.forEach((m: any) => {
       if (!m.categories) return
       const key = `${m.instance_id}:${m.whmcs_id}`
@@ -142,19 +153,75 @@ export async function GET(request: NextRequest) {
         productCategoryMap.set(key, cat)
       } else if (m.mapping_type === 'product_group') {
         groupCategoryMap.set(key, cat)
+      } else if (m.mapping_type === 'billable_item') {
+        billableCategoryMap.set(key, cat)
       }
     })
 
     // Helper to convert billing cycle to monthly amount
     const toMonthlyAmount = (amount: number, cycle: string): number => {
       const map: Record<string, number> = {
-        monthly: 1, quarterly: 3,
+        monthly: 1, months: 1, month: 1,
+        quarterly: 3,
         'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12,
+        annually: 12, yearly: 12, years: 12, year: 12,
         biennially: 24, triennially: 36,
       }
-      return amount / (map[cycle?.toLowerCase()] || 1)
+      const divisor = map[cycle?.toLowerCase()]
+      if (!divisor) return 0
+      return amount / divisor
     }
+
+    // Estimate billing cycle duration in months
+    const getCycleMonths = (recurcycle: string, recur: number): number => {
+      const base = (recurcycle || '').toLowerCase().startsWith('year') ? 12 : 1
+      return base * (recur || 1)
+    }
+
+    // Was billable item active at a given date?
+    // Uses estimated start date: duedate - invoicecount * cycleMonths
+    const billableWasActiveAt = (
+      startDate: Date,
+      recurfor: number,
+      cycleMonths: number,
+      date: Date,
+    ): boolean => {
+      if (startDate > date) return false
+      if (recurfor === 0) return true
+      const monthsDiff =
+        (date.getFullYear() - startDate.getFullYear()) * 12 +
+        (date.getMonth() - startDate.getMonth())
+      return Math.floor(monthsDiff / cycleMonths) < recurfor
+    }
+
+    // Pre-compute billable item start dates
+    type BillableItemWithStart = {
+      startDate: Date
+      cycleMonths: number
+      recurfor: number
+      monthlyMrr: number
+      categoryName: string
+      categoryColor: string
+    }
+    const billableWithStart: BillableItemWithStart[] = (billableItems || []).flatMap(item => {
+      if (!item.duedate) return []
+      const cycleMonths = getCycleMonths(item.recurcycle || 'Months', item.recur || 1)
+      const monthlyMrr = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
+      if (monthlyMrr === 0 || cycleMonths === 0) return []
+      const dueDate = new Date(item.duedate)
+      const startDate = new Date(dueDate)
+      startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
+      const key = `${item.instance_id}:${item.whmcs_id}`
+      const cat = billableCategoryMap.get(key)
+      return [{
+        startDate,
+        cycleMonths,
+        recurfor: item.recurfor ?? 0,
+        monthlyMrr,
+        categoryName: cat?.name ?? 'Uncategorized',
+        categoryColor: cat?.color ?? '',
+      }]
+    })
 
     // Generate 12 months of data
     const monthlyData: MonthlyDataPoint[] = []
@@ -199,9 +266,9 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        const monthlyAmount = service.monthly_amount || toMonthlyAmount(
+        const monthlyAmount = toMonthlyAmount(
           Number(service.amount) || 0,
-          service.billingcycle || 'monthly'
+          service.billingcycle || ''
         )
 
         // Resolve group/category with priority logic
@@ -232,6 +299,22 @@ export async function GET(request: NextRequest) {
           groupTotals.get(resolvedName)!.color = resolvedColor
         }
         groupTotals.get(resolvedName)!.total += monthlyAmount
+      })
+
+      // Add recurring billable items active during this month
+      billableWithStart.forEach(item => {
+        if (!billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, monthEnd)) return
+
+        groupMRR[item.categoryName] = (groupMRR[item.categoryName] || 0) + item.monthlyMrr
+        totalMRR += item.monthlyMrr
+        categorizedMRR += item.categoryName !== 'Uncategorized' ? item.monthlyMrr : 0
+
+        if (!groupTotals.has(item.categoryName)) {
+          groupTotals.set(item.categoryName, { total: 0, color: item.categoryColor })
+        } else if (item.categoryColor && !groupTotals.get(item.categoryName)!.color) {
+          groupTotals.get(item.categoryName)!.color = item.categoryColor
+        }
+        groupTotals.get(item.categoryName)!.total += item.monthlyMrr
       })
 
       // Use last month for category coverage calculation

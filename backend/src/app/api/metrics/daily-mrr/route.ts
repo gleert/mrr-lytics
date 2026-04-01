@@ -64,45 +64,42 @@ export async function GET(request: NextRequest) {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    // Get all active hosting services with their products
-    const { data: hostingServices, error: hostingError } = await supabase
-      .from('whmcs_hosting')
-      .select(`
-        id,
-        instance_id,
-        whmcs_id,
-        packageid,
-        amount,
-        billingcycle,
-        domainstatus,
-        regdate,
-        nextduedate,
-        terminationdate,
-        monthly_amount
-      `)
-      .in('instance_id', instanceIds)
-      .in('domainstatus', ['Active', 'Suspended'])
+    // Get all active hosting services + billable items in parallel
+    const [
+      { data: hostingServices, error: hostingError },
+      { data: billableItems },
+      { data: categoryMappings, error: mappingsError },
+      { data: billableMappings },
+    ] = await Promise.all([
+      supabase
+        .from('whmcs_hosting')
+        .select('id, instance_id, whmcs_id, packageid, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
+        .in('instance_id', instanceIds)
+        .in('domainstatus', ['Active', 'Suspended']),
+      supabase
+        .from('whmcs_billable_items')
+        .select('instance_id, whmcs_id, amount, recurcycle')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .or('recurfor.eq.0,invoicecount.lt.recurfor')
+        .limit(10000),
+      supabase
+        .from('category_mappings')
+        .select('whmcs_id, instance_id, mapping_type, categories(id, name, color)')
+        .in('instance_id', instanceIds)
+        .eq('mapping_type', 'product'),
+      supabase
+        .from('category_mappings')
+        .select('whmcs_id, instance_id, categories(id, name, color)')
+        .in('instance_id', instanceIds)
+        .eq('mapping_type', 'billable_item'),
+    ])
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
       throw new Error('Failed to fetch hosting data')
     }
-
-    // Get category mappings for these instances
-    const { data: categoryMappings, error: mappingsError } = await supabase
-      .from('category_mappings')
-      .select(`
-        whmcs_id,
-        instance_id,
-        mapping_type,
-        categories (
-          id,
-          name,
-          color
-        )
-      `)
-      .in('instance_id', instanceIds)
-      .eq('mapping_type', 'product')
 
     if (mappingsError) {
       console.error('Category mappings query error:', mappingsError)
@@ -142,6 +139,7 @@ export async function GET(request: NextRequest) {
     const productCategoryMap = new Map<string, { name: string; color: string }>()
     const groupCategoryMap = new Map<string, { name: string; color: string }>()
     const productToGroupMap = new Map<string, number>()
+    const billableCategoryMap = new Map<string, { name: string; color: string }>()
 
     // Map products to their groups
     products?.forEach(product => {
@@ -164,6 +162,15 @@ export async function GET(request: NextRequest) {
         const key = `${mapping.instance_id}:${mapping.whmcs_id}`
         const cat = mapping.categories as unknown as { name: string; color: string }
         groupCategoryMap.set(key, { name: cat.name, color: cat.color })
+      }
+    })
+
+    // Billable item category mappings
+    billableMappings?.forEach((mapping: any) => {
+      if (mapping.categories) {
+        const key = `${mapping.instance_id}:${mapping.whmcs_id}`
+        const cat = mapping.categories as { name: string; color: string }
+        billableCategoryMap.set(key, { name: cat.name, color: cat.color })
       }
     })
 
@@ -190,23 +197,32 @@ export async function GET(request: NextRequest) {
 
     // Helper to convert billing cycle to monthly amount
     const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const cycleLower = cycle?.toLowerCase() || 'monthly'
-      switch (cycleLower) {
-        case 'monthly': return amount
-        case 'quarterly': return amount / 3
-        case 'semi-annually':
-        case 'semiannually': return amount / 6
-        case 'annually':
-        case 'yearly': return amount / 12
-        case 'biennially': return amount / 24
-        case 'triennially': return amount / 36
-        default: return amount
+      const map: Record<string, number> = {
+        monthly: 1, months: 1, month: 1,
+        quarterly: 3,
+        'semi-annually': 6, semiannually: 6,
+        annually: 12, yearly: 12, years: 12, year: 12,
+        biennially: 24, triennially: 36,
       }
+      const divisor = map[cycle?.toLowerCase()]
+      if (!divisor) return 0
+      return amount / divisor
     }
 
     // Generate daily data points
     const dailyData: DailyMRRPoint[] = []
     const categoryColors: Record<string, string> = {}
+
+    // Pre-compute billable items MRR per category (constant across all days)
+    const billableDailyMRR: Array<{ monthlyMrr: number; category: { name: string; color: string } }> = []
+    billableItems?.forEach(item => {
+      const monthlyMrr = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
+      if (monthlyMrr === 0) return
+      const key = `${item.instance_id}:${item.whmcs_id}`
+      const cat = billableCategoryMap.get(key) ?? { name: 'Uncategorized', color: '#6B7280' }
+      categoryColors[cat.name] = cat.color
+      billableDailyMRR.push({ monthlyMrr, category: cat })
+    })
     const currentDate = new Date(startDate)
 
     while (currentDate <= endDate) {
@@ -216,9 +232,9 @@ export async function GET(request: NextRequest) {
       let pendingChurn = 0
 
       hostingServices?.forEach(service => {
-        const amount = service.monthly_amount || toMonthlyAmount(
+        const amount = toMonthlyAmount(
           Number(service.amount) || 0,
-          service.billingcycle || 'monthly'
+          service.billingcycle || ''
         )
 
         // Check if service was active on this date
@@ -247,6 +263,12 @@ export async function GET(request: NextRequest) {
         if (termDate && termDate > currentDate) {
           pendingChurn += amount
         }
+      })
+
+      // Add recurring billable items (active items are constant across all days in range)
+      billableDailyMRR.forEach(({ monthlyMrr, category }) => {
+        categoryTotals[category.name] = (categoryTotals[category.name] || 0) + monthlyMrr
+        totalMRR += monthlyMrr
       })
 
       dailyData.push({

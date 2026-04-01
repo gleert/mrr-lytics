@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
       { data: products },
       { data: productGroups },
       { data: mappings },
+      { data: billableItems },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -96,6 +97,14 @@ export async function GET(request: NextRequest) {
         .from('category_mappings')
         .select('instance_id, mapping_type, whmcs_id, categories(id, name, color)')
         .in('instance_id', instanceIds),
+      supabase
+        .from('whmcs_billable_items')
+        .select('instance_id, whmcs_id, amount, recurcycle')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .or('recurfor.eq.0,invoicecount.lt.recurfor')
+        .limit(10000),
     ])
 
     if (hostingError) {
@@ -122,6 +131,9 @@ export async function GET(request: NextRequest) {
     // category per product group: `instance:groupWhmcsId` → { name, color }
     const groupCategoryMap = new Map<string, { name: string; color: string }>()
 
+    // category per billable item: `instance:whmcsId` → { name, color }
+    const billableCategoryMap = new Map<string, { name: string; color: string }>()
+
     mappings?.forEach((m: any) => {
       if (!m.categories) return
       const key = `${m.instance_id}:${m.whmcs_id}`
@@ -130,15 +142,18 @@ export async function GET(request: NextRequest) {
         productCategoryMap.set(key, cat)
       } else if (m.mapping_type === 'product_group') {
         groupCategoryMap.set(key, cat)
+      } else if (m.mapping_type === 'billable_item') {
+        billableCategoryMap.set(key, cat)
       }
     })
 
     // --- Monthly amount helper (matches mv_mrr_current view exactly) ---
     const toMonthlyAmount = (amount: number, cycle: string): number => {
       const map: Record<string, number> = {
-        monthly: 1, quarterly: 3,
+        monthly: 1, months: 1, month: 1,
+        quarterly: 3,
         'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12,
+        annually: 12, yearly: 12, years: 12, year: 12,
         biennially: 24, triennially: 36,
       }
       const divisor = map[cycle?.toLowerCase()]
@@ -170,6 +185,27 @@ export async function GET(request: NextRequest) {
       const resolvedName = productCat?.name ?? groupCat?.name ?? fallbackGroupName
       const resolvedColor = productCat?.color ?? groupCat?.color ?? ''
       const hasCategory = !!(productCat || groupCat)
+
+      if (hasCategory) categorizedMRR += monthlyAmount
+
+      const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory }
+      groupTotals.set(resolvedName, {
+        mrr: existing.mrr + monthlyAmount,
+        count: existing.count + 1,
+        color: existing.color || resolvedColor,
+        hasCategory: existing.hasCategory || hasCategory,
+      })
+      totalMRR += monthlyAmount
+    })
+
+    // --- Aggregate billable items MRR ---
+    billableItems?.forEach(item => {
+      const monthlyAmount = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
+      const key = `${item.instance_id}:${item.whmcs_id}`
+      const cat = billableCategoryMap.get(key)
+      const resolvedName = cat?.name ?? 'Uncategorized'
+      const resolvedColor = cat?.color ?? ''
+      const hasCategory = !!cat
 
       if (hasCategory) categorizedMRR += monthlyAmount
 
@@ -220,7 +256,9 @@ export async function GET(request: NextRequest) {
 
     // Assign fallback colors where no category color was set
     breakdown.forEach((item, index) => {
-      if (!item.color) {
+      if (item.name === 'Uncategorized') {
+        item.color = '#6B7280' // Always gray for uncategorized
+      } else if (!item.color) {
         item.color = GROUP_COLORS[index % GROUP_COLORS.length]
       }
     })

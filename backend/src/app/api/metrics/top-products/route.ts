@@ -54,14 +54,25 @@ export async function GET(request: NextRequest) {
     // Get active hosting services
     const { data: hostingServices, error: hostingError } = await supabase
       .from('whmcs_hosting')
-      .select('instance_id, packageid, amount, billingcycle, monthly_amount, domainstatus')
+      .select('instance_id, packageid, amount, billingcycle, domainstatus')
       .in('instance_id', instanceIds)
       .in('domainstatus', ['Active', 'Suspended'])
+      .limit(10000)
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
       throw new Error('Failed to fetch hosting data')
     }
+
+    // Get recurring billable items (same filter as mv_mrr_current)
+    const { data: billableItems } = await supabase
+      .from('whmcs_billable_items')
+      .select('instance_id, amount, recurcycle, recurfor, invoicecount')
+      .in('instance_id', instanceIds)
+      .eq('invoice_action', 4)
+      .gt('invoicecount', 0)
+      .or('recurfor.eq.0,invoicecount.lt.recurfor')
+      .limit(10000)
 
     // Get products
     const { data: products, error: productsError } = await supabase
@@ -86,31 +97,35 @@ export async function GET(request: NextRequest) {
 
     // Helper to convert billing cycle to monthly amount
     const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const cycleLower = cycle?.toLowerCase() || 'monthly'
-      switch (cycleLower) {
-        case 'monthly': return amount
-        case 'quarterly': return amount / 3
-        case 'semi-annually':
-        case 'semiannually': return amount / 6
-        case 'annually':
-        case 'yearly': return amount / 12
-        case 'biennially': return amount / 24
-        case 'triennially': return amount / 36
-        default: return amount
+      const map: Record<string, number> = {
+        monthly: 1, months: 1, month: 1,
+        quarterly: 3,
+        'semi-annually': 6, semiannually: 6,
+        annually: 12, yearly: 12, years: 12, year: 12,
+        biennially: 24, triennially: 36,
       }
+      const divisor = map[cycle?.toLowerCase()]
+      if (!divisor) return 0
+      return amount / divisor
     }
+
+    // Add recurring billable items to totalMRR (they have no packageid, counted in total only)
+    let billableItemsMRR = 0
+    billableItems?.forEach(item => {
+      billableItemsMRR += toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || 'monthly')
+    })
 
     // Aggregate by product
     const productStats = new Map<string, { id: number; name: string; services: number; mrr: number }>()
-    let totalMRR = 0
+    let totalMRR = billableItemsMRR
 
     hostingServices?.forEach(service => {
       const productKey = `${service.instance_id}:${service.packageid}`
       const product = productNameMap.get(productKey)
       
-      const monthlyAmount = service.monthly_amount || toMonthlyAmount(
+      const monthlyAmount = toMonthlyAmount(
         Number(service.amount) || 0,
-        service.billingcycle || 'monthly'
+        service.billingcycle || ''
       )
 
       totalMRR += monthlyAmount
