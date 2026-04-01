@@ -78,11 +78,10 @@ export async function GET(request: NextRequest) {
         .in('domainstatus', ['Active', 'Suspended']),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle')
+        .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
         .in('instance_id', instanceIds)
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
-        .or('recurfor.eq.0,invoicecount.lt.recurfor')
         .limit(10000),
       supabase
         .from('category_mappings')
@@ -214,8 +213,12 @@ export async function GET(request: NextRequest) {
     const categoryColors: Record<string, string> = {}
 
     // Pre-compute billable items MRR per category (constant across all days)
+    // Filter in JS: column-to-column OR comparisons don't work in PostgREST .or()
+    const activeBillableItems = (billableItems ?? []).filter(
+      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
+    )
     const billableDailyMRR: Array<{ monthlyMrr: number; category: { name: string; color: string } }> = []
-    billableItems?.forEach(item => {
+    activeBillableItems.forEach(item => {
       const monthlyMrr = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
       if (monthlyMrr === 0) return
       const key = `${item.instance_id}:${item.whmcs_id}`

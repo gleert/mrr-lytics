@@ -99,11 +99,10 @@ export async function GET(request: NextRequest) {
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle')
+        .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
         .in('instance_id', instanceIds)
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
-        .or('recurfor.eq.0,invoicecount.lt.recurfor')
         .limit(10000),
     ])
 
@@ -199,7 +198,11 @@ export async function GET(request: NextRequest) {
     })
 
     // --- Aggregate billable items MRR ---
-    billableItems?.forEach(item => {
+    // Filter in JS: column-to-column OR comparisons don't work in PostgREST .or()
+    const activeBillableItems = (billableItems ?? []).filter(
+      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
+    )
+    activeBillableItems.forEach(item => {
       const monthlyAmount = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
       const key = `${item.instance_id}:${item.whmcs_id}`
       const cat = billableCategoryMap.get(key)
