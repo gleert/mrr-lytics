@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
     const instanceIdsParam = searchParams.get('instance_ids')
     const instanceIdParam = searchParams.get('instance_id')
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
 
     let instanceIds: string[] = []
     if (instanceIdsParam) {
@@ -48,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse the period to get date range
-    const { startDate, endDate, days } = parseDateRange(period, null, null)
+    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,12 +58,24 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get active hosting services for MRR calculation (current state)
-    const { data: hostingServices, error: hostingError } = await supabase
-      .from('whmcs_hosting')
-      .select('amount, billingcycle, domainstatus')
-      .in('instance_id', instanceIds)
-      .eq('domainstatus', 'Active')
+    // Get active hosting services + recurring billable items in parallel
+    const [
+      { data: hostingServices, error: hostingError },
+      { data: billableItems },
+    ] = await Promise.all([
+      supabase
+        .from('whmcs_hosting')
+        .select('amount, billingcycle, domainstatus')
+        .in('instance_id', instanceIds)
+        .eq('domainstatus', 'Active'),
+      supabase
+        .from('whmcs_billable_items')
+        .select('amount, recurcycle, recurfor, invoicecount')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .limit(10000),
+    ])
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
@@ -71,19 +85,23 @@ export async function GET(request: NextRequest) {
     // Calculate current MRR from active services AND breakdown by billing cycle
     let currentMRR = 0
     const billingCycleBreakdown = new Map<string, { count: number; mrr: number; total: number }>()
-    
+
     // Helper to convert billing cycle to monthly amount
     const toMonthlyAmount = (amount: number, cycle: string): number => {
-      switch (cycle) {
-        case 'monthly': return amount
+      switch ((cycle || '').toLowerCase()) {
+        case 'monthly':
+        case 'months':
+        case 'month': return amount
         case 'quarterly': return amount / 3
         case 'semi-annually':
         case 'semiannually': return amount / 6
         case 'annually':
-        case 'yearly': return amount / 12
+        case 'yearly':
+        case 'years':
+        case 'year': return amount / 12
         case 'biennially': return amount / 24
         case 'triennially': return amount / 36
-        default: return amount
+        default: return 0
       }
     }
 
@@ -113,6 +131,26 @@ export async function GET(request: NextRequest) {
       currentMRR += monthlyAmount
 
       // Track breakdown by billing cycle
+      const cycleName = normalizeCycleName(cycle)
+      const existing = billingCycleBreakdown.get(cycleName) || { count: 0, mrr: 0, total: 0 }
+      billingCycleBreakdown.set(cycleName, {
+        count: existing.count + 1,
+        mrr: existing.mrr + monthlyAmount,
+        total: existing.total + amount,
+      })
+    })
+
+    // Add recurring billable items (filter in JS — PostgREST column comparison bug)
+    const activeBillable = (billableItems ?? []).filter(
+      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
+    )
+    activeBillable.forEach(item => {
+      const amount = Number(item.amount) || 0
+      const cycle = (item.recurcycle || '').toLowerCase()
+      const monthlyAmount = toMonthlyAmount(amount, cycle)
+      if (monthlyAmount === 0) return
+      currentMRR += monthlyAmount
+
       const cycleName = normalizeCycleName(cycle)
       const existing = billingCycleBreakdown.get(cycleName) || { count: 0, mrr: 0, total: 0 }
       billingCycleBreakdown.set(cycleName, {
