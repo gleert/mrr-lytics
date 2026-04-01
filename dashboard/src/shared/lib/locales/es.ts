@@ -22,6 +22,8 @@ export const es = {
       next: 'Siguiente',
       previous: 'Anterior',
       vsPreviousPeriod: 'vs período anterior',
+      all: 'Todos',
+      clearFilters: 'Limpiar filtros',
     },
 
     // Auth
@@ -238,6 +240,9 @@ export const es = {
         cycle: 'Ciclo',
         monthlyMrr: 'MRR/mes',
         category: 'Categoría',
+      },
+      filters: {
+        allCycles: 'Todos los ciclos',
       },
     },
 

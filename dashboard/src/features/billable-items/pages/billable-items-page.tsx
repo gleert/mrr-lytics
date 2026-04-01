@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Icon } from '@/shared/components/ui/icon'
+import { cn } from '@/shared/lib/utils'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
 import { useFilters } from '@/app/providers'
 import {
@@ -27,6 +28,8 @@ export function BillableItemsPage() {
   const isAdmin = userRole === 'admin'
 
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'completed' | 'one_time'>('all')
+  const [cycleFilter, setCycleFilter] = React.useState<string>('all')
   const [updatingItems, setUpdatingItems] = React.useState<Set<string>>(new Set())
   const [isCategoryFormOpen, setIsCategoryFormOpen] = React.useState(false)
 
@@ -36,19 +39,24 @@ export function BillableItemsPage() {
   const deleteMapping = useDeleteBillableItemCategoryMapping()
   const createCategory = useCreateCategory()
 
+  const availableCycles = React.useMemo(() => {
+    if (!data?.items) return []
+    const cycles = [...new Set(data.items.map(i => i.recurcycle).filter(Boolean))] as string[]
+    return cycles.sort()
+  }, [data?.items])
+
   const filteredItems = React.useMemo(() => {
     if (!data?.items) return []
     const query = searchQuery.toLowerCase()
-    const filtered = !query
-      ? data.items
-      : data.items.filter(
-          item =>
-            item.description?.toLowerCase().includes(query) ||
-            item.client_name?.toLowerCase().includes(query)
-        )
-    // Sort: in_period items first, then the rest
-    return [...filtered].sort((a, b) => (b.in_period ? 1 : 0) - (a.in_period ? 1 : 0))
-  }, [data?.items, searchQuery])
+    return data.items
+      .filter(item => {
+        if (statusFilter !== 'all' && item.status !== statusFilter) return false
+        if (cycleFilter !== 'all' && (item.recurcycle || null) !== cycleFilter) return false
+        if (query && !item.description?.toLowerCase().includes(query) && !item.client_name?.toLowerCase().includes(query)) return false
+        return true
+      })
+      .sort((a, b) => (b.in_period ? 1 : 0) - (a.in_period ? 1 : 0))
+  }, [data?.items, searchQuery, statusFilter, cycleFilter])
 
   const handleCategoryChange = async (item: BillableItem, categoryId: string | null) => {
     const itemKey = `${item.instance_id}:${item.whmcs_id}`
@@ -123,7 +131,7 @@ export function BillableItemsPage() {
             <CardTitle className="flex items-center gap-2 text-base">
               <Icon name="receipt_long" size="md" />
               {t('billableItems.title')}
-              {searchQuery && (
+              {(searchQuery || statusFilter !== 'all' || cycleFilter !== 'all') && (
                 <span className="text-sm font-normal text-muted">
                   ({filteredItems.length} / {data?.items?.length || 0})
                 </span>
@@ -131,22 +139,79 @@ export function BillableItemsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 pt-4">
-            {/* Search input */}
-            <div className="px-4 pb-4">
+            {/* Search + filters */}
+            <div className="px-4 pb-4 flex flex-wrap gap-3 items-center">
+              {/* Search */}
               <div className="relative">
-                <Icon
-                  name="search"
-                  size="sm"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-                />
+                <Icon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder={t('billableItems.searchPlaceholder')}
-                  className="h-9 pl-9 pr-3 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 text-sm w-full sm:w-64"
+                  className="h-9 pl-9 pr-3 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 text-sm w-full sm:w-56"
                 />
               </div>
+
+              {/* Status filter */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {(['all', 'active', 'completed', 'one_time'] as const).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
+                      statusFilter === s
+                        ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
+                        : 'bg-surface text-muted border-border hover:bg-surface-hover'
+                    )}
+                  >
+                    {s === 'all' ? t('common.all') : t(`billableItems.status.${s === 'one_time' ? 'oneTime' : s}`)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Cycle filter */}
+              {availableCycles.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  <button
+                    onClick={() => setCycleFilter('all')}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
+                      cycleFilter === 'all'
+                        ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
+                        : 'bg-surface text-muted border-border hover:bg-surface-hover'
+                    )}
+                  >
+                    {t('billableItems.filters.allCycles')}
+                  </button>
+                  {availableCycles.map(cycle => (
+                    <button
+                      key={cycle}
+                      onClick={() => setCycleFilter(cycle)}
+                      className={cn(
+                        'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
+                        cycleFilter === cycle
+                          ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
+                          : 'bg-surface text-muted border-border hover:bg-surface-hover'
+                      )}
+                    >
+                      {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Clear filters */}
+              {(statusFilter !== 'all' || cycleFilter !== 'all' || searchQuery) && (
+                <button
+                  onClick={() => { setStatusFilter('all'); setCycleFilter('all'); setSearchQuery('') }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
+                >
+                  <Icon name="close" size="sm" />
+                  {t('common.clearFilters')}
+                </button>
+              )}
             </div>
 
             {/* Table body */}

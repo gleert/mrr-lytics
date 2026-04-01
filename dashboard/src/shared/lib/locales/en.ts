@@ -22,6 +22,8 @@ export const en = {
       next: 'Next',
       previous: 'Previous',
       vsPreviousPeriod: 'vs previous period',
+      all: 'All',
+      clearFilters: 'Clear filters',
     },
 
     // Auth
@@ -238,6 +240,9 @@ export const en = {
         cycle: 'Cycle',
         monthlyMrr: 'MRR/month',
         category: 'Category',
+      },
+      filters: {
+        allCycles: 'All cycles',
       },
     },
 
