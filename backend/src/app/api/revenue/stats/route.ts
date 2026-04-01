@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
     const instanceIdsParam = searchParams.get('instance_ids')
     const instanceIdParam = searchParams.get('instance_id')
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
 
     // Support multiple instance IDs (comma-separated) or single instance_id
     let instanceIds: string[] = []
@@ -45,13 +47,22 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    const { startDate, endDate, days } = parseDateRange(period, null, null)
+    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
+
+    // Exact invoice count via DB (bypasses PostgREST max-rows limit)
+    const { count: exactInvoicesCount } = await supabase
+      .from('whmcs_invoices')
+      .select('*', { count: 'exact', head: true })
+      .in('instance_id', instanceIds)
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString())
 
     // Get all invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
@@ -61,6 +72,7 @@ export async function GET(request: NextRequest) {
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
+      .limit(10000)
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -166,12 +178,24 @@ export async function GET(request: NextRequest) {
       ? Math.round((recurringRevenue / totalRevenue) * 100) 
       : 0
 
-    // Get current MRR from active services
-    const { data: services, error: servicesError } = await supabase
-      .from('whmcs_hosting')
-      .select('amount, billingcycle')
-      .in('instance_id', instanceIds)
-      .eq('domainstatus', 'Active')
+    // Get current MRR from active services + billable items
+    const [
+      { data: services, error: servicesError },
+      { data: billableItemsMrr },
+    ] = await Promise.all([
+      supabase
+        .from('whmcs_hosting')
+        .select('amount, billingcycle')
+        .in('instance_id', instanceIds)
+        .eq('domainstatus', 'Active'),
+      supabase
+        .from('whmcs_billable_items')
+        .select('amount, recurcycle, recurfor, invoicecount')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .limit(10000),
+    ])
 
     if (servicesError) {
       throw new Error('Failed to fetch services')
@@ -183,6 +207,14 @@ export async function GET(request: NextRequest) {
       const amount = Number(service.amount) || 0
       const monthly = normalizeToMonthly(amount, service.billingcycle)
       mrr += monthly
+    })
+
+    // Add recurring billable items (filter in JS — PostgREST column comparison bug)
+    const activeBillable = (billableItemsMrr ?? []).filter(
+      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
+    )
+    activeBillable.forEach(item => {
+      mrr += normalizeToMonthly(Number(item.amount) || 0, item.recurcycle || '')
     })
 
     const arr = mrr * 12
@@ -198,6 +230,7 @@ export async function GET(request: NextRequest) {
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', prevStartDate.toISOString())
       .lte('date', prevEndDate.toISOString())
+      .limit(10000)
 
     const prevTotalRevenue = prevInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
 
@@ -257,8 +290,8 @@ export async function GET(request: NextRequest) {
     // For recurring %, report absolute point difference (e.g. 72% → 75% = +3)
     const recurringPctChange = Math.round((recurringPercentage - prevRecurringPercentage) * 100) / 100
 
-    // Calculate average invoice amount
-    const invoicesCount = invoices?.length || 0
+    // Calculate average invoice amount (use exact DB count, not capped row count)
+    const invoicesCount = exactInvoicesCount ?? invoices?.length ?? 0
     const avgInvoiceAmount = invoicesCount > 0 ? totalRevenue / invoicesCount : 0
 
     // Paid vs Unpaid breakdown
@@ -367,14 +400,15 @@ export async function GET(request: NextRequest) {
  * Normalize billing amount to monthly
  */
 function normalizeToMonthly(amount: number, cycle: string): number {
-  const cycleMap: Record<string, number> = {
-    'Monthly': 1,
-    'Quarterly': 3,
-    'Semi-Annually': 6,
-    'Annually': 12,
-    'Biennially': 24,
-    'Triennially': 36,
+  const map: Record<string, number> = {
+    monthly: 1, months: 1, month: 1,
+    quarterly: 3,
+    'semi-annually': 6, semiannually: 6,
+    annually: 12, yearly: 12, years: 12, year: 12,
+    biennially: 24,
+    triennially: 36,
   }
-  const divisor = cycleMap[cycle] || 1
+  const divisor = map[(cycle || '').toLowerCase()]
+  if (!divisor) return 0
   return amount / divisor
 }
