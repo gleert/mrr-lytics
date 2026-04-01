@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Icon } from '@/shared/components/ui/icon'
-import { cn } from '@/shared/lib/utils'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
 import { useFilters } from '@/app/providers'
 import {
@@ -140,7 +139,33 @@ export function BillableItemsPage() {
           </CardHeader>
           <CardContent className="p-0 pt-4">
             {/* Search + filters */}
-            <div className="px-4 pb-4 flex flex-wrap gap-3 items-center">
+            <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
+              {/* Status filter */}
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated"
+              >
+                <option value="all">{t('billableItems.filters.allStatuses')}</option>
+                <option value="active">{t('billableItems.status.active')}</option>
+                <option value="completed">{t('billableItems.status.completed')}</option>
+                <option value="one_time">{t('billableItems.status.oneTime')}</option>
+              </select>
+
+              {/* Cycle filter */}
+              <select
+                value={cycleFilter}
+                onChange={e => setCycleFilter(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated"
+              >
+                <option value="all">{t('billableItems.filters.allCycles')}</option>
+                {availableCycles.map(cycle => (
+                  <option key={cycle} value={cycle}>
+                    {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
+                  </option>
+                ))}
+              </select>
+
               {/* Search */}
               <div className="relative">
                 <Icon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -149,69 +174,9 @@ export function BillableItemsPage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder={t('billableItems.searchPlaceholder')}
-                  className="h-9 pl-9 pr-3 bg-surface border border-border rounded-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 text-sm w-full sm:w-56"
+                  className="pl-9 pr-3 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated w-48 text-foreground placeholder:text-muted focus:outline-none"
                 />
               </div>
-
-              {/* Status filter */}
-              <div className="flex items-center gap-1 flex-wrap">
-                {(['all', 'active', 'completed', 'one_time'] as const).map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
-                      statusFilter === s
-                        ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
-                        : 'bg-surface text-muted border-border hover:bg-surface-hover'
-                    )}
-                  >
-                    {s === 'all' ? t('common.all') : t(`billableItems.status.${s === 'one_time' ? 'oneTime' : s}`)}
-                  </button>
-                ))}
-              </div>
-
-              {/* Cycle filter */}
-              {availableCycles.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  <button
-                    onClick={() => setCycleFilter('all')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
-                      cycleFilter === 'all'
-                        ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
-                        : 'bg-surface text-muted border-border hover:bg-surface-hover'
-                    )}
-                  >
-                    {t('billableItems.filters.allCycles')}
-                  </button>
-                  {availableCycles.map(cycle => (
-                    <button
-                      key={cycle}
-                      onClick={() => setCycleFilter(cycle)}
-                      className={cn(
-                        'px-2.5 py-1 rounded-full text-xs font-medium transition-colors border',
-                        cycleFilter === cycle
-                          ? 'bg-primary-500/20 text-primary-400 border-primary-500/40'
-                          : 'bg-surface text-muted border-border hover:bg-surface-hover'
-                      )}
-                    >
-                      {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Clear filters */}
-              {(statusFilter !== 'all' || cycleFilter !== 'all' || searchQuery) && (
-                <button
-                  onClick={() => { setStatusFilter('all'); setCycleFilter('all'); setSearchQuery('') }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
-                >
-                  <Icon name="close" size="sm" />
-                  {t('common.clearFilters')}
-                </button>
-              )}
             </div>
 
             {/* Table body */}

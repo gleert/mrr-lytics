@@ -242,6 +242,7 @@ export const es = {
         category: 'Categoría',
       },
       filters: {
+        allStatuses: 'Todos los estados',
         allCycles: 'Todos los ciclos',
       },
     },
