@@ -82,6 +82,7 @@ export const es = {
       clients: 'Clientes',
       products: 'Productos',
       domains: 'Dominios',
+      billableItems: 'Servicios Adicionales',
       categories: 'Categorías',
       forecasting: 'Pronósticos',
       reports: 'Informes',
@@ -210,6 +211,34 @@ export const es = {
       deleteWarning: 'Esto eliminará la categoría y todas las asignaciones de productos. Esta acción no se puede deshacer.',
       hasMappings: '{{count}} productos serán desasignados',
       hasMappings_one: '{{count}} producto será desasignado',
+    },
+
+    // Billable Items
+    billableItems: {
+      title: 'Servicios Adicionales',
+      subtitle: 'Ítems facturables recurrentes que contribuyen al MRR',
+      searchPlaceholder: 'Buscar por descripción o cliente...',
+      noItems: 'No se encontraron ítems recurrentes',
+      inPeriod: 'En periodo',
+      status: {
+        active: 'Activo',
+        completed: 'Completado',
+        oneTime: 'Puntual',
+      },
+      stats: {
+        totalItems: 'Ítems Recurrentes',
+        totalMrr: 'Contribución MRR',
+        categorized: 'Categorizados',
+        avgAmount: 'Importe Medio',
+      },
+      table: {
+        description: 'Descripción',
+        client: 'Cliente',
+        amount: 'Importe',
+        cycle: 'Ciclo',
+        monthlyMrr: 'MRR/mes',
+        category: 'Categoría',
+      },
     },
 
     // Products
@@ -743,6 +772,13 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v234: {
+          billableItemsPage: 'Nueva página de Servicios Adicionales con gestión de servicios recurrentes, asignación de categorías, insignias de estado (activo/completado/único) y resaltado del filtro de periodo',
+          customDateRangeFix: 'El filtro de rango de fechas personalizado ahora se aplica correctamente en los endpoints de ingresos, clientes, dominios y previsión (antes usaba el valor predeterminado de 30 días)',
+          invoiceCountFix: 'El KPI de total de facturas en ingresos ahora muestra el recuento exacto más allá de 1.000 registros',
+          domainsNewDomains: 'El KPI "Nuevos dominios" ahora muestra cambio nulo en lugar de +100% cuando el periodo anterior tenía 0 dominios nuevos',
+          productsMrrBillable: 'El MRR total en Productos ahora incluye la contribución de los servicios adicionales recurrentes',
+        },
         v233: {
           recurringBillableItems: 'Los billable items recurrentes (mantenimiento, servicios gestionados) ahora se incluyen en el cálculo del MRR y ARR',
           churnWasActiveAt: 'La tasa de churn del health score ahora usa lógica wasActiveAt basada en fechas para una ventana de 30 días precisa en lugar de detección por fecha de sincronización',
@@ -799,7 +835,7 @@ export const es = {
           freeTrial: 'Plan gratuito convertido a prueba de 15 días con funciones restringidas',
           trialExpiredWall: 'Pantalla de mejora cuando la prueba gratuita expira (página de facturación accesible)',
           emailTemplates: 'Plantillas de correo rediseñadas (confirmación, invitación, recuperación) con tema oscuro',
-          tourPerPage: 'Recorridos guiados por página para 7 secciones (dashboard, ingresos, clientes, productos, pronósticos, sync, dominios)',
+          tourPerPage: 'Recorridos guiados por página para 8 secciones (dashboard, ingresos, clientes, productos, pronósticos, sync, dominios, servicios adicionales)',
           billingEs: 'Traducciones completas al español para pantallas de facturación y prueba',
         },
         v200: {
@@ -1702,6 +1738,16 @@ export const es = {
           revenue: {
             title: 'Ingresos por dominios',
             description: 'Ingresos por renovación, precio promedio y tendencias de dominios activos vs expirados.',
+          },
+        },
+        billableItems: {
+          stats: {
+            title: 'KPIs de Servicios Adicionales',
+            description: 'Total de ítems, contribución al MRR, tasa de categorización e importe medio de un vistazo.',
+          },
+          table: {
+            title: 'Tabla de Servicios Adicionales',
+            description: 'Todos los servicios adicionales recurrentes con su estado, ciclo y contribución al MRR. Los administradores pueden asignar categorías aquí.',
           },
         },
       },

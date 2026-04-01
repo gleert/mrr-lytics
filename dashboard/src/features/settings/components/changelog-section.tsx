@@ -24,6 +24,17 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.3.4',
+    date: '2026-03-31',
+    changes: [
+      { type: 'feature',     text: 'changelog.entries.v234.billableItemsPage' },
+      { type: 'improvement', text: 'changelog.entries.v234.customDateRangeFix' },
+      { type: 'improvement', text: 'changelog.entries.v234.invoiceCountFix' },
+      { type: 'fix',         text: 'changelog.entries.v234.domainsNewDomains' },
+      { type: 'improvement', text: 'changelog.entries.v234.productsMrrBillable' },
+    ],
+  },
+  {
     version: '2.3.3',
     date: '2026-03-31',
     changes: [

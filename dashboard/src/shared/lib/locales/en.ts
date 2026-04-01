@@ -82,6 +82,7 @@ export const en = {
       clients: 'Clients',
       products: 'Products',
       domains: 'Domains',
+      billableItems: 'Billable Items',
       categories: 'Categories',
       forecasting: 'Forecasting',
       reports: 'Reports',
@@ -210,6 +211,34 @@ export const en = {
       deleteWarning: 'This will remove the category and all product mappings. This action cannot be undone.',
       hasMappings: '{{count}} products will be unmapped',
       hasMappings_one: '{{count}} product will be unmapped',
+    },
+
+    // Billable Items
+    billableItems: {
+      title: 'Billable Items',
+      subtitle: 'Recurring billable items contributing to MRR',
+      searchPlaceholder: 'Search by description or client...',
+      noItems: 'No recurring billable items found',
+      inPeriod: 'In period',
+      status: {
+        active: 'Active',
+        completed: 'Completed',
+        oneTime: 'One-time',
+      },
+      stats: {
+        totalItems: 'Recurring Items',
+        totalMrr: 'MRR Contribution',
+        categorized: 'Categorized',
+        avgAmount: 'Avg. Amount',
+      },
+      table: {
+        description: 'Description',
+        client: 'Client',
+        amount: 'Amount',
+        cycle: 'Cycle',
+        monthlyMrr: 'MRR/month',
+        category: 'Category',
+      },
     },
 
     // Products
@@ -746,6 +775,13 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v234: {
+          billableItemsPage: 'New Billable Items page with recurring service management, category assignment, status badges (active/completed/one-time), and period filter highlighting',
+          customDateRangeFix: 'Custom date range filter now correctly applied across revenue, clients, domains, and forecasting endpoints (was using 30-day default)',
+          invoiceCountFix: 'Revenue total invoices KPI now shows accurate count beyond 1,000 using exact Supabase count query',
+          domainsNewDomains: 'Domains "New Domains" KPI now shows null change instead of +100% when previous period had 0 new domains',
+          productsMrrBillable: 'Products total MRR now includes recurring billable items contribution',
+        },
         v233: {
           recurringBillableItems: 'Recurring billable items (maintenance, managed services) are now included in MRR and ARR calculations',
           churnWasActiveAt: 'Health score churn rate now uses date-driven wasActiveAt logic for an accurate 30-day window instead of sync-time detection',
@@ -802,7 +838,7 @@ export const en = {
           freeTrial: 'Free plan converted to 15-day trial with restricted features',
           trialExpiredWall: 'Upgrade wall when free trial expires (billing page accessible)',
           emailTemplates: 'Redesigned email templates (confirmation, invite, recovery) with dark theme',
-          tourPerPage: 'Per-page guided tours for 7 sections (dashboard, revenue, clients, products, forecasting, sync, domains)',
+          tourPerPage: 'Per-page guided tours for 8 sections (dashboard, revenue, clients, products, forecasting, sync, domains, billable items)',
           billingEs: 'Complete Spanish translations for billing and trial screens',
         },
         v200: {
@@ -1706,6 +1742,16 @@ export const en = {
           revenue: {
             title: 'Domain Revenue',
             description: 'Renewal revenue, average price, and active vs expired domain trends over time.',
+          },
+        },
+        billableItems: {
+          stats: {
+            title: 'Billable Items KPIs',
+            description: 'Total items, MRR contribution, categorization rate, and average amount at a glance.',
+          },
+          table: {
+            title: 'Billable Items Table',
+            description: 'All recurring billable items with their status, cycle, and MRR contribution. Admins can assign categories here.',
           },
         },
       },

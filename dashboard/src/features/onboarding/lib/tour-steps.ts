@@ -8,7 +8,7 @@ export interface TourStep {
   isSidebar?: boolean
 }
 
-export type TourId = 'dashboard' | 'revenue' | 'clients' | 'products' | 'forecasting' | 'sync' | 'domains'
+export type TourId = 'dashboard' | 'revenue' | 'clients' | 'products' | 'forecasting' | 'sync' | 'domains' | 'billable-items'
 
 export interface TourDef {
   steps: TourStep[]
@@ -24,6 +24,7 @@ export const routeToTourId: Record<string, TourId> = {
   '/forecasting': 'forecasting',
   '/sync': 'sync',
   '/domains': 'domains',
+  '/billable-items': 'billable-items',
 }
 
 export const tours: Record<TourId, TourDef> = {
@@ -240,6 +241,25 @@ export const tours: Record<TourId, TourDef> = {
         titleKey: 'onboarding.tours.domains.revenue.title',
         descriptionKey: 'onboarding.tours.domains.revenue.description',
         placement: 'bottom',
+      },
+    ],
+  },
+
+  'billable-items': {
+    steps: [
+      {
+        id: 'billable-items-stats',
+        targetSelector: '[data-tour="billable-items-stats"]',
+        titleKey: 'onboarding.tours.billableItems.stats.title',
+        descriptionKey: 'onboarding.tours.billableItems.stats.description',
+        placement: 'bottom',
+      },
+      {
+        id: 'billable-items-table',
+        targetSelector: '[data-tour="billable-items-table"]',
+        titleKey: 'onboarding.tours.billableItems.table.title',
+        descriptionKey: 'onboarding.tours.billableItems.table.description',
+        placement: 'top',
       },
     ],
   },

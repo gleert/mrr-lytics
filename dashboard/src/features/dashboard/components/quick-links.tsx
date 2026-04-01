@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/forecasting', icon: 'trending_up', labelKey: 'nav.forecasting', color: 'text-violet-400', bg: 'bg-violet-500/10' },
   { to: '/domains', icon: 'language', labelKey: 'nav.domains', color: 'text-amber-400', bg: 'bg-amber-500/10' },
   { to: '/products', icon: 'inventory_2', labelKey: 'nav.products', color: 'text-pink-400', bg: 'bg-pink-500/10' },
+  { to: '/billable-items', icon: 'receipt_long', labelKey: 'nav.billableItems', color: 'text-orange-400', bg: 'bg-orange-500/10' },
   { to: '/sync', icon: 'sync', labelKey: 'sync.title', color: 'text-cyan-400', bg: 'bg-cyan-500/10', adminOnly: true },
 ]
 
