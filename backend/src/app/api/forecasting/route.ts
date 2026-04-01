@@ -161,14 +161,15 @@ export async function GET(request: NextRequest) {
     })
 
     // Get historical invoice data within the selected period for trend analysis
+    // Use invoice date (not payment date) and include all statuses — MRR is committed when billed
     const { data: periodInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('total, datepaid')
+      .select('total, date')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
-      .order('datepaid', { ascending: true })
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
+      .order('date', { ascending: true })
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -188,13 +189,13 @@ export async function GET(request: NextRequest) {
     }
 
     periodInvoices?.forEach(invoice => {
-      if (invoice.datepaid) {
+      if (invoice.date) {
         let bucketKey: string
-        const invoiceDate = new Date(invoice.datepaid)
-        
+        const invoiceDate = new Date(invoice.date)
+
         switch (bucketFormat) {
           case 'daily':
-            bucketKey = invoice.datepaid.substring(0, 10) // YYYY-MM-DD
+            bucketKey = invoice.date.substring(0, 10) // YYYY-MM-DD
             break
           case 'weekly':
             // Get the week number
@@ -204,7 +205,7 @@ export async function GET(request: NextRequest) {
             break
           case 'monthly':
           default:
-            bucketKey = invoice.datepaid.substring(0, 7) // YYYY-MM
+            bucketKey = invoice.date.substring(0, 7) // YYYY-MM
             break
         }
         
