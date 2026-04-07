@@ -93,7 +93,7 @@ export async function validateApiKeyEdge(key: string): Promise<ValidatedApiKey> 
  * Check if the admin API key is valid (Edge compatible)
  */
 export function validateAdminKeyEdge(key: string): boolean {
-  const adminKey = process.env.ADMIN_API_KEY
+  const adminKey = process.env.ADMIN_API_KEY?.trim()
   if (!adminKey) {
     console.warn('ADMIN_API_KEY not configured')
     return false
