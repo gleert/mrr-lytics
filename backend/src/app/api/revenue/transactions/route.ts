@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create invoice lookup map
-    const invoiceMap = new Map<string, { whmcs_id: number; invoicenum: string; date: string; datepaid: string; status: string; total: number }>()
+    const invoiceMap = new Map<string, { whmcs_id: number; invoicenum: string; date: string; datepaid: string; status: string; subtotal: number }>()
     const matchingInvoiceKeys = new Set<string>()
 
     invoices?.forEach(inv => {
