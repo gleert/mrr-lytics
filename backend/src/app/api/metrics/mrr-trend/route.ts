@@ -258,12 +258,9 @@ export async function GET(request: NextRequest) {
           return
         }
 
-        // Only count active or suspended services
-        if (!['Active', 'Suspended'].includes(service.domainstatus)) {
-          // But if it was terminated during or after this month, it was active
-          if (!termDate || termDate < monthDate) {
-            return
-          }
+        // Only count active services (Suspended excluded to match mv_mrr_current)
+        if (service.domainstatus !== 'Active') {
+          return
         }
 
         const monthlyAmount = toMonthlyAmount(

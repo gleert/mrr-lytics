@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         .from('whmcs_hosting')
         .select('id, instance_id, whmcs_id, packageid, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
         .in('instance_id', instanceIds)
-        .in('domainstatus', ['Active', 'Suspended']),
+        .eq('domainstatus', 'Active'),
       supabase
         .from('whmcs_billable_items')
         .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
