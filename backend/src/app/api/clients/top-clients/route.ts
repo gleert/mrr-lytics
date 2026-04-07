@@ -102,40 +102,19 @@ export async function GET(request: NextRequest) {
     const clientWhmcsIds = topEntries.map(e => e.client_id)
     const { data: clientRows } = await supabase
       .from('whmcs_clients')
-      .select('whmcs_id, instance_id, firstname, lastname, companyname, status')
+      .select('whmcs_id, instance_id, firstname, lastname, companyname, status, current_mrr')
       .in('instance_id', instanceIds)
       .in('whmcs_id', clientWhmcsIds)
 
-    // Also fetch current MRR from active hosting services
-    const { data: hostingRows } = await supabase
-      .from('whmcs_hosting')
-      .select('client_id, instance_id, amount, billingcycle')
-      .in('instance_id', instanceIds)
-      .in('client_id', clientWhmcsIds)
-      .eq('domainstatus', 'Active')
-
-    // Build client name map
+    // Build client name + MRR map from whmcs_clients.current_mrr
+    // (current_mrr already includes hosting + domains + billable items via update_client_metrics)
     const clientNameMap = new Map<string, { name: string; status: string }>()
+    const clientMrrMap = new Map<string, number>()
     clientRows?.forEach(c => {
       const key = `${c.instance_id}:${c.whmcs_id}`
       const name = c.companyname || `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Unknown'
       clientNameMap.set(key, { name, status: c.status || 'Unknown' })
-    })
-
-    // Build MRR map per client
-    const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const map: Record<string, number> = {
-        monthly: 1, quarterly: 3, 'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12, biennially: 24, triennially: 36,
-      }
-      return amount / (map[cycle?.toLowerCase()] || 1)
-    }
-
-    const clientMrrMap = new Map<string, number>()
-    hostingRows?.forEach(h => {
-      const key = `${h.instance_id}:${h.client_id}`
-      const monthly = toMonthlyAmount(Number(h.amount) || 0, h.billingcycle)
-      clientMrrMap.set(key, (clientMrrMap.get(key) || 0) + monthly)
+      clientMrrMap.set(key, Number((c as any).current_mrr) || 0)
     })
 
     // Build final result based on sort_by
@@ -148,42 +127,26 @@ export async function GET(request: NextRequest) {
     }>
 
     if (sortBy === 'mrr') {
-      // Sort by MRR — take clients with highest current MRR
-      const allMrrClients = Array.from(clientMrrMap.entries())
-        .map(([key, mrr]) => {
-          const [instanceId, clientIdStr] = key.split(':')
-          return { key, instance_id: instanceId, client_id: parseInt(clientIdStr), mrr }
-        })
-        .sort((a, b) => b.mrr - a.mrr)
-        .slice(0, limit)
+      // Sort by MRR — query whmcs_clients directly sorted by current_mrr (includes hosting + domains + billable items)
+      const { data: topMrrClients } = await supabase
+        .from('whmcs_clients')
+        .select('whmcs_id, instance_id, firstname, lastname, companyname, status, current_mrr')
+        .in('instance_id', instanceIds)
+        .eq('status', 'Active')
+        .gt('current_mrr', 0)
+        .order('current_mrr', { ascending: false })
+        .limit(limit)
 
-      // If we need more client details, fetch them
-      const mrrClientIds = allMrrClients.map(c => c.client_id)
-      if (mrrClientIds.length > 0) {
-        const { data: mrrClientRows } = await supabase
-          .from('whmcs_clients')
-          .select('whmcs_id, instance_id, firstname, lastname, companyname, status')
-          .in('instance_id', instanceIds)
-          .in('whmcs_id', mrrClientIds)
-
-        mrrClientRows?.forEach(c => {
-          const key = `${c.instance_id}:${c.whmcs_id}`
-          if (!clientNameMap.has(key)) {
-            const name = c.companyname || `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Unknown'
-            clientNameMap.set(key, { name, status: c.status || 'Unknown' })
-          }
-        })
-      }
-
-      clients = allMrrClients.map(entry => {
-        const info = clientNameMap.get(entry.key)
-        const revenueEntry = clientRevenue.get(entry.key)
+      clients = (topMrrClients || []).map(c => {
+        const key = `${c.instance_id}:${c.whmcs_id}`
+        const name = c.companyname || `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Unknown'
+        const revenueEntry = clientRevenue.get(key)
         return {
-          client_id: entry.client_id,
-          name: info?.name || 'Unknown Client',
-          status: info?.status || 'Unknown',
+          client_id: c.whmcs_id,
+          name,
+          status: c.status || 'Unknown',
           revenue_in_period: Math.round((revenueEntry?.revenue || 0) * 100) / 100,
-          current_mrr: Math.round(entry.mrr * 100) / 100,
+          current_mrr: Math.round((Number(c.current_mrr) || 0) * 100) / 100,
         }
       })
     } else {
