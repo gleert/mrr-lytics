@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         .eq('mapping_type', 'billable_item'),
       supabase
         .from('whmcs_domains')
-        .select('recurringamount, registrationperiod, registrationdate, expirydate')
+        .select('recurringamount, registrationperiod')
         .in('instance_id', instanceIds)
         .eq('status', 'Active'),
     ])
@@ -232,6 +232,18 @@ export async function GET(request: NextRequest) {
       categoryColors[cat.name] = cat.color
       billableDailyMRR.push({ monthlyMrr, category: cat })
     })
+
+    // Pre-compute domain MRR (constant across all days — already filtered status=Active)
+    let domainDailyMRR = 0
+    domainServices?.forEach(domain => {
+      const annual = Number(domain.recurringamount) || 0
+      const period = Number(domain.registrationperiod) || 1
+      const monthlyMrr = annual > 0 && period > 0 ? annual / (period * 12) : 0
+      domainDailyMRR += monthlyMrr
+    })
+    if (domainDailyMRR > 0) {
+      categoryColors['Domains'] = '#06B6D4'
+    }
     const currentDate = new Date(startDate)
 
     while (currentDate <= endDate) {
@@ -280,23 +292,11 @@ export async function GET(request: NextRequest) {
         totalMRR += monthlyMrr
       })
 
-      // Add domain recurring revenue active on this date
-      domainServices?.forEach(domain => {
-        const regDate = domain.registrationdate ? new Date(domain.registrationdate) : null
-        const expDate = domain.expirydate ? new Date(domain.expirydate) : null
-        if (!regDate || regDate > currentDate) return
-        if (expDate && expDate < currentDate) return
-
-        const annual = Number(domain.recurringamount) || 0
-        const period = Number(domain.registrationperiod) || 1
-        const monthlyMrr = annual > 0 && period > 0 ? annual / (period * 12) : 0
-        if (monthlyMrr === 0) return
-
-        const catName = 'Domains'
-        categoryColors[catName] = '#06B6D4'
-        categoryTotals[catName] = (categoryTotals[catName] || 0) + monthlyMrr
-        totalMRR += monthlyMrr
-      })
+      // Add domain recurring revenue (constant — all active domains)
+      if (domainDailyMRR > 0) {
+        categoryTotals['Domains'] = (categoryTotals['Domains'] || 0) + domainDailyMRR
+        totalMRR += domainDailyMRR
+      }
 
       dailyData.push({
         date: dateStr,
