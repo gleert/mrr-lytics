@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     // Get all invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total, datepaid, date, status')
+      .select('whmcs_id, subtotal, datepaid, date, status')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString())
@@ -162,14 +162,14 @@ export async function GET(request: NextRequest) {
       
       // If no items found, estimate from total
       if (revenue.recurring === 0 && revenue.onetime === 0) {
-        const total = Number(invoice.total) || 0
+        const total = Number(invoice.subtotal) || 0
         revenue.recurring = total * 0.8
         revenue.onetime = total * 0.2
       }
 
       current.recurring += revenue.recurring
       current.onetime += revenue.onetime
-      current.total += Number(invoice.total) || 0
+      current.total += Number(invoice.subtotal) || 0
 
       trendMap.set(key, current)
     })

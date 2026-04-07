@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     // Use invoice date (not payment date) and include all statuses — MRR is committed when billed
     const { data: periodInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('total, date')
+      .select('subtotal, date')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString().split('T')[0])
@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
             break
         }
         
-        revenueByBucket.set(bucketKey, (revenueByBucket.get(bucketKey) || 0) + (Number(invoice.total) || 0))
+        revenueByBucket.set(bucketKey, (revenueByBucket.get(bucketKey) || 0) + (Number(invoice.subtotal) || 0))
       }
     })
 

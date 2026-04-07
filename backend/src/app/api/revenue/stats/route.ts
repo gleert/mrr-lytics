@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
+    const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
     
     // If we couldn't categorize from items, estimate from total
     if (recurringRevenue === 0 && onetimeRevenue === 0 && totalRevenue > 0) {
@@ -258,14 +258,14 @@ export async function GET(request: NextRequest) {
 
     const { data: prevInvoices } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total')
+      .select('whmcs_id, subtotal')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', prevStartDate.toISOString())
       .lte('date', prevEndDate.toISOString())
       .limit(10000)
 
-    const prevTotalRevenue = prevInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
+    const prevTotalRevenue = prevInvoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
 
     // Calculate prev period recurring/onetime breakdown
     let prevRecurringRevenue = 0
@@ -330,8 +330,8 @@ export async function GET(request: NextRequest) {
     // Paid vs Unpaid breakdown
     const paidInvoices = invoices?.filter(i => i.status === 'Paid') || []
     const unpaidInvoices = invoices?.filter(i => i.status !== 'Paid') || []
-    const paidTotal = paidInvoices.reduce((sum, inv) => sum + Number(inv.total), 0)
-    const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.total), 0)
+    const paidTotal = paidInvoices.reduce((sum, inv) => sum + Number(inv.subtotal), 0)
+    const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.subtotal), 0)
 
     // Next period projection: MRR + average one-time from last 3 periods
     const projectedNextPeriod = Math.round((mrr + (onetimeRevenue / Math.max(days / 30, 1))) * 100) / 100
@@ -339,7 +339,7 @@ export async function GET(request: NextRequest) {
     // Recent paid invoices (last 5)
     const { data: recentPaidRaw } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, invoicenum, total, datepaid, client_id, instance_id')
+      .select('whmcs_id, invoicenum, subtotal, datepaid, client_id, instance_id')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
       .not('datepaid', 'is', null)
@@ -364,7 +364,7 @@ export async function GET(request: NextRequest) {
 
     const recentPaid = (recentPaidRaw || []).map(inv => ({
       invoice_num: inv.invoicenum,
-      amount: Number(inv.total),
+      amount: Number(inv.subtotal),
       date: inv.datepaid,
       client_name: clientNameMap.get(`${inv.instance_id}:${inv.client_id}`) || 'Unknown',
     }))

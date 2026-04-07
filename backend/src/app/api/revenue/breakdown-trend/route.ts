@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     // Get invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total, datepaid, date, status')
+      .select('whmcs_id, subtotal, datepaid, date, status')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString())
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
     for (const invoice of invoices) {
       const groups = invoiceGroups.get(invoice.whmcs_id)
       if (!groups) {
-        totalRevenue += Number(invoice.total) || 0
+        totalRevenue += Number(invoice.subtotal) || 0
         continue
       }
       groups.forEach(({ revenue, hasCategory }) => {
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
       const groups = invoiceGroups.get(invoice.whmcs_id)
 
       if (!groups || groups.size === 0) {
-        const total = Number(invoice.total) || 0
+        const total = Number(invoice.subtotal) || 0
         const fallbackGroup = groupBy === 'type' ? 'Recurring' : 'Other'
         allGroupNames.add(fallbackGroup)
         const bucket = trendMap.get(key) || new Map<string, number>()

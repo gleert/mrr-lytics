@@ -262,7 +262,7 @@ export async function GET(request: NextRequest) {
     // Get paid invoices for revenue calculation
     const { data: paidInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('total, client_id')
+      .select('subtotal, client_id')
       .in('instance_id', instanceIds)
       .eq('status', 'Paid')
       .gte('datepaid', startDate.toISOString().split('T')[0])
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
       throw new Error(`Failed to fetch invoices: ${invoicesError.message}`)
     }
 
-    const revenueInPeriod = paidInvoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0
+    const revenueInPeriod = paidInvoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
 
     return success({
       total_clients: totalRealClients,

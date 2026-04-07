@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     // Get paid invoices in period, grouped by client
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('client_id, instance_id, total')
+      .select('client_id, instance_id, subtotal')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString().split('T')[0])
@@ -79,12 +79,12 @@ export async function GET(request: NextRequest) {
       const key = `${inv.instance_id}:${inv.client_id}`
       const existing = clientRevenue.get(key)
       if (existing) {
-        existing.revenue += Number(inv.total) || 0
+        existing.revenue += Number(inv.subtotal) || 0
       } else {
         clientRevenue.set(key, {
           client_id: inv.client_id,
           instance_id: inv.instance_id,
-          revenue: Number(inv.total) || 0,
+          revenue: Number(inv.subtotal) || 0,
         })
       }
     })

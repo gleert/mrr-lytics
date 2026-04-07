@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
     // Fetch invoice data for these specific invoices (limited set)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, instance_id, invoicenum, date, datepaid, status, total')
+      .select('whmcs_id, instance_id, invoicenum, date, datepaid, status, subtotal')
       .in('instance_id', instanceIds)
       .in('whmcs_id', invoiceIds)
 
@@ -321,7 +321,7 @@ export async function GET(request: NextRequest) {
         invoice_id: invoice?.whmcs_id || item.invoice_id,
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
         invoice_status: invoice?.status || 'Unknown',
-        invoice_total: Number(invoice?.total) || 0,
+        invoice_total: Number(invoice?.subtotal) || 0,
         client_id: item.client_id,
         client_name: clientMap.get(clientKey) || 'Unknown Client',
         category: categoryName,
