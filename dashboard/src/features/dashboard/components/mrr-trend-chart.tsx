@@ -267,6 +267,8 @@ export function MRRTrendChart() {
                     <ChartTooltip
                       labelFormatter={formatMonth}
                       valueFormatter={(v) => formatCurrency(v)}
+                      totalKey="total"
+                      totalLabel={t('dashboard.committedMrr')}
                     />
                   }
                 />

@@ -16,6 +16,8 @@ interface ChartTooltipProps {
   labelFormatter?: (label: string) => string
   valueFormatter?: (value: number, key: string) => string
   showTotal?: boolean
+  totalKey?: string
+  totalLabel?: string
 }
 
 export function ChartTooltip({
@@ -25,11 +27,16 @@ export function ChartTooltip({
   labelFormatter,
   valueFormatter,
   showTotal = false,
+  totalKey,
+  totalLabel,
 }: ChartTooltipProps) {
   if (!active || !payload?.length || label === undefined) return null
 
   const formattedLabel = labelFormatter ? labelFormatter(String(label)) : String(label)
-  const total = payload.reduce((s, p) => s + (Number(p.value) || 0), 0)
+
+  const regularItems = totalKey ? payload.filter(p => p.dataKey !== totalKey) : payload
+  const pinnedItem = totalKey ? payload.find(p => p.dataKey === totalKey) : null
+  const total = regularItems.reduce((s, p) => s + (Number(p.value) || 0), 0)
 
   return (
     <div
@@ -55,7 +62,7 @@ export function ChartTooltip({
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {payload.map((p) => {
+        {regularItems.map((p) => {
           const label = p.name ?? p.dataKey
           const val = valueFormatter
             ? valueFormatter(Number(p.value) || 0, p.dataKey)
@@ -90,7 +97,28 @@ export function ChartTooltip({
           )
         })}
 
-        {showTotal && payload.length > 1 && (
+        {pinnedItem && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              borderTop: '1px solid var(--color-border)',
+              paddingTop: 6,
+              marginTop: 2,
+            }}
+          >
+            <span style={{ color: 'var(--color-muted)' }}>
+              {totalLabel ?? pinnedItem.name ?? pinnedItem.dataKey}
+            </span>
+            <span style={{ color: 'var(--color-foreground)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+              {valueFormatter ? valueFormatter(Number(pinnedItem.value) || 0, pinnedItem.dataKey) : String(pinnedItem.value)}
+            </span>
+          </div>
+        )}
+
+        {showTotal && regularItems.length > 1 && (
           <div
             style={{
               display: 'flex',
