@@ -97,7 +97,8 @@ export async function GET(request: NextRequest) {
       supabase
         .from('whmcs_domains')
         .select('recurringamount, registrationperiod, registrationdate, expirydate')
-        .in('instance_id', instanceIds),
+        .in('instance_id', instanceIds)
+        .eq('status', 'Active'),
     ])
 
     if (hostingError) {
