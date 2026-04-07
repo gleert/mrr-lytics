@@ -265,13 +265,13 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.mrr - a.mrr)
 
-    if (breakdown.length >= 10) {
-      const top9 = breakdown.slice(0, 9)
-      const others = breakdown.slice(9)
+    if (breakdown.length >= 15) {
+      const top14 = breakdown.slice(0, 14)
+      const others = breakdown.slice(14)
       const othersMrr = others.reduce((sum, i) => sum + i.mrr, 0)
       const othersCount = others.reduce((sum, i) => sum + i.count, 0)
       breakdown = [
-        ...top9,
+        ...top14,
         {
           name: 'Others',
           mrr: Math.round(othersMrr * 100) / 100,
