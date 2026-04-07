@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_domains')
-        .select('recurringamount, registrationperiod, registrationdate, expirydate, status')
+        .select('recurringamount, registrationperiod')
         .in('instance_id', instanceIds)
         .eq('status', 'Active'),
     ])
@@ -165,24 +165,12 @@ export async function GET(request: NextRequest) {
       return ['Active', 'Suspended'].includes(service.domainstatus)
     }
 
-    // Was domain active at a given date?
-    const domainWasActiveAt = (
-      registrationdate: string | null,
-      expirydate: string | null,
-      date: Date,
-    ): boolean => {
-      const regDate = registrationdate ? new Date(registrationdate) : null
-      const expDate = expirydate ? new Date(expirydate) : null
-      if (!regDate || regDate > date) return false
-      if (expDate && expDate < date) return false
-      return true
-    }
-
-    const getDomainMonthlyMrr = (domain: { recurringamount: number | null; registrationperiod: number | null }): number => {
+    // Pre-compute total domain MRR (constant — all active domains, no historical churn available)
+    const domainTotalMrr = (domainServices ?? []).reduce((sum, domain) => {
       const annual = Number(domain.recurringamount) || 0
       const period = Number(domain.registrationperiod) || 1
-      return annual > 0 && period > 0 ? annual / (period * 12) : 0
-    }
+      return sum + (annual > 0 && period > 0 ? annual / (period * 12) : 0)
+    }, 0)
 
     // Generate monthly movement data
     const movementData: MovementDataPoint[] = []
@@ -225,18 +213,9 @@ export async function GET(request: NextRequest) {
         if (wasActive  && !isActive) churned_mrr += item.mrr
       })
 
-      domainServices?.forEach(domain => {
-        const wasActive = domainWasActiveAt(domain.registrationdate, domain.expirydate, prevMonthEnd)
-        const isActive  = domainWasActiveAt(domain.registrationdate, domain.expirydate, monthEnd)
-        const mrr = getDomainMonthlyMrr(domain)
-        if (mrr === 0) return
-
-        if (wasActive) starting_mrr += mrr
-        if (isActive)  ending_mrr   += mrr
-
-        if (!wasActive && isActive)   new_mrr     += mrr
-        if (wasActive  && !isActive)  churned_mrr += mrr
-      })
+      // Domains are constant (no monthly snapshots → can't track new/churn per domain)
+      starting_mrr += domainTotalMrr
+      ending_mrr   += domainTotalMrr
 
       // Expansion/contraction require historical price data — not available
       const expansion_mrr  = 0
