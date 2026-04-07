@@ -61,11 +61,23 @@ export async function GET(request: NextRequest) {
     startDate.setMonth(startDate.getMonth() - months + 1)
     startDate.setDate(1) // Start of month
 
-    // Get all hosting services (all statuses — we need cancelled/terminated for churn)
-    const { data: hostingServices, error: hostingError } = await supabase
-      .from('whmcs_hosting')
-      .select('id, instance_id, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
-      .in('instance_id', instanceIds)
+    // Get hosting services + billable items in parallel
+    const [
+      { data: hostingServices, error: hostingError },
+      { data: billableItems },
+    ] = await Promise.all([
+      supabase
+        .from('whmcs_hosting')
+        .select('id, instance_id, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
+        .in('instance_id', instanceIds),
+      supabase
+        .from('whmcs_billable_items')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate')
+        .in('instance_id', instanceIds)
+        .eq('invoice_action', 4)
+        .gt('invoicecount', 0)
+        .limit(10000),
+    ])
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
@@ -75,15 +87,53 @@ export async function GET(request: NextRequest) {
     // Monthly amount — same formula as mv_mrr_current view (no monthly_amount shortcut)
     const toMonthlyAmount = (amount: number, cycle: string): number => {
       const map: Record<string, number> = {
-        monthly: 1, quarterly: 3,
+        monthly: 1, months: 1, month: 1,
+        quarterly: 3,
         'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12,
+        annually: 12, yearly: 12, years: 12, year: 12,
         biennially: 24, triennially: 36,
       }
       const divisor = map[cycle?.toLowerCase()]
       if (!divisor) return 0
       return amount / divisor
     }
+
+    const getCycleMonths = (recurcycle: string, recur: number): number => {
+      const base = (recurcycle || '').toLowerCase().startsWith('year') ? 12 : 1
+      return base * (recur || 1)
+    }
+
+    const billableWasActiveAt = (
+      startDate: Date,
+      recurfor: number,
+      cycleMonths: number,
+      date: Date,
+    ): boolean => {
+      if (startDate > date) return false
+      if (recurfor === 0) return true
+      const monthsDiff =
+        (date.getFullYear() - startDate.getFullYear()) * 12 +
+        (date.getMonth() - startDate.getMonth())
+      return Math.floor(monthsDiff / cycleMonths) < recurfor
+    }
+
+    // Pre-compute billable item start dates
+    type BillableItemMovement = {
+      startDate: Date
+      cycleMonths: number
+      recurfor: number
+      mrr: number
+    }
+    const billableWithStart: BillableItemMovement[] = (billableItems || []).flatMap(item => {
+      if (!item.duedate) return []
+      const cycleMonths = getCycleMonths(item.recurcycle || 'Months', item.recur || 1)
+      const mrr = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
+      if (mrr === 0 || cycleMonths === 0) return []
+      const dueDate = new Date(item.duedate)
+      const startDate = new Date(dueDate)
+      startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
+      return [{ startDate, cycleMonths, recurfor: item.recurfor ?? 0, mrr }]
+    })
 
     const getMonthlyAmount = (service: typeof hostingServices[0]): number =>
       toMonthlyAmount(Number(service.amount) || 0, service.billingcycle || '')
@@ -137,6 +187,17 @@ export async function GET(request: NextRequest) {
 
         if (!wasActive && isActive)   new_mrr     += mrr  // new this month
         if (wasActive  && !isActive)  churned_mrr += mrr  // churned this month
+      })
+
+      billableWithStart.forEach(item => {
+        const wasActive = billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, prevMonthEnd)
+        const isActive  = billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, monthEnd)
+
+        if (wasActive) starting_mrr += item.mrr
+        if (isActive)  ending_mrr   += item.mrr
+
+        if (!wasActive && isActive)  new_mrr     += item.mrr
+        if (wasActive  && !isActive) churned_mrr += item.mrr
       })
 
       // Expansion/contraction require historical price data — not available

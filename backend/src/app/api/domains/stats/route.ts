@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
     const instanceIdsParam = searchParams.get('instance_ids')
     const instanceIdParam = searchParams.get('instance_id')
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
 
     let instanceIds: string[] = []
     if (instanceIdsParam) {
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { startDate, endDate } = parseDateRange(period, null, null)
+    const { startDate, endDate } = parseDateRange(period, startDateParam, endDateParam)
     const today = new Date()
     const thirtyDaysFromNow = new Date(today)
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
@@ -80,28 +82,44 @@ export async function GET(request: NextRequest) {
     const expired_domains = expiredResult.count ?? 0
     const expiring_soon  = expiringSoonResult.count ?? 0
 
-    // Fetch all domains for charts, tables and derived stats (still needed)
-    const { data: domains, error: domainsError } = await supabase
-      .from('whmcs_domains')
-      .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, recurringamount, donotrenew')
-      .in('instance_id', instanceIds)
-      .limit(10000)
-
-    if (domainsError) {
-      console.error('Domains query error:', domainsError)
-      return success({
-        total_domains: 0,
-        active_domains: 0,
-        pending_domains: 0,
-        expired_domains: 0,
-        expiring_soon: 0,
-        new_domains: 0,
-        total_recurring: 0,
-        do_not_renew: 0,
-      }, { instance_ids: instanceIds })
+    // Fetch all domains with pagination (Supabase server caps at 1000 rows per request)
+    const allDomains: Array<{
+      whmcs_id: number
+      client_id: number
+      domain: string
+      status: string
+      registrationdate: string | null
+      expirydate: string | null
+      recurringamount: number | null
+      donotrenew: number | boolean | null
+    }> = []
+    {
+      let offset = 0
+      while (true) {
+        const { data: page, error: pageError } = await supabase
+          .from('whmcs_domains')
+          .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, recurringamount, donotrenew')
+          .in('instance_id', instanceIds)
+          .range(offset, offset + 999)
+        if (pageError) {
+          console.error('Domains query error:', pageError)
+          return success({
+            total_domains: 0,
+            active_domains: 0,
+            pending_domains: 0,
+            expired_domains: 0,
+            expiring_soon: 0,
+            new_domains: 0,
+            total_recurring: 0,
+            do_not_renew: 0,
+          }, { instance_ids: instanceIds })
+        }
+        if (!page || page.length === 0) break
+        allDomains.push(...page)
+        if (page.length < 1000) break
+        offset += 1000
+      }
     }
-
-    const allDomains = domains || []
 
     // New domains registered in period - use separate query for accuracy
     const { count: newDomainsCount } = await supabase
@@ -132,12 +150,10 @@ export async function GET(request: NextRequest) {
       return regDate >= prevStartDate && regDate < prevEndDate
     }).length
 
-    // Calculate change percentage
-    let new_domains_change = 0
+    // Calculate change percentage (null when previous period had 0 — no meaningful comparison)
+    let new_domains_change: number | null = null
     if (prev_new_domains > 0) {
       new_domains_change = ((new_domains - prev_new_domains) / prev_new_domains) * 100
-    } else if (new_domains > 0) {
-      new_domains_change = 100
     }
 
     // Calculate breakdown by status
@@ -258,7 +274,7 @@ export async function GET(request: NextRequest) {
       expired_domains,
       expiring_soon,
       new_domains,
-      new_domains_change: Math.round(new_domains_change * 100) / 100,
+      new_domains_change: new_domains_change !== null ? Math.round(new_domains_change * 100) / 100 : null,
       total_recurring: Math.round(total_recurring * 100) / 100,
       do_not_renew,
       status_breakdown,

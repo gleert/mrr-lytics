@@ -778,6 +778,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v235: {
+          cronRetryAfterError: 'El cron de sincronización ahora reintenta automáticamente las instancias que fallaron previamente (p. ej. timeout 504 de WHMCS) en lugar de quedar bloqueadas indefinidamente',
+        },
         v234: {
           billableItemsPage: 'Nueva página de Servicios Adicionales con gestión de servicios recurrentes, asignación de categorías, insignias de estado (activo/completado/único) y resaltado del filtro de periodo',
           customDateRangeFix: 'El filtro de rango de fechas personalizado ahora se aplica correctamente en los endpoints de ingresos, clientes, dominios y previsión (antes usaba el valor predeterminado de 30 días)',

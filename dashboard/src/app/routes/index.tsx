@@ -17,6 +17,7 @@ import { Spinner } from '@/shared/components/ui/spinner'
 const RevenuePage = lazy(() => import('@/features/revenue/pages/revenue-page').then(m => ({ default: m.RevenuePage })))
 const ClientsPage = lazy(() => import('@/features/clients/pages/clients-page').then(m => ({ default: m.ClientsPage })))
 const ProductsPage = lazy(() => import('@/features/products/pages/products-page').then(m => ({ default: m.ProductsPage })))
+const BillableItemsPage = lazy(() => import('@/features/billable-items/pages/billable-items-page').then(m => ({ default: m.BillableItemsPage })))
 const DomainsPage = lazy(() => import('@/features/domains/pages/domains-page').then(m => ({ default: m.DomainsPage })))
 const ForecastingPage = lazy(() => import('@/features/forecasting/pages/forecasting-page').then(m => ({ default: m.ForecastingPage })))
 const SettingsPage = lazy(() => import('@/features/settings/pages/settings-page').then(m => ({ default: m.SettingsPage })))
@@ -69,6 +70,7 @@ export function AppRoutes() {
         <Route path="/revenue" element={<LazyPage><RevenuePage /></LazyPage>} />
         <Route path="/clients" element={<LazyPage><ClientsPage /></LazyPage>} />
         <Route path="/products" element={<LazyPage><ProductsPage /></LazyPage>} />
+        <Route path="/billable-items" element={<LazyPage><BillableItemsPage /></LazyPage>} />
         <Route path="/domains" element={<LazyPage><DomainsPage /></LazyPage>} />
         <Route path="/forecasting" element={<LazyPage><ForecastingPage /></LazyPage>} />
         <Route path="/sync" element={<AdminGuard><LazyPage><SyncPage /></LazyPage></AdminGuard>} />

@@ -14,14 +14,15 @@ export function BillableItemsStats({ items, totalMrr, isLoading }: BillableItems
   const { t } = useTranslation()
 
   const stats = useMemo(() => {
-    const totalItems = items.length
+    const activeItems = items.filter(i => i.status !== 'one_time')
+    const totalItems = activeItems.length
     const categorizedPct =
       totalItems > 0
-        ? Math.round((items.filter(i => i.category !== null).length / totalItems) * 1000) / 10
+        ? Math.round((activeItems.filter(i => i.category !== null).length / totalItems) * 1000) / 10
         : 0
     const avgAmount =
       totalItems > 0
-        ? items.reduce((sum, i) => sum + i.amount, 0) / totalItems
+        ? activeItems.reduce((sum, i) => sum + i.amount, 0) / totalItems
         : 0
 
     return { totalItems, categorizedPct, avgAmount }

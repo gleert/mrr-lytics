@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
     const instanceIdsParam = searchParams.get('instance_ids')
     const instanceIdParam = searchParams.get('instance_id')
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
     // const statusFilter = searchParams.get('status') || 'all'
 
     // Support multiple instance IDs (comma-separated) or single instance_id
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    const { startDate, endDate, days } = parseDateRange(period, null, null)
+    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -131,38 +133,23 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to fetch new clients')
     }
 
-    // Get churned clients — use synced_at as proxy for close date (WHMCS doesn't expose a close date)
+    // Get churned clients using real closure date from activity log (populated by module v1.3.0+)
     const { data: churnedClientsRaw, error: churnedError } = await supabase
       .from('whmcs_clients')
-      .select('id, whmcs_id, instance_id, synced_at')
+      .select('id, whmcs_id, instance_id, closed_at')
       .in('instance_id', instanceIds)
       .eq('status', 'Closed')
-      .gte('synced_at', startDate.toISOString())
-      .lte('synced_at', endDate.toISOString())
+      .not('closed_at', 'is', null)
+      .gte('closed_at', startDate.toISOString())
+      .lte('closed_at', endDate.toISOString())
 
     if (churnedError) {
       throw new Error('Failed to fetch churned clients')
     }
 
-    // Filter out spam/empty clients: only count churned if they had at least 1 service
-    let churnedClients = churnedClientsRaw
-    if (churnedClientsRaw && churnedClientsRaw.length > 0) {
-      const churnedWhmcsIds = churnedClientsRaw.map(c => c.whmcs_id)
-      const { data: churnedServices } = await supabase
-        .from('whmcs_hosting')
-        .select('client_id, instance_id')
-        .in('instance_id', instanceIds)
-        .in('client_id', churnedWhmcsIds)
-
-      const clientsWithAnyService = new Set<string>()
-      churnedServices?.forEach(s => {
-        clientsWithAnyService.add(`${s.instance_id}:${s.client_id}`)
-      })
-
-      churnedClients = churnedClientsRaw.filter(c =>
-        clientsWithAnyService.has(`${c.instance_id}:${c.whmcs_id}`)
-      )
-    }
+    // Clients with closed_at from the activity log are confirmed real churned clients —
+    // no need to cross-check services (would exclude domain-only clients incorrectly)
+    const churnedClients = churnedClientsRaw
 
     // Build time-series buckets for new clients
     const newClientsBuckets = new Map<string, number>()
@@ -179,8 +166,8 @@ export async function GET(request: NextRequest) {
     // Build time-series buckets for churned clients
     const churnedBuckets = new Map<string, number>()
     churnedClients?.forEach(c => {
-      if (c.synced_at) {
-        const key = toBucketKey(c.synced_at)
+      if (c.closed_at) {
+        const key = toBucketKey(c.closed_at)
         churnedBuckets.set(key, (churnedBuckets.get(key) || 0) + 1)
       }
     })

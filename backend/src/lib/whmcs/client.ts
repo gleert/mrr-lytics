@@ -182,6 +182,7 @@ export class WhmcsClient {
         result.data.invoice_items,
         result.data.clients,
         result.data.cancellation_requests || [],
+        result.data.client_closures || [],
       ]
       
       // If any table has exactly limit records, there might be more

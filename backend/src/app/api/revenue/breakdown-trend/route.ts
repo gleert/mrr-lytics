@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
     const instanceIdParam = searchParams.get('instance_id')
     const groupBy = (searchParams.get('group_by') || 'source') as 'category' | 'source' | 'type'
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
 
     let instanceIds: string[] = []
     if (instanceIdsParam) {
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     if (instanceIds.length === 0) throw new Error('No instance specified')
 
-    const { startDate, endDate, days } = parseDateRange(period, null, null)
+    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
       .order('date', { ascending: true })
+      .limit(10000)
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)

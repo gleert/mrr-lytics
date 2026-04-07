@@ -78,6 +78,8 @@ export function useTriggerSync() {
       queryClient.invalidateQueries({ queryKey: ['sync'] })
       // Also invalidate metrics since they might change after sync
       queryClient.invalidateQueries({ queryKey: ['metrics'] })
+      // Invalidate instances so module_version updates in the banner
+      queryClient.invalidateQueries({ queryKey: ['instances'] })
     },
   })
 }

@@ -18,11 +18,12 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get all active instances with sync enabled
+    // Get all active (or previously errored) instances with sync enabled
+    // Instances with status 'error' must be retried automatically by the cron
     const { data: allInstances, error: dbError } = await supabase
       .from('whmcs_instances')
       .select('id, tenant_id, name, whmcs_url, whmcs_api_identifier, whmcs_api_secret, status, sync_enabled, sync_interval_hours, last_sync_at')
-      .eq('status', 'active')
+      .in('status', ['active', 'error'])
       .eq('sync_enabled', true)
       .not('whmcs_api_secret', 'is', null)
 

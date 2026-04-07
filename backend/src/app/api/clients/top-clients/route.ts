@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
     const instanceIdParam = searchParams.get('instance_id')
     const limitParam = searchParams.get('limit') || '6'
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
     const sortBy = searchParams.get('sort_by') || 'revenue' // 'revenue' or 'mrr'
 
     let instanceIds: string[] = []
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 
     const limit = Math.min(10, Math.max(1, parseInt(limitParam, 10)))
-    const { startDate, endDate } = parseDateRange(period, null, null)
+    const { startDate, endDate } = parseDateRange(period, startDateParam, endDateParam)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

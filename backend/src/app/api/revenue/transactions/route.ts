@@ -317,7 +317,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: item.id,
-        date: invoice?.status === 'Paid' ? (invoice.datepaid || invoice.date || '') : (invoice?.date || ''),
+        date: invoice?.date || '',
         invoice_id: invoice?.whmcs_id || item.invoice_id,
         invoice_num: invoice?.invoicenum || String(item.invoice_id),
         invoice_status: invoice?.status || 'Unknown',

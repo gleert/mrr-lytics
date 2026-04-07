@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(5000, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
     const period = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date')
+    const endDateParam = searchParams.get('end_date')
 
     // Support multiple instance IDs
     let instanceIds: string[] = []
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Parse date range for filtering
-    const { startDate, endDate } = parseDateRange(period, null, null)
+    const { startDate, endDate } = parseDateRange(period, startDateParam, endDateParam)
 
     // Build query
     let query = supabase

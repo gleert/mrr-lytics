@@ -401,6 +401,11 @@ export function ClientsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {getStatusBadge(client.status)}
+                      {client.status === 'Closed' && client.closed_at && (
+                        <span className="block text-xs text-muted mt-0.5">
+                          {new Date(client.closed_at).toLocaleDateString()}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
                       {client.services_count}
@@ -419,32 +424,58 @@ export function ClientsPage() {
         </div>
 
         {/* Pagination */}
-        {clientsData && clientsData.pagination.total_pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-            <p className="text-sm text-muted">
-              {t('clients.showingPage', { 
-                page: clientsData.pagination.page, 
-                total: clientsData.pagination.total_pages 
-              })}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={!clientsData.pagination.has_prev}
-                className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('common.previous')}
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => p + 1)}
-                disabled={!clientsData.pagination.has_next}
-                className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('common.next')}
-              </button>
+        {clientsData && clientsData.pagination.total_pages > 1 && (() => {
+          const { page, total_pages, has_prev, has_next } = clientsData.pagination
+          const pages: (number | '...')[] = []
+          for (let i = 1; i <= total_pages; i++) {
+            if (i === 1 || i === total_pages || (i >= page - 2 && i <= page + 2)) {
+              pages.push(i)
+            } else if (pages[pages.length - 1] !== '...') {
+              pages.push('...')
+            }
+          }
+          return (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+              <p className="text-sm text-muted">
+                {t('clients.showingPage', { page, total: total_pages })}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={!has_prev}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Icon name="chevron_left" size="sm" />
+                </button>
+                {pages.map((p, i) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${i}`} className="w-8 text-center text-sm text-muted">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={cn(
+                        'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
+                        p === page
+                          ? 'bg-primary-500 text-white'
+                          : 'border border-border hover:bg-surface-elevated text-foreground'
+                      )}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={!has_next}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Icon name="chevron_right" size="sm" />
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
     </div>
     </NoInstancesGuard>

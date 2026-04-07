@@ -31,6 +31,7 @@ const menuItems: NavItem[] = [
 // Products section items
 const productItems: NavItem[] = [
   { to: '/products', icon: 'inventory_2', labelKey: 'nav.products' },
+  { to: '/billable-items', icon: 'receipt_long', labelKey: 'nav.billableItems' },
   { to: '/domains', icon: 'language', labelKey: 'nav.domains' },
 ]
 

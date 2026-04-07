@@ -23,6 +23,7 @@ export interface WhmcsClient {
   domains_count: number
   total_paid: number
   synced_at: string
+  closed_at?: string | null
   primary_domain: string | null
 }
 

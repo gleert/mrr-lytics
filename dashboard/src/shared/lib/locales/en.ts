@@ -781,6 +781,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v235: {
+          cronRetryAfterError: 'Cron sync now automatically retries instances that previously failed (e.g. WHMCS 504 timeout) instead of leaving them permanently stuck',
+        },
         v234: {
           billableItemsPage: 'New Billable Items page with recurring service management, category assignment, status badges (active/completed/one-time), and period filter highlighting',
           customDateRangeFix: 'Custom date range filter now correctly applied across revenue, clients, domains, and forecasting endpoints (was using 30-day default)',
