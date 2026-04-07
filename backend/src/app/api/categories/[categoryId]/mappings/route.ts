@@ -36,8 +36,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return error(new Error('instance_id, mapping_type, and whmcs_id are required'), 400)
     }
 
-    if (!['product', 'product_group'].includes(mapping_type)) {
-      return error(new Error('mapping_type must be "product" or "product_group"'), 400)
+    if (!['product', 'product_group', 'billable_item'].includes(mapping_type)) {
+      return error(new Error('mapping_type must be "product", "product_group", or "billable_item"'), 400)
     }
 
     const supabase = createClient(
