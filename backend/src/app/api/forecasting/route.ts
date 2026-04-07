@@ -282,6 +282,12 @@ export async function GET(request: NextRequest) {
     // ±20% per period is already aggressive for an established hosting/SaaS company.
     growthRate = Math.max(-20, Math.min(20, growthRate))
 
+    // Dampen growth rate when data is sparse — projection should be flat with few points.
+    // Thresholds: daily needs 30+, weekly needs 12+, monthly needs 6+.
+    const sufficientPoints = bucketFormat === 'monthly' ? 6 : bucketFormat === 'weekly' ? 12 : 30
+    const dataConfidence = Math.min(1, revenueValues.length / sufficientPoints)
+    growthRate = growthRate * dataConfidence
+
     // Project next period MRR based on current MRR and observed growth
     const projectedMRR = currentMRR * (1 + growthRate / 100)
 
