@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
       .from('whmcs_invoices')
       .select('client_id, instance_id, total')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
       .gt('total', 0)
 
     if (invoicesError) {
