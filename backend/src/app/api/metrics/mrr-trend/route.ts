@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       { data: productGroups },
       { data: mappings },
       { data: billableItems },
+      { data: domainServices },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -116,6 +117,10 @@ export async function GET(request: NextRequest) {
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
+      supabase
+        .from('whmcs_domains')
+        .select('recurringamount, registrationperiod, registrationdate, expirydate')
+        .in('instance_id', instanceIds),
     ])
 
     if (hostingError) {
@@ -312,6 +317,28 @@ export async function GET(request: NextRequest) {
           groupTotals.get(item.categoryName)!.color = item.categoryColor
         }
         groupTotals.get(item.categoryName)!.total += item.monthlyMrr
+      })
+
+      // Add domain recurring revenue active during this month
+      domainServices?.forEach(domain => {
+        const regDate = domain.registrationdate ? new Date(domain.registrationdate) : null
+        const expDate = domain.expirydate ? new Date(domain.expirydate) : null
+        if (!regDate || regDate > monthEnd) return
+        if (expDate && expDate < monthDate) return
+
+        const annual = Number(domain.recurringamount) || 0
+        const period = Number(domain.registrationperiod) || 1
+        const monthlyMrr = annual > 0 && period > 0 ? annual / (period * 12) : 0
+        if (monthlyMrr === 0) return
+
+        const groupName = 'Domains'
+        groupMRR[groupName] = (groupMRR[groupName] || 0) + monthlyMrr
+        totalMRR += monthlyMrr
+
+        if (!groupTotals.has(groupName)) {
+          groupTotals.set(groupName, { total: 0, color: '#06B6D4' })
+        }
+        groupTotals.get(groupName)!.total += monthlyMrr
       })
 
       // Use last month for category coverage calculation

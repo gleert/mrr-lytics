@@ -58,10 +58,11 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get active hosting services + recurring billable items in parallel
+    // Get active hosting services + recurring billable items + domains in parallel
     const [
       { data: hostingServices, error: hostingError },
       { data: billableItems },
+      { data: activeDomains },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -75,6 +76,11 @@ export async function GET(request: NextRequest) {
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
+      supabase
+        .from('whmcs_domains')
+        .select('recurringamount, registrationperiod')
+        .in('instance_id', instanceIds)
+        .eq('status', 'Active'),
     ])
 
     if (hostingError) {
@@ -157,6 +163,23 @@ export async function GET(request: NextRequest) {
         count: existing.count + 1,
         mrr: existing.mrr + monthlyAmount,
         total: existing.total + amount,
+      })
+    })
+
+    // Add active domain recurring revenue (annual recurringamount normalized to monthly)
+    activeDomains?.forEach(domain => {
+      const annual = Number(domain.recurringamount) || 0
+      const period = Number(domain.registrationperiod) || 1
+      const monthlyAmount = annual > 0 && period > 0 ? annual / (period * 12) : 0
+      if (monthlyAmount === 0) return
+      currentMRR += monthlyAmount
+
+      const cycleName = 'Annually'
+      const existing = billingCycleBreakdown.get(cycleName) || { count: 0, mrr: 0, total: 0 }
+      billingCycleBreakdown.set(cycleName, {
+        count: existing.count + 1,
+        mrr: existing.mrr + monthlyAmount,
+        total: existing.total + annual,
       })
     })
 

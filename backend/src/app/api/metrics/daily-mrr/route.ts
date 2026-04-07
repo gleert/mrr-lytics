@@ -64,12 +64,13 @@ export async function GET(request: NextRequest) {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    // Get all active hosting services + billable items in parallel
+    // Get all active hosting services + billable items + domains in parallel
     const [
       { data: hostingServices, error: hostingError },
       { data: billableItems },
       { data: categoryMappings, error: mappingsError },
       { data: billableMappings },
+      { data: domainServices },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -93,6 +94,10 @@ export async function GET(request: NextRequest) {
         .select('whmcs_id, instance_id, categories(id, name, color)')
         .in('instance_id', instanceIds)
         .eq('mapping_type', 'billable_item'),
+      supabase
+        .from('whmcs_domains')
+        .select('recurringamount, registrationperiod, registrationdate, expirydate')
+        .in('instance_id', instanceIds),
     ])
 
     if (hostingError) {
@@ -271,6 +276,24 @@ export async function GET(request: NextRequest) {
       // Add recurring billable items (active items are constant across all days in range)
       billableDailyMRR.forEach(({ monthlyMrr, category }) => {
         categoryTotals[category.name] = (categoryTotals[category.name] || 0) + monthlyMrr
+        totalMRR += monthlyMrr
+      })
+
+      // Add domain recurring revenue active on this date
+      domainServices?.forEach(domain => {
+        const regDate = domain.registrationdate ? new Date(domain.registrationdate) : null
+        const expDate = domain.expirydate ? new Date(domain.expirydate) : null
+        if (!regDate || regDate > currentDate) return
+        if (expDate && expDate < currentDate) return
+
+        const annual = Number(domain.recurringamount) || 0
+        const period = Number(domain.registrationperiod) || 1
+        const monthlyMrr = annual > 0 && period > 0 ? annual / (period * 12) : 0
+        if (monthlyMrr === 0) return
+
+        const catName = 'Domains'
+        categoryColors[catName] = '#06B6D4'
+        categoryTotals[catName] = (categoryTotals[catName] || 0) + monthlyMrr
         totalMRR += monthlyMrr
       })
 

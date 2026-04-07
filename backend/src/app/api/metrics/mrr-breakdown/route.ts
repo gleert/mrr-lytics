@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
       { data: productGroups },
       { data: mappings },
       { data: billableItems },
+      { data: activeDomains },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -104,6 +105,11 @@ export async function GET(request: NextRequest) {
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
+      supabase
+        .from('whmcs_domains')
+        .select('recurringamount, registrationperiod')
+        .in('instance_id', instanceIds)
+        .eq('status', 'Active'),
     ])
 
     if (hostingError) {
@@ -218,6 +224,25 @@ export async function GET(request: NextRequest) {
         count: existing.count + 1,
         color: existing.color || resolvedColor,
         hasCategory: existing.hasCategory || hasCategory,
+      })
+      totalMRR += monthlyAmount
+    })
+
+    // --- Aggregate domain MRR as "Domains" group ---
+    activeDomains?.forEach(domain => {
+      const annual = Number(domain.recurringamount) || 0
+      const period = Number(domain.registrationperiod) || 1
+      const monthlyAmount = annual > 0 && period > 0 ? annual / (period * 12) : 0
+      if (monthlyAmount === 0) return
+
+      const resolvedName = 'Domains'
+      const resolvedColor = '#06B6D4' // Cyan
+      const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory: false }
+      groupTotals.set(resolvedName, {
+        mrr: existing.mrr + monthlyAmount,
+        count: existing.count + 1,
+        color: existing.color || resolvedColor,
+        hasCategory: false,
       })
       totalMRR += monthlyAmount
     })
