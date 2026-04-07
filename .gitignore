@@ -40,3 +40,5 @@ yarn-error.log*
 
 # OpenCode config (contains MCP auth)
 opencode.json
+
+.vercel

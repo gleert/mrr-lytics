@@ -277,8 +277,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Cap growth rate to reasonable bounds
-    growthRate = Math.max(-50, Math.min(200, growthRate))
+    // Cap growth rate to realistic bounds for a recurring-revenue business.
+    // Invoice buckets are noisy (lumpy payments), so raw growth rates are unreliable.
+    // ±20% per period is already aggressive for an established hosting/SaaS company.
+    growthRate = Math.max(-20, Math.min(20, growthRate))
 
     // Project next period MRR based on current MRR and observed growth
     const projectedMRR = currentMRR * (1 + growthRate / 100)
@@ -303,8 +305,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Use stdDev for scenario spread, with minimum spread of 5%
-    const scenarioSpread = Math.max(5, Math.min(25, growthStdDev))
+    // Use stdDev for scenario spread, capped at ±5% to keep scenarios realistic.
+    // Invoice noise can push stdDev very high; ±5% on top of the baseline is sufficient.
+    const scenarioSpread = Math.max(2, Math.min(5, growthStdDev))
     
     // Pessimistic: baseline growth minus spread — always <= baseline
     const pessimisticGrowth = growthRate - scenarioSpread
