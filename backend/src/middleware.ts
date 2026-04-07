@@ -32,7 +32,7 @@ async function validateImpersonationToken(token: string): Promise<{
 const PUBLIC_PATHS = ['/api/health', '/api/contact', '/api/module/version']
 
 // Paths that require admin key instead of tenant key
-const ADMIN_PATHS = ['/api/tenants']
+const ADMIN_PATHS = ['/api/tenants', '/api/sys']
 
 // Paths that use cron secret
 const CRON_PATHS = ['/api/cron']
