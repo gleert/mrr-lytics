@@ -20,7 +20,7 @@ if (!defined('WHMCS')) {
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
-define('MRRLYTICS_VERSION', '1.3.2');
+define('MRRLYTICS_VERSION', '1.3.3');
 define('MRRLYTICS_VERSION_CHECK_URL', 'https://app.mrrlytics.com/api/module/version');
 
 /**
@@ -436,7 +436,7 @@ function mrrlytics_config()
                 'FriendlyName' => 'Rate Limit',
                 'Type'         => 'text',
                 'Size'         => 5,
-                'Default'      => '60',
+                'Default'      => '300',
                 'Description'  => 'Requests per minute per IP.',
             ],
         ],
@@ -600,7 +600,7 @@ function mrrlytics_output($vars)
         $apiKey = '';
     }
     
-    $rateLimit = isset($vars['RATE_LIMIT']) ? $vars['RATE_LIMIT'] : '60';
+    $rateLimit = isset($vars['RATE_LIMIT']) ? $vars['RATE_LIMIT'] : '300';
 
     // Update check banner
     $updateInfo = mrrlytics_checkForUpdate();

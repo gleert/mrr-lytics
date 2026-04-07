@@ -434,7 +434,7 @@ try {
     // 3. Check rate limit
     $clientIp = getClientIp();
     $rateLimitSetting = getAddonSetting('RATE_LIMIT');
-    $rateLimit = $rateLimitSetting ? (int) $rateLimitSetting : 60;
+    $rateLimit = $rateLimitSetting ? (int) $rateLimitSetting : 300;
     $rateLimitResult = checkRateLimit($clientIp, $rateLimit);
     
     // Add rate limit headers
