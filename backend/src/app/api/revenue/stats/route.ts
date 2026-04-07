@@ -196,10 +196,11 @@ export async function GET(request: NextRequest) {
       ? Math.round((recurringRevenue / totalRevenue) * 100) 
       : 0
 
-    // Get current MRR from active services + billable items
+    // Get current MRR from active services + billable items + domains
     const [
       { data: services, error: servicesError },
       { data: billableItemsMrr },
+      { data: activeDomains },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -213,6 +214,11 @@ export async function GET(request: NextRequest) {
         .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
+      supabase
+        .from('whmcs_domains')
+        .select('recurringamount, registrationperiod')
+        .in('instance_id', instanceIds)
+        .eq('status', 'Active'),
     ])
 
     if (servicesError) {
@@ -233,6 +239,15 @@ export async function GET(request: NextRequest) {
     )
     activeBillable.forEach(item => {
       mrr += normalizeToMonthly(Number(item.amount) || 0, item.recurcycle || '')
+    })
+
+    // Add active domain recurring revenue (annual recurringamount normalized to monthly)
+    activeDomains?.forEach(domain => {
+      const annual = Number(domain.recurringamount) || 0
+      const period = Number(domain.registrationperiod) || 1
+      if (annual > 0 && period > 0) {
+        mrr += annual / (period * 12)
+      }
     })
 
     const arr = mrr * 12
