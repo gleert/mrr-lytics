@@ -467,6 +467,7 @@ try {
     }
     
     // 5. Load and execute the data extractor
+    require_once __DIR__ . '/lib/version.php';
     require_once __DIR__ . '/lib/DataExtractor.php';
     
     $extractor = new \MRRlytics\DataExtractor($limit, $offset, $since, $debugMode);

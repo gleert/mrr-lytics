@@ -20,7 +20,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 class DataExtractor
 {
-    const VERSION = '1.3.2';
+    // Version is defined in lib/version.php (single source of truth)
+    // Use MRRLYTICS_VERSION constant directly where needed.
 
     /**
      * Record limit per table
