@@ -260,6 +260,7 @@ export async function GET(request: NextRequest) {
       const dataPointBonus = Math.min(30, revenueValues.length * 5)
       const periodBonus = Math.min(20, Math.floor(days / 30) * 5)
       confidenceLevel = Math.min(95, 30 + dataPointBonus + periodBonus)
+      // Scale confidence down proportionally to data density (applied after caps below)
       
       // Adjust confidence based on revenue consistency
       if (revenueValues.length >= 3) {
@@ -282,11 +283,17 @@ export async function GET(request: NextRequest) {
     // ±20% per period is already aggressive for an established hosting/SaaS company.
     growthRate = Math.max(-20, Math.min(20, growthRate))
 
-    // Dampen growth rate when data is sparse — projection should be flat with few points.
+    // Dampen growth rate when data is sparse — projection should be near-flat with few points.
+    // Use quadratic dampening so the curve flattens quickly: at 50% of required points,
+    // growth is only 25% of its value; at 7/30 daily points it drops to ~5%.
     // Thresholds: daily needs 30+, weekly needs 12+, monthly needs 6+.
     const sufficientPoints = bucketFormat === 'monthly' ? 6 : bucketFormat === 'weekly' ? 12 : 30
     const dataConfidence = Math.min(1, revenueValues.length / sufficientPoints)
-    growthRate = growthRate * dataConfidence
+    const dampingFactor = Math.pow(dataConfidence, 2) // quadratic — aggressive flattening
+    growthRate = growthRate * dampingFactor
+
+    // Scale confidence level down with the same factor — low data → low confidence
+    confidenceLevel = Math.max(5, Math.round(confidenceLevel * dampingFactor))
 
     // Project next period MRR based on current MRR and observed growth
     const projectedMRR = currentMRR * (1 + growthRate / 100)
@@ -312,8 +319,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Use stdDev for scenario spread, capped at ±5% to keep scenarios realistic.
-    // Invoice noise can push stdDev very high; ±5% on top of the baseline is sufficient.
-    const scenarioSpread = Math.max(2, Math.min(5, growthStdDev))
+    // Also dampen the spread proportionally to data confidence so scenarios converge
+    // toward baseline when data is sparse.
+    const scenarioSpread = Math.max(1, Math.min(5, growthStdDev)) * dataConfidence
     
     // Pessimistic: baseline growth minus spread — always <= baseline
     const pessimisticGrowth = growthRate - scenarioSpread
