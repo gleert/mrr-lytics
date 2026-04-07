@@ -363,7 +363,7 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
   // Get invoice summary with date filter (across all instances)
   const { data: invoices } = await supabase
     .from('whmcs_invoices')
-    .select('status, total')
+    .select('status, subtotal')
     .in('instance_id', instanceIds)
     .gte('date', startDate.toISOString().split('T')[0])
     .lte('date', endDate.toISOString().split('T')[0])
@@ -377,9 +377,9 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
     invoices: {
       paid_count: paidInvoices.length,
       unpaid_count: unpaidInvoices.length,
-      total_paid: paidInvoices.reduce((sum, i) => sum + Number(i.total), 0),
-      total_unpaid: unpaidInvoices.reduce((sum, i) => sum + Number(i.total), 0),
-      revenue_last_30_days: paidInvoices.reduce((sum, i) => sum + Number(i.total), 0),
+      total_paid: paidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
+      total_unpaid: unpaidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
+      revenue_last_30_days: paidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
     },
   }
 }

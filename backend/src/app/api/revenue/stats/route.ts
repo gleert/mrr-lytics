@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     // Get all invoices in period (Paid + Unpaid)
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('whmcs_id, total, subtotal, status, datepaid, date')
+      .select('whmcs_id, subtotal, status, datepaid, date')
       .in('instance_id', instanceIds)
       .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
       .gte('date', startDate.toISOString())
