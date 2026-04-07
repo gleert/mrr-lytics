@@ -778,6 +778,14 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v240: {
+          domainMrr: 'Los ingresos recurrentes de dominios ahora se incluyen en el MRR/ARR en todos los módulos: KPIs de ingresos, desglose de MRR, tendencia de MRR, MRR diario, variación de MRR y previsiones',
+          revenueBreakdownCap: 'El desglose de ingresos ahora muestra hasta 15 categorías (14 + Otros)',
+          mrrTrendTooltip: 'El tooltip del gráfico de tendencia MRR ahora muestra el MRR total comprometido fijo al fondo con separador, coherente con el gráfico de MRR diario',
+          clientDomainMrr: 'La columna MRR del listado de clientes ahora incluye los ingresos recurrentes de dominios en el MRR actual de cada cliente',
+          forecastingDampening: 'Las proyecciones de previsiones usan amortiguamiento cuadrático cuando hay pocos datos — curva casi plana con pocos puntos, escalando hasta confianza completa con 30+ puntos diarios',
+          forecastingText: 'Corregido el texto de "¿Cómo se calcula?" para indicar correctamente que se usan todas las facturas emitidas (pagadas, pendientes y en espera de pago), no solo las pagadas',
+        },
         v235: {
           cronRetryAfterError: 'El cron de sincronización ahora reintenta automáticamente las instancias que fallaron previamente (p. ej. timeout 504 de WHMCS) en lugar de quedar bloqueadas indefinidamente',
         },

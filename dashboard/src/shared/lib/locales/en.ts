@@ -781,6 +781,14 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v240: {
+          domainMrr: 'Domain recurring revenue now included in MRR/ARR across all metric modules: Revenue KPIs, MRR breakdown, MRR trend, daily MRR, MRR movement, and forecasting',
+          revenueBreakdownCap: 'Revenue breakdown expanded to show up to 15 categories (14 + Others)',
+          mrrTrendTooltip: 'MRR trend chart tooltip now shows the total committed MRR pinned at the bottom with a separator, consistent with the daily MRR chart',
+          clientDomainMrr: 'Client list MRR column now includes recurring domain revenue in each client\'s current MRR',
+          forecastingDampening: 'Forecasting projections now use quadratic dampening when data is sparse — near-flat curve with few data points, scaling up to full confidence with 30+ daily points',
+          forecastingText: 'Fixed "How is this calculated?" text to correctly state all invoiced amounts are used (paid, unpaid and pending), not only paid invoices',
+        },
         v235: {
           cronRetryAfterError: 'Cron sync now automatically retries instances that previously failed (e.g. WHMCS 504 timeout) instead of leaving them permanently stuck',
         },

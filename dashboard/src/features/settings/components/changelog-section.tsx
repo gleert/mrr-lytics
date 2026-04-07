@@ -24,6 +24,18 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.4.0',
+    date: '2026-04-07',
+    changes: [
+      { type: 'feature',     text: 'changelog.entries.v240.domainMrr' },
+      { type: 'improvement', text: 'changelog.entries.v240.revenueBreakdownCap' },
+      { type: 'improvement', text: 'changelog.entries.v240.mrrTrendTooltip' },
+      { type: 'improvement', text: 'changelog.entries.v240.clientDomainMrr' },
+      { type: 'improvement', text: 'changelog.entries.v240.forecastingDampening' },
+      { type: 'fix',         text: 'changelog.entries.v240.forecastingText' },
+    ],
+  },
+  {
     version: '2.3.5',
     date: '2026-04-07',
     changes: [
