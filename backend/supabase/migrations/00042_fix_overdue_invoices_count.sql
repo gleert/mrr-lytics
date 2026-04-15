@@ -81,10 +81,23 @@ CREATE UNIQUE INDEX idx_mv_mrr_cycle ON mv_mrr_by_cycle(instance_id, billingcycl
 -- ────────────────────────────────────────────────────────────────────────
 -- Bug B fix: Recreate populate_metrics_daily with correct Unpaid/Overdue
 -- filter. Body is copied verbatim from migration 00017 except for the two
--- invoice count blocks.
+-- invoice count blocks. Also adds a `p_skip_refresh` parameter so the
+-- backfill loop below can avoid refreshing materialized views on every
+-- call (per-call refresh exhausts max_locks_per_transaction on large
+-- historical backfills).
+--
+-- DROP is required because we are changing the parameter list (adding
+-- p_skip_refresh), which CREATE OR REPLACE does not allow.
 -- ────────────────────────────────────────────────────────────────────────
 
-CREATE OR REPLACE FUNCTION populate_metrics_daily(p_instance_id UUID, p_date DATE DEFAULT CURRENT_DATE)
+DROP FUNCTION IF EXISTS populate_metrics_daily(UUID, DATE);
+DROP FUNCTION IF EXISTS populate_metrics_daily(UUID, DATE, BOOLEAN);
+
+CREATE OR REPLACE FUNCTION populate_metrics_daily(
+    p_instance_id UUID,
+    p_date DATE DEFAULT CURRENT_DATE,
+    p_skip_refresh BOOLEAN DEFAULT FALSE
+)
 RETURNS UUID AS $$
 DECLARE
     v_mrr DECIMAL(12,2);
@@ -116,12 +129,17 @@ DECLARE
     v_top_products JSONB;
     v_result_id UUID;
 BEGIN
-    -- Refresh materialized views first
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_current;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_by_cycle;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_client_summary;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_invoice_summary;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_revenue_by_product;
+    -- Refresh materialized views first. Skipped when called inside a
+    -- historical backfill loop — the caller is responsible for refreshing
+    -- once before the loop, otherwise the per-call refreshes quickly
+    -- exhaust max_locks_per_transaction on large date ranges.
+    IF NOT p_skip_refresh THEN
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_current;
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_by_cycle;
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_client_summary;
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_invoice_summary;
+        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_revenue_by_product;
+    END IF;
 
     -- Get MRR/ARR from materialized view
     SELECT COALESCE(mrr, 0), COALESCE(arr, 0), COALESCE(active_services, 0)
@@ -335,6 +353,17 @@ $$ LANGUAGE plpgsql;
 
 -- Full historical backfill: for every active instance, repopulate metrics_daily
 -- from the earliest date we have data for up to today.
+--
+-- Materialized views are refreshed ONCE up front; each populate_metrics_daily
+-- call inside the loop uses p_skip_refresh=TRUE so the transaction does not
+-- accumulate thousands of refresh locks and blow past max_locks_per_transaction.
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_current;
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_by_cycle;
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_client_summary;
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_invoice_summary;
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_revenue_by_product;
+
 DO $$
 DECLARE
     r RECORD;
@@ -364,7 +393,7 @@ BEGIN
         FOR d IN
             SELECT generate_series(min_date, CURRENT_DATE, '1 day'::interval)::DATE
         LOOP
-            PERFORM populate_metrics_daily(r.id, d);
+            PERFORM populate_metrics_daily(r.id, d, TRUE);
         END LOOP;
     END LOOP;
 END $$;
