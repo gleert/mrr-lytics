@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
+import {
+  fetchRecurringBillableSet,
+  isRecurringItem,
+} from '@/lib/metrics/revenue-classification'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,12 +126,10 @@ export async function GET(request: NextRequest) {
       itemsQuery = itemsQuery.lte('amount', amountMax)
     }
 
-    // Source filter (recurring vs onetime)
-    if (source === 'recurring') {
-      itemsQuery = itemsQuery.in('type', ['Hosting', 'Domain', 'DomainRegister', 'DomainTransfer'])
-    } else if (source === 'onetime') {
-      itemsQuery = itemsQuery.in('type', ['Item', 'Addon', 'PromoHosting', 'PromoDomain', 'Invoice', 'Late Fee', 'Setup'])
-    }
+    // Source filter is applied client-side after we cross-reference
+    // whmcs_billable_items (type='Item' + invoice_action=4 → recurring).
+    // Doing it DB-side would either miss billable items or require a
+    // multi-join query.
 
     // Apply sorting
     if (sortBy === 'amount') {
@@ -360,6 +362,24 @@ export async function GET(request: NextRequest) {
     // Apply category filter (client-side since categories come from mapping)
     if (category) {
       transactions = transactions.filter(t => t.category === category)
+    }
+
+    // Apply source filter (client-side) using the unified recurring-item
+    // classifier: hardcoded recurring types + cross-reference against
+    // whmcs_billable_items (invoice_action=4) for type='Item' rows.
+    if (source === 'recurring' || source === 'onetime') {
+      const recurringBillableSet = await fetchRecurringBillableSet(supabase, instanceIds)
+      const itemClassification = new Map<string, boolean>()
+      for (const item of items) {
+        itemClassification.set(
+          item.id,
+          isRecurringItem(item.type, item.relid, item.instance_id, recurringBillableSet),
+        )
+      }
+      transactions = transactions.filter(t => {
+        const isRec = itemClassification.get(t.id) ?? false
+        return source === 'recurring' ? isRec : !isRec
+      })
     }
 
     // Calculate total after all filters

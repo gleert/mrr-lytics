@@ -5,6 +5,10 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import {
+  fetchRecurringBillableSet,
+  isRecurringItem,
+} from '@/lib/metrics/revenue-classification'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,18 +85,27 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Load recurring billable item set once for the period
+    const recurringBillableSet = await fetchRecurringBillableSet(supabase, instanceIds)
+
     // Get invoice items for categorization
     const invoiceWhmcsIds = invoices.map(i => i.whmcs_id)
-    
+
     // Process in batches
     const BATCH_SIZE = 500
-    const allItems: { invoice_id: number; type: string | null; amount: number; description: string | null }[] = []
-    
+    const allItems: {
+      invoice_id: number
+      type: string | null
+      relid: number | null
+      instance_id: string
+      amount: number
+    }[] = []
+
     for (let i = 0; i < invoiceWhmcsIds.length; i += BATCH_SIZE) {
       const batch = invoiceWhmcsIds.slice(i, i + BATCH_SIZE)
       const { data: batchItems, error: itemsError } = await supabase
         .from('whmcs_invoice_items')
-        .select('invoice_id, type, amount, description')
+        .select('invoice_id, type, relid, instance_id, amount')
         .in('instance_id', instanceIds)
         .in('invoice_id', batch)
 
@@ -100,39 +113,24 @@ export async function GET(request: NextRequest) {
         console.error('Invoice items query error:', itemsError)
         break
       }
-      
+
       if (batchItems) {
         allItems.push(...batchItems.map(item => ({
           ...item,
-          amount: Number(item.amount) || 0
+          amount: Number(item.amount) || 0,
         })))
       }
     }
-
-    // Build a map of invoice_id -> { recurring, onetime }
-    const recurringTypes = ['Hosting', 'DomainRenew', 'Domain']
-    const onetimeTypes = ['Setup', 'Addon', 'DomainRegister', 'PromoHosting', 'Item']
 
     const invoiceRevenue = new Map<number, { recurring: number; onetime: number }>()
 
     allItems.forEach(item => {
       const current = invoiceRevenue.get(item.invoice_id) || { recurring: 0, onetime: 0 }
-      const type = item.type || ''
-      
-      if (recurringTypes.includes(type)) {
+      if (isRecurringItem(item.type, item.relid, item.instance_id, recurringBillableSet)) {
         current.recurring += item.amount
-      } else if (onetimeTypes.includes(type)) {
-        current.onetime += item.amount
       } else {
-        // Check description for hints
-        const desc = (item.description || '').toLowerCase()
-        if (desc.includes('renew') || desc.includes('hosting') || desc.includes('monthly') || desc.includes('annual')) {
-          current.recurring += item.amount
-        } else {
-          current.onetime += item.amount
-        }
+        current.onetime += item.amount
       }
-      
       invoiceRevenue.set(item.invoice_id, current)
     })
 

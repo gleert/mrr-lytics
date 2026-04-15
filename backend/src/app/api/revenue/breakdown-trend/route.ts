@@ -5,6 +5,10 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import {
+  fetchRecurringBillableSet,
+  isRecurringItem,
+} from '@/lib/metrics/revenue-classification'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,9 +94,10 @@ export async function GET(request: NextRequest) {
     const BATCH_SIZE = 500
     const allItems: { invoice_id: number; type: string; amount: number; relid: number | null; instance_id: string }[] = []
 
-    // Fetch items (sequential batches) + category maps (parallel)
-    const [categoryMaps] = await Promise.all([
+    // Fetch items (sequential batches) + category maps + recurring billable set (parallel)
+    const [categoryMaps, recurringBillableSet] = await Promise.all([
       buildCategoryMaps(supabase, instanceIds),
+      fetchRecurringBillableSet(supabase, instanceIds),
       (async () => {
         for (let i = 0; i < invoiceWhmcsIds.length; i += BATCH_SIZE) {
           const batch = invoiceWhmcsIds.slice(i, i + BATCH_SIZE)
@@ -116,7 +121,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // Build per-item resolver based on groupBy
-    const resolver = buildResolver(groupBy, categoryMaps)
+    const resolver = buildResolver(groupBy, categoryMaps, recurringBillableSet)
 
     // Build a map: invoice_id → Map<groupName, {revenue, hasCategory}>
     const invoiceGroups = new Map<number, Map<string, { revenue: number; hasCategory: boolean }>>()
@@ -317,7 +322,8 @@ interface ResolvedGroup { name: string; hasCategory: boolean }
 
 function buildResolver(
   groupBy: 'category' | 'source' | 'type',
-  maps: CategoryMaps
+  maps: CategoryMaps,
+  recurringBillableSet: Set<string>,
 ): (item: { type: string; relid: number | null; instance_id: string }) => ResolvedGroup {
 
   if (groupBy === 'source') {
@@ -331,8 +337,12 @@ function buildResolver(
   }
 
   if (groupBy === 'type') {
-    const recurringTypes = ['Hosting', 'DomainRenew', 'Domain']
-    return (item) => ({ name: recurringTypes.includes(item.type) ? 'Recurring' : 'One-time', hasCategory: false })
+    return (item) => ({
+      name: isRecurringItem(item.type, item.relid, item.instance_id, recurringBillableSet)
+        ? 'Recurring'
+        : 'One-time',
+      hasCategory: false,
+    })
   }
 
   // groupBy === 'category'

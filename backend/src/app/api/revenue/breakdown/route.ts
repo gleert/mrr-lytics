@@ -5,6 +5,10 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import {
+  fetchRecurringBillableSet,
+  isRecurringItem,
+} from '@/lib/metrics/revenue-classification'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,15 +83,21 @@ export async function GET(request: NextRequest) {
 
     // Get invoice items with related data
     // Process in batches if too many invoices to avoid query limits
-    type InvoiceItem = { type: string; amount: number; description: string; relid: number | null }
+    type InvoiceItem = {
+      type: string
+      amount: number
+      description: string
+      relid: number | null
+      instance_id: string
+    }
     let invoiceItems: InvoiceItem[] = []
     const BATCH_SIZE = 500
-    
+
     for (let i = 0; i < invoiceWhmcsIds.length; i += BATCH_SIZE) {
       const batch = invoiceWhmcsIds.slice(i, i + BATCH_SIZE)
       const { data: batchItems, error: itemsError } = await supabase
         .from('whmcs_invoice_items')
-        .select('type, amount, description, relid')
+        .select('type, amount, description, relid, instance_id')
         .in('instance_id', instanceIds)
         .in('invoice_id', batch)
 
@@ -95,7 +105,7 @@ export async function GET(request: NextRequest) {
         console.error('Invoice items query error:', itemsError)
         throw new Error('Failed to fetch invoice items')
       }
-      
+
       if (batchItems) {
         // Convert nullable fields to non-null with defaults
         const normalized = batchItems.map(item => ({
@@ -103,10 +113,14 @@ export async function GET(request: NextRequest) {
           amount: Number(item.amount) || 0,
           description: item.description || '',
           relid: item.relid,
+          instance_id: item.instance_id,
         }))
         invoiceItems.push(...normalized)
       }
     }
+
+    // Load recurring billable item set once — reused for getBreakdownByType
+    const recurringBillableSet = await fetchRecurringBillableSet(supabase, instanceIds)
 
     let breakdown: { name: string; value: number; color?: string }[] = []
 
@@ -118,7 +132,7 @@ export async function GET(request: NextRequest) {
         breakdown = getBreakdownBySource(invoiceItems || [])
         break
       case 'type':
-        breakdown = getBreakdownByType(invoiceItems || [])
+        breakdown = getBreakdownByType(invoiceItems || [], recurringBillableSet)
         break
       default:
         breakdown = await getBreakdownByCategory(supabase, invoiceItems || [], instanceIds)
@@ -343,16 +357,21 @@ function getBreakdownBySource(
  * Group revenue by type (Recurring vs One-time)
  */
 function getBreakdownByType(
-  items: Array<{ type: string; amount: number; description: string; relid: number | null }>
+  items: Array<{
+    type: string
+    amount: number
+    description: string
+    relid: number | null
+    instance_id: string
+  }>,
+  recurringBillableSet: Set<string>,
 ): { name: string; value: number }[] {
   let recurring = 0
   let onetime = 0
 
-  const recurringTypes = ['Hosting', 'DomainRenew', 'Domain']
-
   items.forEach(item => {
     const amount = Number(item.amount) || 0
-    if (recurringTypes.includes(item.type)) {
+    if (isRecurringItem(item.type, item.relid, item.instance_id, recurringBillableSet)) {
       recurring += amount
     } else {
       onetime += amount
