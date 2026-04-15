@@ -366,6 +366,7 @@ export const es = {
         category: 'Categoría',
         product: 'Producto',
         type: 'Tipo',
+        source: 'Fuente',
         amount: 'Importe',
         invoiceTotal: 'Total Fact.',
         status: 'Estado',
