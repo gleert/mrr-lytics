@@ -103,9 +103,15 @@ export async function GET(request: NextRequest) {
       .select('id, instance_id, invoice_id, client_id, type, relid, description, amount', { count: 'exact' })
       .in('instance_id', instanceIds)
 
-    // Apply filters
+    // Apply filters. 'Other' is a synthetic label for NULL or empty type —
+    // the transactions list renders `item.type || 'Other'`, so the filter
+    // has to mirror that or selecting 'Other' would return zero rows.
     if (type) {
-      itemsQuery = itemsQuery.eq('type', type)
+      if (type === 'Other') {
+        itemsQuery = itemsQuery.or('type.is.null,type.eq.')
+      } else {
+        itemsQuery = itemsQuery.eq('type', type)
+      }
     }
 
     if (amountMin !== null) {
@@ -362,15 +368,24 @@ export async function GET(request: NextRequest) {
     // Apply pagination (client-side)
     const paginatedTransactions = transactions.slice(offset, offset + limit)
 
-    // Get unique values for filter options
+    // Get unique values for filter options. Include NULL/empty rows so we
+    // can surface 'Other' as a selectable filter, mirroring the column
+    // render (`item.type || 'Other'`).
     const { data: typeOptions } = await supabase
       .from('whmcs_invoice_items')
       .select('type')
       .in('instance_id', instanceIds)
-      .not('type', 'is', null)
-      .limit(100)
+      .limit(5000)
 
-    const uniqueTypes = [...new Set(typeOptions?.map(t => t.type).filter(Boolean) || [])]
+    const uniqueTypes = [...new Set(
+      (typeOptions || [])
+        .map(t => t.type)
+        .filter((t): t is string => typeof t === 'string' && t.length > 0)
+    )]
+
+    if ((typeOptions || []).some(t => !t.type)) {
+      uniqueTypes.push('Other')
+    }
 
     const { data: allCategories } = await supabase
       .from('categories')
