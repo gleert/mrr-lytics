@@ -385,8 +385,9 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
     .lte('date', endDate.toISOString().split('T')[0])
 
   // Calculate invoice metrics from filtered data
+  // WHMCS transitions Unpaid → Overdue when duedate passes; both count as unpaid.
   const paidInvoices = invoices?.filter(i => i.status === 'Paid') || []
-  const unpaidInvoices = invoices?.filter(i => i.status === 'Unpaid') || []
+  const unpaidInvoices = invoices?.filter(i => i.status === 'Unpaid' || i.status === 'Overdue') || []
 
   return {
     clients: clientSummary,

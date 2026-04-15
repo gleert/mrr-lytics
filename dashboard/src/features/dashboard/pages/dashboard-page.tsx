@@ -182,7 +182,7 @@ export function DashboardPage() {
         />
         <KPICard
           title={t('dashboard.domains')}
-          value={metrics?.domains?.total ?? 0}
+          value={metrics?.domains?.active ?? 0}
           loading={metricsLoading}
           icon={<Icon name="language" size="2xl" />}
           accentColor="info"
