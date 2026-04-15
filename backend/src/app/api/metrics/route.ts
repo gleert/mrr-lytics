@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
-import { calculateMrrMultiInstance, calculateChurnMultiInstance, calculateRevenueByProductMultiInstance } from '@/lib/metrics'
+import { calculateMrrLive, calculateChurnMultiInstance, calculateRevenueByProductMultiInstance } from '@/lib/metrics'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
@@ -62,6 +62,15 @@ export async function GET(request: NextRequest) {
       () => getMetricsFromDaily(instanceIds)
     )
 
+    // Live MRR from raw tables — single source of truth, used by both
+    // /api/metrics and /api/metrics/mrr-breakdown so the KPI card and the
+    // breakdown bar can never disagree. metrics_daily.mrr is frozen at the
+    // last sync, which caused an 82.55 € drift vs. mrr-breakdown.
+    const liveMrr = await cached(
+      `live-mrr:${instanceIds.sort().join(',')}`, 60, // 1 min TTL
+      () => calculateMrrLive(instanceIds)
+    )
+
     // Get previous period metrics for comparison (same period last month)
     const previousMetrics = await cached(
       `prev:${cacheKey}`, 300, // 5 min TTL
@@ -75,23 +84,23 @@ export async function GET(request: NextRequest) {
     }
     
     if (dailyMetrics) {
-      // Fast path: use pre-calculated metrics
+      // Fast path: use pre-calculated metrics for non-MRR fields, live for MRR
       const changes = previousMetrics ? {
-        mrr_change: calculateChange(dailyMetrics.mrr, previousMetrics.mrr),
-        arr_change: calculateChange(dailyMetrics.arr, previousMetrics.arr),
+        mrr_change: calculateChange(liveMrr.total, previousMetrics.mrr),
+        arr_change: calculateChange(liveMrr.arr, previousMetrics.arr),
         active_clients_change: calculateChange(dailyMetrics.active_clients, previousMetrics.active_clients),
-        churn_rate_change: previousMetrics.churn_rate !== undefined 
+        churn_rate_change: previousMetrics.churn_rate !== undefined
           ? Math.round((dailyMetrics.churn_rate - previousMetrics.churn_rate) * 100) / 100
           : undefined,
       } : {}
-      
+
       return success({
         mrr: {
-          mrr: dailyMetrics.mrr,
-          arr: dailyMetrics.arr,
-          active_services: dailyMetrics.active_services,
-          mrr_by_cycle: dailyMetrics.mrr_by_cycle,
-          calculated_at: dailyMetrics.updated_at,
+          mrr: liveMrr.total,
+          arr: liveMrr.arr,
+          active_services: liveMrr.active_services,
+          mrr_by_cycle: liveMrr.mrr_by_cycle,
+          calculated_at: liveMrr.calculated_at,
           mrr_change: changes.mrr_change,
           arr_change: changes.arr_change,
         },
@@ -126,7 +135,9 @@ export async function GET(request: NextRequest) {
           active: dailyMetrics.active_domains,
           expiring_30d: dailyMetrics.expiring_domains_30d,
         },
-        arpu: dailyMetrics.arpu,
+        arpu: dailyMetrics.active_clients > 0
+          ? Math.round((liveMrr.total / dailyMetrics.active_clients) * 100) / 100
+          : 0,
         period: {
           type: period,
           start_date: startDate.toISOString(),
@@ -137,16 +148,21 @@ export async function GET(request: NextRequest) {
       }, { instance_ids: instanceIds })
     }
 
-    // Fallback: Calculate metrics from materialized views
-    const [mrr, churn, revenueByProduct, clientsAndInvoices] = await Promise.all([
-      calculateMrrMultiInstance(instanceIds),
+    // Fallback: Calculate metrics from live helper + materialized views
+    const [churn, revenueByProduct, clientsAndInvoices] = await Promise.all([
       calculateChurnMultiInstance(instanceIds, days),
       calculateRevenueByProductMultiInstance(instanceIds),
       getClientAndInvoiceSummaryMultiInstance(instanceIds, startDate, endDate),
     ])
 
     return success({
-      mrr,
+      mrr: {
+        mrr: liveMrr.total,
+        arr: liveMrr.arr,
+        active_services: liveMrr.active_services,
+        mrr_by_cycle: liveMrr.mrr_by_cycle,
+        calculated_at: liveMrr.calculated_at,
+      },
       churn,
       revenue_by_product: revenueByProduct,
       clients: clientsAndInvoices.clients,

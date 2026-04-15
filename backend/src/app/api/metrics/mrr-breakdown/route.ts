@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
+import { calculateMrrLive } from '@/lib/metrics'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 
@@ -29,7 +30,11 @@ const GROUP_COLORS = [
 ]
 
 /**
- * GET /api/metrics/mrr-breakdown - Get MRR breakdown by category (with fallback to product group)
+ * GET /api/metrics/mrr-breakdown - MRR breakdown by category.
+ *
+ * Uses calculateMrrLive() as the single source of truth for the numbers,
+ * then layers category mappings on top so total_mrr equals the main
+ * /api/metrics card to the cent.
  *
  * Priority for grouping each active service:
  *   1. Category mapped directly to the product
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     let instanceIds: string[] = []
     if (instanceIdsParam) {
-      instanceIds = instanceIdsParam.split(',').filter(id => id.trim())
+      instanceIds = instanceIdsParam.split(',').filter((id) => id.trim())
     } else if (instanceIdParam) {
       instanceIds = [instanceIdParam]
     }
@@ -72,20 +77,13 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // --- Fetch all needed data in parallel ---
     const [
-      { data: hostingServices, error: hostingError },
+      liveMrr,
       { data: products },
       { data: productGroups },
       { data: mappings },
-      { data: billableItems },
-      { data: activeDomains },
     ] = await Promise.all([
-      supabase
-        .from('whmcs_hosting')
-        .select('instance_id, packageid, amount, billingcycle')
-        .in('instance_id', instanceIds)
-        .eq('domainstatus', 'Active'),
+      calculateMrrLive(instanceIds),
       supabase
         .from('whmcs_products')
         .select('whmcs_id, instance_id, gid, name')
@@ -98,36 +96,19 @@ export async function GET(request: NextRequest) {
         .from('category_mappings')
         .select('instance_id, mapping_type, whmcs_id, categories(id, name, color)')
         .in('instance_id', instanceIds),
-      supabase
-        .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
-        .in('instance_id', instanceIds)
-        .eq('invoice_action', 4)
-        .gt('invoicecount', 0)
-        .limit(10000),
-      supabase
-        .from('whmcs_domains')
-        .select('recurringamount, registrationperiod')
-        .in('instance_id', instanceIds)
-        .eq('status', 'Active'),
     ])
-
-    if (hostingError) {
-      console.error('Hosting query error:', hostingError)
-      throw new Error('Failed to fetch hosting data')
-    }
 
     // --- Build lookup maps ---
 
     // product group id per product: `instance:productWhmcsId` → groupWhmcsId
     const productToGroupMap = new Map<string, number>()
-    products?.forEach(p => {
+    products?.forEach((p) => {
       productToGroupMap.set(`${p.instance_id}:${p.whmcs_id}`, p.gid)
     })
 
     // product group name: `instance:groupWhmcsId` → name
     const groupNameMap = new Map<string, string>()
-    productGroups?.forEach(g => {
+    productGroups?.forEach((g) => {
       groupNameMap.set(`${g.instance_id}:${g.whmcs_id}`, g.name || 'Unknown Group')
     })
 
@@ -135,7 +116,6 @@ export async function GET(request: NextRequest) {
     const productCategoryMap = new Map<string, { name: string; color: string }>()
     // category per product group: `instance:groupWhmcsId` → { name, color }
     const groupCategoryMap = new Map<string, { name: string; color: string }>()
-
     // category per billable item: `instance:whmcsId` → { name, color }
     const billableCategoryMap = new Map<string, { name: string; color: string }>()
 
@@ -152,30 +132,12 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // --- Monthly amount helper (matches mv_mrr_current view exactly) ---
-    const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const map: Record<string, number> = {
-        monthly: 1, months: 1, month: 1,
-        quarterly: 3,
-        'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12, years: 12, year: 12,
-        biennially: 24, triennially: 36,
-      }
-      const divisor = map[cycle?.toLowerCase()]
-      if (!divisor) return 0 // unknown cycle → 0, consistent with mv_mrr_current ELSE 0
-      return amount / divisor
-    }
-
     // --- Aggregate MRR by resolved group name + track category coverage ---
     const groupTotals = new Map<string, { mrr: number; count: number; color: string; hasCategory: boolean }>()
-    let totalMRR = 0
     let categorizedMRR = 0
 
-    hostingServices?.forEach(service => {
-      // Always calculate from amount + billingcycle (same as mv_mrr_current view)
-      // Never use monthly_amount column — it may be stale or differ from the view
-      const monthlyAmount = toMonthlyAmount(Number(service.amount) || 0, service.billingcycle || '')
-
+    liveMrr.rows.hosting.forEach((service) => {
+      if (service.monthly <= 0) return
       const productKey = `${service.instance_id}:${service.packageid}`
       const groupId = productToGroupMap.get(productKey)
       const groupKey = groupId ? `${service.instance_id}:${groupId}` : null
@@ -191,61 +153,50 @@ export async function GET(request: NextRequest) {
       const resolvedColor = productCat?.color ?? groupCat?.color ?? ''
       const hasCategory = !!(productCat || groupCat)
 
-      if (hasCategory) categorizedMRR += monthlyAmount
+      if (hasCategory) categorizedMRR += service.monthly
 
       const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory }
       groupTotals.set(resolvedName, {
-        mrr: existing.mrr + monthlyAmount,
+        mrr: existing.mrr + service.monthly,
         count: existing.count + 1,
         color: existing.color || resolvedColor,
         hasCategory: existing.hasCategory || hasCategory,
       })
-      totalMRR += monthlyAmount
     })
 
-    // --- Aggregate billable items MRR ---
-    // Filter in JS: column-to-column OR comparisons don't work in PostgREST .or()
-    const activeBillableItems = (billableItems ?? []).filter(
-      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
-    )
-    activeBillableItems.forEach(item => {
-      const monthlyAmount = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
+    liveMrr.rows.billable.forEach((item) => {
+      if (item.monthly <= 0) return
       const key = `${item.instance_id}:${item.whmcs_id}`
       const cat = billableCategoryMap.get(key)
       const resolvedName = cat?.name ?? 'Uncategorized'
       const resolvedColor = cat?.color ?? ''
       const hasCategory = !!cat
 
-      if (hasCategory) categorizedMRR += monthlyAmount
+      if (hasCategory) categorizedMRR += item.monthly
 
       const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory }
       groupTotals.set(resolvedName, {
-        mrr: existing.mrr + monthlyAmount,
+        mrr: existing.mrr + item.monthly,
         count: existing.count + 1,
         color: existing.color || resolvedColor,
         hasCategory: existing.hasCategory || hasCategory,
       })
-      totalMRR += monthlyAmount
     })
 
-    // --- Aggregate domain MRR as "Domains" group ---
-    activeDomains?.forEach(domain => {
-      const annual = Number(domain.recurringamount) || 0
-      const period = Number(domain.registrationperiod) || 1
-      const monthlyAmount = annual > 0 && period > 0 ? annual / (period * 12) : 0
-      if (monthlyAmount === 0) return
-
+    liveMrr.rows.domains.forEach((domain) => {
+      if (domain.monthly <= 0) return
       const resolvedName = 'Domains'
       const resolvedColor = '#06B6D4' // Cyan
       const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory: false }
       groupTotals.set(resolvedName, {
-        mrr: existing.mrr + monthlyAmount,
+        mrr: existing.mrr + domain.monthly,
         count: existing.count + 1,
         color: existing.color || resolvedColor,
         hasCategory: false,
       })
-      totalMRR += monthlyAmount
     })
+
+    const totalMRR = liveMrr.total
 
     // --- Determine mode ---
     const uncategorizedMrrPct = totalMRR > 0
@@ -254,7 +205,7 @@ export async function GET(request: NextRequest) {
     // Use category mode when at least 50% of MRR is covered by categories
     const usingCategories = totalMRR > 0 && (categorizedMRR / totalMRR) >= 0.5
 
-    // --- Sort and cap at 9 + Others ---
+    // --- Sort and cap at 14 + Others ---
     let breakdown: GroupBreakdown[] = Array.from(groupTotals.entries())
       .map(([name, data]) => ({
         name,

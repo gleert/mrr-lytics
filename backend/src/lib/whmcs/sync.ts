@@ -223,20 +223,33 @@ export async function syncInstance(
       console.error('Failed to update client metrics:', clientMetricsError)
     }
 
-    // Populate metrics_daily (this also refreshes materialized views)
+    // Populate metrics_daily (this also refreshes materialized views).
+    // Surface RPC failures explicitly with a distinctive [STALE-METRICS]
+    // prefix: previously the failure was swallowed silently and left
+    // mv_mrr_current lagging, producing KPI/breakdown discrepancies.
     try {
-      const { data: metricsResult } = await supabase.rpc('populate_metrics_daily', {
-        p_instance_id: instance.id,
-      })
+      const { data: metricsResult, error: metricsError } = await supabase.rpc(
+        'populate_metrics_daily',
+        { p_instance_id: instance.id }
+      )
+      if (metricsError) throw metricsError
       metricsId = metricsResult
       console.log(`[Sync] Populated metrics_daily for instance ${instance.id}`)
     } catch (metricsError) {
-      console.error('Failed to populate metrics_daily:', metricsError)
+      const msg = metricsError instanceof Error ? metricsError.message : String(metricsError)
+      console.error(
+        `[STALE-METRICS][Sync] populate_metrics_daily FAILED for instance ${instance.id}: ${msg}`
+      )
       // Fallback: just refresh views
       try {
-        await supabase.rpc('refresh_metrics_views')
+        const { error: refreshError } = await supabase.rpc('refresh_metrics_views')
+        if (refreshError) throw refreshError
+        console.log(`[Sync] Fallback refresh_metrics_views succeeded for instance ${instance.id}`)
       } catch (refreshError) {
-        console.error('Failed to refresh views:', refreshError)
+        const rmsg = refreshError instanceof Error ? refreshError.message : String(refreshError)
+        console.error(
+          `[STALE-METRICS][Sync] refresh_metrics_views FAILED for instance ${instance.id}: ${rmsg}`
+        )
       }
     }
 
