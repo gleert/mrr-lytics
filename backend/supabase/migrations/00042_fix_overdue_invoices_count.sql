@@ -1,26 +1,88 @@
 -- Migration: Fix "Vencidas" (overdue) invoice count always showing 0
 --
--- Root cause:
---   WHMCS automatically changes invoice status from 'Unpaid' to 'Overdue' when
---   the duedate passes. The sync stores this literal status. The previous
---   definition of populate_metrics_daily() filtered only `status = 'Unpaid'`,
---   so actually-overdue invoices were never counted.
+-- Two bugs addressed:
 --
---   Convention per backend/docs/DATABASE.md:344 is `status IN ('Unpaid', 'Overdue')`.
+-- Bug A — stale view/function mismatch (latent since migration 00030):
+--   Migrations 00030/00032/00035/00036/00037 dropped and recreated
+--   `mv_mrr_by_cycle` without the `service_count` column, but
+--   `get_mrr_by_cycle_json` (defined in 00013) and `src/lib/metrics/mrr.ts`
+--   still reference `service_count`. As a result every call to
+--   `populate_metrics_daily` has been failing with
+--   'column "service_count" does not exist'. The sync swallows the error
+--   (see sync.ts:238 `[STALE-METRICS]`), so metrics_daily rows have been
+--   stale/missing since 00030 was applied in production.
 --
--- Fix:
---   1. Recreate populate_metrics_daily() with the two invoice count blocks
---      updated to include 'Overdue'.
---   2. Backfill metrics_daily across all historical dates for every active
---      instance so historical trends for Vencidas/Pendientes stop showing 0.
+--   Fix: recreate `mv_mrr_by_cycle` with `service_count` restored so both
+--   the function and the TypeScript callers work again. Semantics of
+--   `mrr_contribution` are unchanged.
 --
--- Note on backfill accuracy:
---   populate_metrics_daily counts invoices using their CURRENT status, not the
---   status they had on the historical date. So a past invoice that was Overdue
---   on 2026-01-15 but is Paid today will NOT count as overdue in the repopulated
---   2026-01-15 row. This is consistent with how the function has always worked
---   for clients/domains/services — we are not introducing a regression, only
---   correcting the status filter.
+-- Bug B — Unpaid/Overdue filter in populate_metrics_daily:
+--   WHMCS transitions Unpaid invoices to status='Overdue' when duedate
+--   passes. The previous filter used only `status = 'Unpaid'`, so the
+--   Vencidas KPI always showed 0 and Pendientes was underestimated.
+--   Convention per backend/docs/DATABASE.md:344 is
+--   `status IN ('Unpaid', 'Overdue')`.
+--
+-- After this migration:
+--   - mv_mrr_by_cycle has service_count back → populate_metrics_daily works
+--   - populate_metrics_daily counts Overdue as unpaid (and includes it in
+--     the vencidas subset)
+--   - Historical metrics_daily is fully backfilled
+--
+-- Note on backfill accuracy: populate_metrics_daily uses the CURRENT status
+-- of invoices/services, not the status on each historical date. So a past
+-- invoice that was Overdue on 2026-01-15 but is Paid today will NOT count
+-- as overdue in the repopulated 2026-01-15 row. This is consistent with how
+-- the function has always worked for clients/domains/services — we are not
+-- introducing a regression, only correcting the filter and restoring the view.
+
+-- ────────────────────────────────────────────────────────────────────────
+-- Bug A fix: Recreate mv_mrr_by_cycle with service_count column.
+-- Preserves the body from migration 00037 (latest authoritative version),
+-- only adding `COUNT(*) AS service_count` to the outer SELECT.
+-- ────────────────────────────────────────────────────────────────────────
+
+DROP MATERIALIZED VIEW IF EXISTS mv_mrr_by_cycle;
+
+CREATE MATERIALIZED VIEW mv_mrr_by_cycle AS
+SELECT
+    instance_id,
+    cycle                                           AS billingcycle,
+    COUNT(*)                                        AS service_count,
+    SUM(normalize_to_monthly(amount, cycle))        AS mrr_contribution
+FROM (
+    SELECT instance_id, billingcycle AS cycle, amount
+    FROM whmcs_hosting
+    WHERE domainstatus = 'Active'
+
+    UNION ALL
+
+    SELECT instance_id, recurcycle AS cycle, amount
+    FROM whmcs_billable_items
+    WHERE invoice_action = 4
+      AND invoicecount > 0
+      AND (recurfor = 0 OR invoicecount < recurfor)
+
+    UNION ALL
+
+    -- Active domains under 'annually' cycle
+    SELECT
+        instance_id,
+        'annually' AS cycle,
+        COALESCE(recurringamount, 0) / COALESCE(NULLIF(registrationperiod, 0), 1) AS amount
+    FROM whmcs_domains
+    WHERE status = 'Active'
+      AND COALESCE(recurringamount, 0) > 0
+) combined
+GROUP BY instance_id, cycle;
+
+CREATE UNIQUE INDEX idx_mv_mrr_cycle ON mv_mrr_by_cycle(instance_id, billingcycle);
+
+-- ────────────────────────────────────────────────────────────────────────
+-- Bug B fix: Recreate populate_metrics_daily with correct Unpaid/Overdue
+-- filter. Body is copied verbatim from migration 00017 except for the two
+-- invoice count blocks.
+-- ────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION populate_metrics_daily(p_instance_id UUID, p_date DATE DEFAULT CURRENT_DATE)
 RETURNS UUID AS $$
