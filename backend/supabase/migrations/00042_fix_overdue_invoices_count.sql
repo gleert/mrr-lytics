@@ -357,6 +357,13 @@ $$ LANGUAGE plpgsql;
 -- Materialized views are refreshed ONCE up front; each populate_metrics_daily
 -- call inside the loop uses p_skip_refresh=TRUE so the transaction does not
 -- accumulate thousands of refresh locks and blow past max_locks_per_transaction.
+--
+-- Disable statement_timeout for the migration session — the backfill loops
+-- over potentially thousands of dates and can take several minutes on large
+-- installations. Supabase's default statement_timeout is enforced at the
+-- connection level and would otherwise kill the migration mid-loop.
+SET LOCAL statement_timeout = 0;
+SET LOCAL idle_in_transaction_session_timeout = 0;
 
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_current;
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_mrr_by_cycle;
