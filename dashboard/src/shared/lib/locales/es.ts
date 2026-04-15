@@ -752,6 +752,15 @@ export const es = {
       },
       currencyUpdated: 'Moneda actualizada correctamente',
       currencyUpdateError: 'Error al actualizar la moneda',
+      // Revenue accounting
+      revenueAccounting: 'Contabilidad de ingresos',
+      revenueAccountingDesc: 'Controla cómo se cuentan los estados especiales de factura en los cálculos de ingresos',
+      includeCancelled: 'Incluir facturas canceladas',
+      includeCancelledDesc: 'Cuenta las facturas con estado "Cancelada" en los informes de ingresos, forecasting y top clientes. Útil cuando la cancelación se usa como rectificativa.',
+      includeCancelledUpdated: 'Contabilidad de ingresos actualizada',
+      includeCancelledError: 'Error al actualizar la configuración',
+      on: 'Activado',
+      off: 'Desactivado',
       // Theme & Language
       themeUpdated: 'Tema actualizado',
       languageUpdated: 'Idioma actualizado',

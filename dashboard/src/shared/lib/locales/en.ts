@@ -755,6 +755,15 @@ export const en = {
       },
       currencyUpdated: 'Currency updated successfully',
       currencyUpdateError: 'Failed to update currency',
+      // Revenue accounting
+      revenueAccounting: 'Revenue accounting',
+      revenueAccountingDesc: 'Control how special invoice states are counted in revenue calculations',
+      includeCancelled: 'Include cancelled invoices',
+      includeCancelledDesc: 'Count invoices with status "Cancelled" in revenue, forecasting and top-clients reports. Useful when cancellation is used as a credit-note workflow.',
+      includeCancelledUpdated: 'Revenue accounting updated',
+      includeCancelledError: 'Failed to update setting',
+      on: 'On',
+      off: 'Off',
       // Theme & Language
       themeUpdated: 'Theme updated',
       languageUpdated: 'Language updated',

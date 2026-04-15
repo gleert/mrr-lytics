@@ -5,6 +5,7 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -183,13 +184,15 @@ export async function GET(request: NextRequest) {
       })
     })
 
-    // Get historical invoice data within the selected period for trend analysis
-    // Use invoice date (not payment date) and include all statuses — MRR is committed when billed
+    const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
+
+    // Get historical invoice data within the selected period for trend analysis.
+    // Use invoice date (not payment date) — MRR is committed when billed.
     const { data: periodInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
       .select('subtotal, date')
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', startDate.toISOString().split('T')[0])
       .lte('date', endDate.toISOString().split('T')[0])
       .order('date', { ascending: true })

@@ -9,6 +9,7 @@ import {
   fetchRecurringBillableSet,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,21 +60,23 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
+
     // Exact invoice count via DB (bypasses PostgREST max-rows limit)
     const { count: exactInvoicesCount } = await supabase
       .from('whmcs_invoices')
       .select('*', { count: 'exact', head: true })
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
 
-    // Get all invoices in period (Paid + Unpaid)
+    // Get all invoices in period
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
       .select('whmcs_id, subtotal, status, datepaid, date')
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
       .limit(10000)
@@ -234,7 +237,7 @@ export async function GET(request: NextRequest) {
       .from('whmcs_invoices')
       .select('whmcs_id, subtotal')
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', prevStartDate.toISOString())
       .lte('date', prevEndDate.toISOString())
       .limit(10000)

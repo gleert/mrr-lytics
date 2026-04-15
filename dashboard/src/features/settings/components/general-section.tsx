@@ -51,14 +51,21 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     }
   }
 
-  // Organization name fields
+  // Organization + revenue accounting fields
   const { data: settingsData } = useQuery({
     queryKey: ['tenant', 'settings', currentTenant?.tenant_id],
     queryFn: async () => {
       if (!currentTenant) return null
-      const res = await api.get<{ success: boolean; data: { tenant: { name: string; company_name: string | null } } }>(
-        `/api/tenants/${currentTenant.tenant_id}/settings`
-      )
+      const res = await api.get<{
+        success: boolean
+        data: {
+          tenant: {
+            name: string
+            company_name: string | null
+            include_cancelled_invoices: boolean
+          }
+        }
+      }>(`/api/tenants/${currentTenant.tenant_id}/settings`)
       return res.data.tenant
     },
     enabled: !!currentTenant && isAdmin,
@@ -66,6 +73,7 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
 
   const [orgName, setOrgName] = React.useState('')
   const [companyName, setCompanyName] = React.useState('')
+  const includeCancelled = settingsData?.include_cancelled_invoices ?? false
 
   React.useEffect(() => {
     if (settingsData) {
@@ -73,6 +81,27 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
       setCompanyName(settingsData.company_name ?? '')
     }
   }, [settingsData])
+
+  const updateIncludeCancelledMutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      if (!currentTenant) throw new Error('No tenant selected')
+      return api.patch<{ success: boolean }>(
+        `/api/tenants/${currentTenant.tenant_id}/settings`,
+        { include_cancelled_invoices: next }
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant', 'settings'] })
+      queryClient.invalidateQueries({ queryKey: ['revenue'] })
+      queryClient.invalidateQueries({ queryKey: ['metrics'] })
+      queryClient.invalidateQueries({ queryKey: ['forecasting'] })
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+      toast.success(t('settings.includeCancelledUpdated', 'Revenue accounting updated'))
+    },
+    onError: () => {
+      toast.error(t('settings.includeCancelledError', 'Failed to update setting'))
+    },
+  })
 
   const updateOrgMutation = useMutation({
     mutationFn: async () => {
@@ -224,6 +253,65 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
                       </Button>
                     )
                   })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Section>
+      )}
+
+      {/* Revenue accounting - Only visible to tenant admins */}
+      {isAdmin && currentTenant && (
+        <Section
+          title={t('settings.revenueAccounting', 'Revenue accounting')}
+          description={t(
+            'settings.revenueAccountingDesc',
+            'Control how special invoice states are counted in revenue calculations',
+          )}
+        >
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="max-w-xl">
+                  <p className="font-medium">
+                    {t('settings.includeCancelled', 'Include cancelled invoices')}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {t(
+                      'settings.includeCancelledDesc',
+                      'Count invoices with status "Cancelled" in revenue, forecasting and top-clients reports. Useful when cancellation is used as a rectificativa (credit note) workflow.',
+                    )}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={includeCancelled ? 'outline' : 'default'}
+                    size="sm"
+                    onClick={() => {
+                      if (includeCancelled) updateIncludeCancelledMutation.mutate(false)
+                    }}
+                    disabled={updateIncludeCancelledMutation.isPending}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {!includeCancelled && <Check className="mr-2 h-4 w-4" />}
+                    {t('settings.off', 'Off')}
+                  </Button>
+                  <Button
+                    variant={includeCancelled ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      if (!includeCancelled) updateIncludeCancelledMutation.mutate(true)
+                    }}
+                    disabled={updateIncludeCancelledMutation.isPending}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {updateIncludeCancelledMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : includeCancelled ? (
+                      <Check className="mr-2 h-4 w-4" />
+                    ) : null}
+                    {t('settings.on', 'On')}
+                  </Button>
                 </div>
               </div>
             </CardContent>

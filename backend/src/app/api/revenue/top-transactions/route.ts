@@ -5,6 +5,7 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,12 +63,14 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Step 1: Get invoices within the period (Paid + Unpaid)
+    const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
+
+    // Step 1: Get invoices within the period
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
       .select('whmcs_id, instance_id, invoicenum, datepaid, date, status')
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', startDate.toISOString())
       .order('date', { ascending: false })
       .limit(500)

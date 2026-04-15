@@ -12,6 +12,7 @@ interface UpdateSettingsBody {
   currency?: Currency
   name?: string
   company_name?: string
+  include_cancelled_invoices?: boolean
 }
 
 /**
@@ -79,16 +80,28 @@ export async function PATCH(
     if (body.currency) updates.currency = body.currency
     if (body.name !== undefined) updates.name = body.name.trim()
 
-    // Store company_name in the settings JSONB field
-    if (body.company_name !== undefined) {
-      // Get current settings first
+    // Store settings that live in the JSONB settings column. Fetch current
+    // settings once so we merge instead of overwriting.
+    const jsonbFieldsTouched =
+      body.company_name !== undefined || body.include_cancelled_invoices !== undefined
+
+    if (jsonbFieldsTouched) {
       const { data: currentTenant } = await supabase
         .from('tenants')
         .select('settings')
         .eq('id', tenantId)
         .single()
       const currentSettings = (currentTenant?.settings as Record<string, unknown>) || {}
-      updates.settings = { ...currentSettings, company_name: body.company_name.trim() }
+      const mergedSettings: Record<string, unknown> = { ...currentSettings }
+
+      if (body.company_name !== undefined) {
+        mergedSettings.company_name = body.company_name.trim()
+      }
+      if (body.include_cancelled_invoices !== undefined) {
+        mergedSettings.include_cancelled_invoices = Boolean(body.include_cancelled_invoices)
+      }
+
+      updates.settings = mergedSettings
     }
 
     if (Object.keys(updates).length === 0) {
@@ -108,10 +121,12 @@ export async function PATCH(
       return error(new Error('Failed to update tenant settings'), 500)
     }
 
+    const updatedSettings = (updatedTenant?.settings as Record<string, unknown>) || {}
     return success({
       tenant: {
         ...updatedTenant,
-        company_name: (updatedTenant?.settings as Record<string, unknown>)?.company_name ?? null,
+        company_name: updatedSettings.company_name ?? null,
+        include_cancelled_invoices: Boolean(updatedSettings.include_cancelled_invoices),
       },
       message: 'Settings updated successfully',
     })
@@ -179,6 +194,7 @@ export async function GET(
         ...tenant,
         currency: tenant.currency || 'EUR',
         company_name: settings.company_name ?? null,
+        include_cancelled_invoices: Boolean(settings.include_cancelled_invoices),
       },
       user_role: userRecord.role,
     })

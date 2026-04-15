@@ -9,6 +9,7 @@ import {
   fetchRecurringBillableSet,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,12 +58,14 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get all invoices in period (Paid + Unpaid)
+    const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
+
+    // Get all invoices in period
     const { data: invoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
       .select('whmcs_id, subtotal, datepaid, date, status')
       .in('instance_id', instanceIds)
-      .in('status', ['Paid', 'Unpaid', 'Payment Pending'])
+      .in('status', revenueStatuses)
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
       .order('date', { ascending: true })
