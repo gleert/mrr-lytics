@@ -6,7 +6,7 @@ import { useCurrency } from '@/shared/hooks/use-currency'
 
 export function TopTransactionsBlock() {
   const { t } = useTranslation()
-  const { formatCurrency, formatCurrencyCompact } = useCurrency()
+  const { formatCurrency } = useCurrency()
   const { data, isLoading } = useTopTransactions(5)
 
   if (isLoading) {
@@ -58,7 +58,7 @@ export function TopTransactionsBlock() {
         <div className="text-right">
           <p className="text-xs text-muted">{t('revenue.total')}</p>
           <p className="text-lg font-bold text-foreground tabular-nums">
-            {formatCurrencyCompact(totalAmount)}
+            {formatCurrency(totalAmount, { maximumFractionDigits: 0 })}
           </p>
         </div>
       </div>

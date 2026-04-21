@@ -111,7 +111,12 @@ export function KPICard({
           )}
         </div>
 
-        <p className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-semibold tracking-tight truncate">{formattedValue}</p>
+        <p
+          className="mt-3 sm:mt-4 text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight tabular-nums break-words"
+          title={formattedValue}
+        >
+          {formattedValue}
+        </p>
 
         {changePercent !== undefined && (
           <div className="mt-2 sm:mt-3 flex items-center gap-2">

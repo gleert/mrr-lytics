@@ -18,7 +18,7 @@ import { ChartSkeleton } from '@/shared/components/ui/chart-skeleton'
 
 export function RecurringVsOnetimeChart() {
   const { t } = useTranslation()
-  const { formatCurrencyCompact, formatPercent } = useCurrency()
+  const { formatCurrency, formatCurrencyCompact, formatPercent } = useCurrency()
   const { data, isLoading } = useRevenueTrend()
 
   // Sum totals across the whole period
@@ -63,7 +63,7 @@ export function RecurringVsOnetimeChart() {
               <div>
                 <p className="text-xs text-muted mb-0.5">{t('revenue.recurringRevenue')}</p>
                 <p className="text-xl font-semibold text-foreground tabular-nums">
-                  {formatCurrencyCompact(recurring)}
+                  {formatCurrency(recurring, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-sm text-primary-400 font-medium">
                   {formatPercent(recurringPct)}
@@ -72,13 +72,13 @@ export function RecurringVsOnetimeChart() {
               <div className="text-center">
                 <p className="text-xs text-muted mb-0.5">{t('revenue.total')}</p>
                 <p className="text-base font-medium text-foreground tabular-nums">
-                  {formatCurrencyCompact(total)}
+                  {formatCurrency(total, { maximumFractionDigits: 0 })}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted mb-0.5">{t('revenue.onetimeRevenue')}</p>
                 <p className="text-xl font-semibold text-foreground tabular-nums">
-                  {formatCurrencyCompact(onetime)}
+                  {formatCurrency(onetime, { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-sm font-medium text-emerald-400">
                   {formatPercent(onetimePct)}
