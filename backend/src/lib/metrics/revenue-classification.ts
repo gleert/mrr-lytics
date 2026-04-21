@@ -8,6 +8,12 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * so the first domain payment must also count as recurring revenue —
  * otherwise KPI "Recurring Revenue" and KPI "MRR" would disagree on whether
  * a fresh domain contributes.
+ *
+ * PromoHosting is included because it represents a discount applied to a
+ * recurring hosting service (typically a negative amount each billing
+ * cycle). Treating it as recurring keeps the recurring/onetime split
+ * reflecting net recurring revenue instead of inflating recurring and
+ * deflating one-time.
  */
 export const RECURRING_TYPES = [
   'Hosting',
@@ -15,6 +21,7 @@ export const RECURRING_TYPES = [
   'DomainRenew',
   'DomainRegister',
   'DomainTransfer',
+  'PromoHosting',
 ] as const
 
 /**
