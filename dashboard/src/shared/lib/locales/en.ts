@@ -795,6 +795,14 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v250: {
+          creditNotes: 'Credit notes / abonos (negative invoice lines with empty type) are now surfaced as a dedicated "Credit Notes" category in revenue breakdowns and shown as a compact summary in the /revenue pending card',
+          forecastCalloutMtd: 'Dashboard forecast callout now shows projected MRR pinned to month-to-date, independent of the global time filter — no more fluctuations when switching periods',
+          promoHostingRecurring: 'PromoHosting invoice items (hosting discounts) are now classified as recurring revenue so the recurring vs one-time split reflects net recurring amounts instead of inflating one bucket',
+          currencyFormatting: 'Unified currency formatting across MRR Trend and Daily Committed MRR charts — Y axis, hover tooltip and group dropdown all now use the same full format with consistent thousand separators',
+          kpiTruncation: 'KPI card values no longer truncate with ellipsis on long currency amounts; text scales responsively instead',
+          thousandSeparator4Digits: '4-digit numbers in Spanish locale (€1.500 and similar) now consistently display the thousand separator — no more mixed formats where only 5-digit numbers had dots',
+        },
         v240: {
           domainMrr: 'Domain recurring revenue now included in MRR/ARR across all metric modules: Revenue KPIs, MRR breakdown, MRR trend, daily MRR, MRR movement, and forecasting',
           revenueBreakdownCap: 'Revenue breakdown expanded to show up to 15 categories (14 + Others)',

@@ -792,6 +792,14 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v250: {
+          creditNotes: 'Las notas de crédito / abonos (líneas de factura negativas con tipo vacío) ahora aparecen como categoría propia "Credit Notes" en los desgloses de ingresos y como resumen compacto en la tarjeta "Pendiente de cobro" de /revenue',
+          forecastCalloutMtd: 'El bloque de proyección del dashboard ahora muestra el MRR proyectado siempre en el mes en curso (MTD), independiente del filtro global de tiempo — sin fluctuaciones al cambiar el periodo',
+          promoHostingRecurring: 'Los items PromoHosting (descuentos sobre hosting) ahora se clasifican como ingresos recurrentes para que el reparto recurrente vs. ocasional refleje el neto y no infle solo uno de los dos cubos',
+          currencyFormatting: 'Formato de moneda unificado en los gráficos de Tendencia de MRR y MRR diario — eje Y, tooltip y dropdown de grupos ahora usan el mismo formato completo con separadores de miles consistentes',
+          kpiTruncation: 'Los valores de las tarjetas KPI ya no se recortan con puntos suspensivos en cifras largas; el texto se adapta al tamaño disponible',
+          thousandSeparator4Digits: 'Los números de 4 cifras en español (€1.500 y similares) ahora muestran siempre el separador de miles — ya no convive un formato con otro donde solo los de 5+ cifras llevaban punto',
+        },
         v240: {
           domainMrr: 'Los ingresos recurrentes de dominios ahora se incluyen en el MRR/ARR en todos los módulos: KPIs de ingresos, desglose de MRR, tendencia de MRR, MRR diario, variación de MRR y previsiones',
           revenueBreakdownCap: 'El desglose de ingresos ahora muestra hasta 15 categorías (14 + Otros)',
