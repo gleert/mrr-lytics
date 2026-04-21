@@ -550,7 +550,9 @@ export const en = {
       forecastCta: {
         desc: 'See detailed projections, scenario comparisons, and revenue trends for the next period.',
         button: 'View Forecasting',
-        onetime: 'One-time',
+        perMonth: '/mo',
+        subUp: 'Projected MRR, +{{growth}}% from current {{current}}/mo.',
+        subDown: 'Projected MRR, -{{growth}}% from current {{current}}/mo.',
       },
       revenueCta: {
         label: 'Revenue this period',

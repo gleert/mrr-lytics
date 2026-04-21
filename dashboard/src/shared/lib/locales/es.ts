@@ -547,7 +547,9 @@ export const es = {
       forecastCta: {
         desc: 'Consulta proyecciones detalladas, comparación de escenarios y tendencias de ingresos para el próximo período.',
         button: 'Ver Pronósticos',
-        onetime: 'Ocasional',
+        perMonth: '/mes',
+        subUp: 'MRR proyectado, +{{growth}}% desde los {{current}}/mes actuales.',
+        subDown: 'MRR proyectado, -{{growth}}% desde los {{current}}/mes actuales.',
       },
       revenueCta: {
         label: 'Ingresos del período',

@@ -2,24 +2,23 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '@/shared/components/ui/icon'
 import { useCurrency } from '@/shared/hooks/use-currency'
-import { useRevenueStats } from '@/features/revenue/hooks/use-revenue-stats'
+import { useForecastingStats } from '@/features/forecasting/hooks/use-forecasting-stats'
 import { useMetrics } from '../hooks/use-metrics'
 
 export function ForecastCTA() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { data: revenueStats, isLoading: revenueLoading } = useRevenueStats({ periodOverride: '30d' })
+  const { data: stats, isLoading: forecastLoading } = useForecastingStats()
   const { data: metrics, isLoading: metricsLoading } = useMetrics()
   const { formatCurrency, formatNumber } = useCurrency()
 
-  if (revenueLoading || metricsLoading || !revenueStats) return null
+  if (forecastLoading || metricsLoading || !stats) return null
 
-  const projection = revenueStats.projected_next_period
-  const onetimeMonthly = revenueStats.onetime_revenue // last 30 days ≈ monthly
-  const mrr = revenueStats.mrr
-  const revenueChange = revenueStats.revenue_change
+  const projectedMrr = stats.projected_mrr
+  const currentMrr = stats.current_mrr
+  const growth = stats.projected_growth
 
-  const isPositive = revenueChange >= 0
+  const isPositive = growth >= 0
   const forecastGradient = isPositive
     ? 'bg-gradient-to-br from-violet-600 to-violet-700'
     : 'bg-gradient-to-br from-rose-700 to-rose-800'
@@ -37,25 +36,25 @@ export function ForecastCTA() {
           <div className="flex items-center gap-2 text-white/70">
             <Icon name={iconName} size="lg" />
             <span className="text-sm font-medium uppercase tracking-wider">
-              {t('revenue.highlights.projectionLabel')}
+              {t('forecasting.calloutGainLabel')}
             </span>
           </div>
           <p className="text-3xl font-black text-white leading-tight tabular-nums">
-            {formatCurrency(projection, { maximumFractionDigits: 0 })}
+            {formatCurrency(projectedMrr, { maximumFractionDigits: 0 })}
+            <span className="text-lg font-semibold text-white/70">{t('dashboard.forecastCta.perMonth')}</span>
           </p>
           <p className="text-white/70 text-sm">
-            {t('revenue.highlights.projectionDesc')}
+            {isPositive
+              ? t('dashboard.forecastCta.subUp', {
+                  growth: formatNumber(growth, { maximumFractionDigits: 1 }),
+                  current: formatCurrency(currentMrr, { maximumFractionDigits: 0 }),
+                })
+              : t('dashboard.forecastCta.subDown', {
+                  growth: formatNumber(Math.abs(growth), { maximumFractionDigits: 1 }),
+                  current: formatCurrency(currentMrr, { maximumFractionDigits: 0 }),
+                })
+            }
           </p>
-          <div className="flex items-center gap-4 text-xs text-white/60 pt-1">
-            <span className="flex items-center gap-1">
-              <Icon name="autorenew" size="xs" />
-              MRR: {formatCurrency(mrr, { maximumFractionDigits: 0 })}
-            </span>
-            <span className="flex items-center gap-1">
-              <Icon name="payments" size="xs" />
-              {t('dashboard.forecastCta.onetime')}: {formatCurrency(onetimeMonthly, { maximumFractionDigits: 0 })}
-            </span>
-          </div>
         </div>
         <div>
           <p className="text-white/60 text-xs mb-3">{t('dashboard.forecastCta.desc')}</p>
