@@ -43,15 +43,29 @@ export interface RevenueBreakdown {
 
 export type BreakdownGroupBy = 'category' | 'source' | 'type'
 
-export function useRevenueStats() {
+export interface UseRevenueStatsOptions {
+  /**
+   * When provided, overrides the global time filter and forces the revenue
+   * stats to use this fixed period (e.g. '30d'). Used by the dashboard
+   * callout so the projection stays stable regardless of the selected filter.
+   */
+  periodOverride?: string
+}
+
+export function useRevenueStats(options: UseRevenueStatsOptions = {}) {
+  const { periodOverride } = options
   const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
 
   const instanceKey = currentInstance?.instance_id || 'all'
+  const effectivePeriod = periodOverride ?? period
+  const effectiveCustomRange = periodOverride ? null : customDateRange
 
   return useQuery({
-    queryKey: ['revenue', 'stats', instanceKey, period, customDateRange],
+    queryKey: ['revenue', 'stats', instanceKey, effectivePeriod, effectiveCustomRange],
     queryFn: async () => {
-      const params: Record<string, string> = { ...getPeriodParams() }
+      const params: Record<string, string> = periodOverride
+        ? { period: periodOverride }
+        : { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')

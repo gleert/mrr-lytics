@@ -546,6 +546,7 @@ export const es = {
       forecastCta: {
         desc: 'Consulta proyecciones detalladas, comparación de escenarios y tendencias de ingresos para el próximo período.',
         button: 'Ver Pronósticos',
+        onetime: 'Ocasional',
       },
       revenueCta: {
         label: 'Ingresos del período',

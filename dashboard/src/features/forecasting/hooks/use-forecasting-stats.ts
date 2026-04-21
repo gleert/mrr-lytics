@@ -54,29 +54,15 @@ export interface ForecastingStats {
   scenarios: Scenarios
 }
 
-export interface UseForecastingStatsOptions {
-  /**
-   * When provided, overrides the global time filter and forces the forecast
-   * to use this fixed period (e.g. '30d'). Used by the dashboard callout so
-   * the outlook stays stable regardless of the selected filter.
-   */
-  periodOverride?: string
-}
-
-export function useForecastingStats(options: UseForecastingStatsOptions = {}) {
-  const { periodOverride } = options
+export function useForecastingStats() {
   const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
 
   const instanceKey = currentInstance?.instance_id || 'all'
-  const effectivePeriod = periodOverride ?? period
-  const effectiveCustomRange = periodOverride ? null : customDateRange
 
   return useQuery({
-    queryKey: ['forecasting', 'stats', instanceKey, effectivePeriod, effectiveCustomRange],
+    queryKey: ['forecasting', 'stats', instanceKey, period, customDateRange],
     queryFn: async () => {
-      const params: Record<string, string> = periodOverride
-        ? { period: periodOverride }
-        : { ...getPeriodParams() }
+      const params: Record<string, string> = { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')

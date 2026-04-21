@@ -549,6 +549,7 @@ export const en = {
       forecastCta: {
         desc: 'See detailed projections, scenario comparisons, and revenue trends for the next period.',
         button: 'View Forecasting',
+        onetime: 'One-time',
       },
       revenueCta: {
         label: 'Revenue this period',
