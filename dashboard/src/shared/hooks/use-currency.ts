@@ -25,7 +25,7 @@ export function useCurrency() {
       currency,
       minimumFractionDigits: min,
       maximumFractionDigits: max,
-      useGrouping: 'always',
+      useGrouping: true,
     }).format(amount)
   }, [currency, locale])
 
@@ -34,11 +34,11 @@ export function useCurrency() {
     const sign = amount < 0 ? '-' : ''
     const sym = CURRENCY_CONFIG[currency].symbol
     if (abs >= 1_000_000) {
-      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: 'always' }).format(abs / 1_000_000)
+      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: true }).format(abs / 1_000_000)
       return `${sign}${sym}${val}M`
     }
     if (abs >= 1_000) {
-      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: 'always' }).format(abs / 1_000)
+      const val = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: true }).format(abs / 1_000)
       return `${sign}${sym}${val}k`
     }
     return formatCurrency(amount)
@@ -55,7 +55,7 @@ export function useCurrency() {
     value: number,
     options?: Intl.NumberFormatOptions
   ): string => {
-    return new Intl.NumberFormat(locale, { useGrouping: 'always', ...options }).format(value)
+    return new Intl.NumberFormat(locale, { useGrouping: true, ...options }).format(value)
   }, [locale])
 
   const formatPercent = useCallback((
