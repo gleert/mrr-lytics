@@ -8,7 +8,7 @@ import { useMetrics } from '../hooks/use-metrics'
 export function ForecastCTA() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { data: stats, isLoading: forecastLoading } = useForecastingStats()
+  const { data: stats, isLoading: forecastLoading } = useForecastingStats({ periodOverride: 'mtd' })
   const { data: metrics, isLoading: metricsLoading } = useMetrics()
   const { formatCurrency, formatNumber } = useCurrency()
 

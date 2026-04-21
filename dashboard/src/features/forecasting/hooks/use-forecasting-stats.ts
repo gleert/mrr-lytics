@@ -54,15 +54,30 @@ export interface ForecastingStats {
   scenarios: Scenarios
 }
 
-export function useForecastingStats() {
+export interface UseForecastingStatsOptions {
+  /**
+   * When provided, ignores the global time filter and pins the forecast
+   * to this period (e.g. 'mtd', '30d', '90d'). Used on the dashboard so
+   * the callout stays on a fixed window regardless of what the user picks
+   * in the filter.
+   */
+  periodOverride?: string
+}
+
+export function useForecastingStats(options: UseForecastingStatsOptions = {}) {
+  const { periodOverride } = options
   const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
 
   const instanceKey = currentInstance?.instance_id || 'all'
+  const effectivePeriod = periodOverride ?? period
+  const effectiveCustomRange = periodOverride ? null : customDateRange
 
   return useQuery({
-    queryKey: ['forecasting', 'stats', instanceKey, period, customDateRange],
+    queryKey: ['forecasting', 'stats', instanceKey, effectivePeriod, effectiveCustomRange],
     queryFn: async () => {
-      const params: Record<string, string> = { ...getPeriodParams() }
+      const params: Record<string, string> = periodOverride
+        ? { period: periodOverride }
+        : { ...getPeriodParams() }
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
