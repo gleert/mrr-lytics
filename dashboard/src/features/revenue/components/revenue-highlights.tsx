@@ -59,7 +59,7 @@ export function RevenueHighlights({ stats }: RevenueHighlightsProps) {
             {t('revenue.highlights.pendingDesc', { count: stats.unpaid_count })}
           </p>
         </div>
-        <div className="flex items-center gap-4 text-xs text-white/50 mt-auto">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/50 mt-auto">
           <span className="flex items-center gap-1">
             <Icon name="check_circle" size="xs" />
             {t('revenue.highlights.paidSummary', {
@@ -67,6 +67,15 @@ export function RevenueHighlights({ stats }: RevenueHighlightsProps) {
               count: stats.paid_count,
             })}
           </span>
+          {stats.credit_notes_count > 0 && (
+            <span className="flex items-center gap-1">
+              <Icon name="receipt_long" size="xs" />
+              {t('revenue.highlights.creditNotesSummary', {
+                amount: formatCurrency(stats.credit_notes_total, { maximumFractionDigits: 0 }),
+                count: stats.credit_notes_count,
+              })}
+            </span>
+          )}
         </div>
       </div>
 

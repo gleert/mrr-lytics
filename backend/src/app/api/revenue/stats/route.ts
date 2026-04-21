@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
 import {
   fetchRecurringBillableSet,
+  isCreditNote,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
@@ -105,6 +106,8 @@ export async function GET(request: NextRequest) {
         paid_count: 0,
         unpaid_total: 0,
         unpaid_count: 0,
+        credit_notes_total: 0,
+        credit_notes_count: 0,
         projected_next_period: 0,
         recent_paid: [],
         top_product: null,
@@ -123,6 +126,8 @@ export async function GET(request: NextRequest) {
     
     let recurringRevenue = 0
     let onetimeRevenue = 0
+    let creditNotesTotal = 0
+    let creditNotesCount = 0
 
     // Load recurring billable item set once (used for both periods)
     const recurringBillableSet = await fetchRecurringBillableSet(supabase, instanceIds)
@@ -152,6 +157,12 @@ export async function GET(request: NextRequest) {
 
       allItems.forEach(item => {
         const amount = Number(item.amount) || 0
+        if (isCreditNote(item.type, amount)) {
+          creditNotesTotal += amount
+          creditNotesCount += 1
+          onetimeRevenue += amount
+          return
+        }
         if (isRecurringItem(item.type, item.relid, item.instance_id, recurringBillableSet)) {
           recurringRevenue += amount
         } else {
@@ -380,6 +391,8 @@ export async function GET(request: NextRequest) {
       paid_count: paidInvoices.length,
       unpaid_total: Math.round(unpaidTotal * 100) / 100,
       unpaid_count: unpaidInvoices.length,
+      credit_notes_total: Math.round(creditNotesTotal * 100) / 100,
+      credit_notes_count: creditNotesCount,
       projected_next_period: projectedNextPeriod,
       recent_paid: recentPaid,
       top_product: topProduct,

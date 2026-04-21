@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
 import {
   fetchRecurringBillableSet,
+  isCreditNote,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
@@ -131,7 +132,10 @@ export async function GET(request: NextRequest) {
 
     for (const item of allItems) {
       if (item.amount === 0) continue
-      const { name: groupName, hasCategory } = resolver(item)
+      const { name: groupName, hasCategory } =
+        groupBy !== 'type' && isCreditNote(item.type, item.amount)
+          ? { name: 'Credit Notes', hasCategory: false }
+          : resolver(item)
       const existing = invoiceGroups.get(item.invoice_id) || new Map<string, { revenue: number; hasCategory: boolean }>()
       const prev = existing.get(groupName) || { revenue: 0, hasCategory }
       existing.set(groupName, {

@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange } from '@/utils/date-helpers'
 import {
   fetchRecurringBillableSet,
+  isCreditNote,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
@@ -265,6 +266,11 @@ async function getBreakdownByCategory(
     let categoryName = 'Other'
     let categoryColor: string | undefined
 
+    if (isCreditNote(item.type, amount)) {
+      addToCategory('Credit Notes', amount)
+      return
+    }
+
     if (item.type === 'Hosting' && item.relid) {
       // Try to find the category for this hosting item
       // We need to find which instance this belongs to - we'll check all instances
@@ -346,7 +352,9 @@ function getBreakdownBySource(
 
   items.forEach(item => {
     const amount = Number(item.amount) || 0
-    const sourceName = sourceMapping[item.type] || 'Other'
+    const sourceName = isCreditNote(item.type, amount)
+      ? 'Credit Notes'
+      : sourceMapping[item.type] || 'Other'
     sourceTotals.set(sourceName, (sourceTotals.get(sourceName) || 0) + amount)
   })
 

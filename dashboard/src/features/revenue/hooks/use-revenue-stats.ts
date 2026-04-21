@@ -19,6 +19,8 @@ export interface RevenueStats {
   paid_count: number
   unpaid_total: number
   unpaid_count: number
+  credit_notes_total: number
+  credit_notes_count: number
   projected_next_period: number
   recent_paid: Array<{ invoice_num: string; amount: number; date: string; client_name: string }>
   top_product: { name: string; revenue: number } | null

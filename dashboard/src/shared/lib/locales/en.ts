@@ -346,6 +346,7 @@ export const en = {
         pendingLabel: 'Pending payment',
         pendingDesc: '{{count}} unpaid invoices this period',
         paidSummary: '{{amount}} paid ({{count}} invoices)',
+        creditNotesSummary: '{{amount}} in credit notes ({{count}})',
         recentLabel: 'Latest payments',
         noRecent: 'No recent payments',
       },

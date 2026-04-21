@@ -346,6 +346,7 @@ export const es = {
         pendingLabel: 'Pendiente de cobro',
         pendingDesc: '{{count}} facturas sin pagar en este periodo',
         paidSummary: '{{amount}} cobrado ({{count}} facturas)',
+        creditNotesSummary: '{{amount}} en abonos ({{count}})',
         recentLabel: 'Últimos cobros',
         noRecent: 'Sin cobros recientes',
       },

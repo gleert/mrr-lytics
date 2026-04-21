@@ -65,3 +65,21 @@ export function isRecurringItem(
   }
   return false
 }
+
+/**
+ * True when the invoice line is a credit note / refund / abono.
+ *
+ * WHMCS stores these as invoice items with an empty/null `type` and a
+ * negative `amount`. Descriptions are free text ("Abono factura NNN",
+ * "Credit note for invoice NNN", "Descuento 50%"). They reverse a previous
+ * transaction so they are conceptually one-time, but the volume is high
+ * enough (~ -€160k across paid invoices in the sample tenant) that they
+ * warrant a dedicated breakdown bucket instead of being lumped into
+ * "Other" / "One-time".
+ */
+export function isCreditNote(
+  type: string | null,
+  amount: number,
+): boolean {
+  return (type === null || type === '') && amount < 0
+}
