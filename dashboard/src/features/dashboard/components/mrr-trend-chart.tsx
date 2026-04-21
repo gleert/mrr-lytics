@@ -22,7 +22,7 @@ export function MRRTrendChart() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data, isLoading } = useMRRTrend()
-  const { formatCurrency, formatCurrencyCompact, formatNumber } = useCurrency()
+  const { formatCurrency, formatNumber } = useCurrency()
   const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
@@ -190,7 +190,7 @@ export function MRRTrendChart() {
                       />
                       <span className="flex-1 text-sm truncate">{group.name}</span>
                       <span className="text-xs text-muted">
-                        {formatCurrency(group.total_mrr / 12)}
+                        {formatCurrency(group.total_mrr / 12, { maximumFractionDigits: 0 })}
                       </span>
                     </label>
                   ))}
@@ -260,13 +260,14 @@ export function MRRTrendChart() {
                   tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
                   tickLine={false}
                   axisLine={{ stroke: 'var(--color-border)' }}
-                  tickFormatter={(value) => formatCurrencyCompact(value)}
+                  tickFormatter={(value) => formatCurrency(value, { maximumFractionDigits: 0 })}
+                  width={70}
                 />
                 <Tooltip
                   content={
                     <ChartTooltip
                       labelFormatter={formatMonth}
-                      valueFormatter={(v) => formatCurrency(v)}
+                      valueFormatter={(v) => formatCurrency(v, { maximumFractionDigits: 0 })}
                       totalKey="total"
                       totalLabel={t('dashboard.committedMrr')}
                     />
