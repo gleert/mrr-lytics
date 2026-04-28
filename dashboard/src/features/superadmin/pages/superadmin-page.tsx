@@ -9,8 +9,112 @@ import { TenantActions } from '../components/tenant-actions'
 const PLAN_COLORS: Record<string, string> = {
   free: 'bg-muted/10 text-muted',
   starter: 'bg-blue-500/10 text-blue-400',
+  advanced: 'bg-cyan-500/10 text-cyan-400',
   pro: 'bg-primary-500/10 text-primary-400',
+  business: 'bg-amber-500/10 text-amber-400',
   enterprise: 'bg-amber-500/10 text-amber-400',
+}
+
+const DEMO_INSTANCE = {
+  url: 'https://api.mrrlytics.com/api/demo/whmcs',
+  apiKey: 'mrr_demo_b822911c03604af664dd7333b694bf7b',
+  label: 'Demo · Acme Hosting',
+}
+
+function CopyableField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted">{label}</p>
+      <div className="flex items-center gap-2">
+        <input
+          readOnly
+          value={value}
+          className={cn(
+            'flex-1 bg-surface-elevated border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none truncate',
+            mono && 'font-mono',
+          )}
+        />
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+          aria-label={`Copiar ${label}`}
+        >
+          <Icon name={copied ? 'check' : 'content_copy'} size="sm" className={copied ? 'text-success' : ''} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function DemoInstanceCard() {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-500/10 border border-primary-500/20 shrink-0">
+          <Icon name="science" size="lg" className="text-primary-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-semibold text-foreground">Instancia demo de WHMCS</h3>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">
+              {DEMO_INSTANCE.label}
+            </span>
+          </div>
+          <p className="text-sm text-muted mt-1">
+            Conecta cualquier tenant a este endpoint para llenar el dashboard con datos sintéticos
+            (~50 clientes, 6 meses de historial). El dataset evoluciona solo: cada sync trae nuevos
+            clientes y facturas mensuales si ha pasado tiempo desde la última llamada.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-3">
+        <CopyableField label="URL del endpoint" value={DEMO_INSTANCE.url} />
+        <CopyableField label="API Key (X-MRRlytics-Key)" value={DEMO_INSTANCE.apiKey} mono />
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface-elevated p-4 space-y-2">
+        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+          <Icon name="link" size="sm" className="text-muted" />
+          Cómo conectarla a un tenant
+        </p>
+        <ol className="text-sm text-muted space-y-1 list-decimal list-inside">
+          <li>Entra al tenant (impersonate desde la lista de abajo o desde tu propia cuenta).</li>
+          <li>
+            Ve a <code className="bg-surface px-1 rounded text-foreground">/sync</code> y pulsa{' '}
+            <em>Add Instance</em>.
+          </li>
+          <li>
+            Pega la URL y la API Key de arriba; el nombre puede ser cualquiera (ej.{' '}
+            <em>“Demo Acme”</em>).
+          </li>
+          <li>El test de conexión debe responder OK; lanza un sync manual para poblar las métricas.</li>
+        </ol>
+      </div>
+
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+        <p className="text-xs text-amber-400 flex items-start gap-1.5">
+          <Icon name="info" size="sm" className="mt-0.5 shrink-0" />
+          <span>
+            La API key es pública intencionadamente — el endpoint solo expone datos sintéticos.
+            Si quieres aislar varios “entornos demo”, inserta filas adicionales en{' '}
+            <code className="bg-surface px-1 rounded">demo_instances</code> con otros{' '}
+            <code className="bg-surface px-1 rounded">seed</code> /{' '}
+            <code className="bg-surface px-1 rounded">start_date</code>.
+          </span>
+        </p>
+      </div>
+    </div>
+  )
 }
 
 function TenantRow({ tenant, onClick, isSelected }: {
@@ -202,6 +306,9 @@ export function SuperAdminPage() {
           </p>
         </div>
       </div>
+
+      {/* Demo instance card */}
+      <DemoInstanceCard />
 
       {/* Tenant list - full width */}
       <div className="rounded-xl border border-border bg-surface flex flex-col">
