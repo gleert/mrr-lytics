@@ -1,10 +1,20 @@
+import * as React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { cn } from '@/shared/lib/utils'
 import { useAdminTenants, useIsSuperAdmin, type AdminTenant } from '../hooks/use-superadmin'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { TenantActions } from '../components/tenant-actions'
+
+type SuperAdminTab = 'tenants' | 'demo'
+
+const STORAGE_KEY = 'mrrlytics-superadmin-tab'
+
+const TABS: { id: SuperAdminTab; icon: string; label: string }[] = [
+  { id: 'tenants', icon: 'group', label: 'Tenants' },
+  { id: 'demo', icon: 'science', label: 'Demo' },
+]
 
 const PLAN_COLORS: Record<string, string> = {
   free: 'bg-muted/10 text-muted',
@@ -279,6 +289,32 @@ export function SuperAdminPage() {
   const { data, isLoading } = useAdminTenants()
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [activeTab, setActiveTab] = useState<SuperAdminTab>(() => {
+    const fromUrl = searchParams.get('tab')
+    if (fromUrl && TABS.some((tab) => tab.id === fromUrl)) {
+      return fromUrl as SuperAdminTab
+    }
+    const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+    if (stored && TABS.some((tab) => tab.id === stored)) {
+      return stored as SuperAdminTab
+    }
+    return 'tenants'
+  })
+
+  React.useEffect(() => {
+    const fromUrl = searchParams.get('tab')
+    if (fromUrl && TABS.some((tab) => tab.id === fromUrl) && fromUrl !== activeTab) {
+      setActiveTab(fromUrl as SuperAdminTab)
+    }
+  }, [searchParams, activeTab])
+
+  const handleTabChange = (tab: SuperAdminTab) => {
+    setActiveTab(tab)
+    if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, tab)
+    setSearchParams({ tab }, { replace: true })
+  }
 
   // Guard: redirect if not superadmin
   if (!isSuperAdmin) {
@@ -307,54 +343,78 @@ export function SuperAdminPage() {
         </div>
       </div>
 
-      {/* Demo instance card */}
-      <DemoInstanceCard />
-
-      {/* Tenant list - full width */}
-      <div className="rounded-xl border border-border bg-surface flex flex-col">
-        {/* Search */}
-        <div className="p-4 border-b border-border">
-          <div className="relative">
-            <Icon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar tenant..."
-              className="w-full bg-surface-elevated border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* List */}
-        <div className="p-2 space-y-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <Icon name="sync" size="xl" className="animate-spin text-muted" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-muted">
-              <Icon name="search_off" size="xl" className="mb-2 opacity-50" />
-              <p className="text-sm">No se encontraron tenants</p>
-            </div>
-          ) : (
-            filtered.map(tenant => (
-              <TenantRow
-                key={tenant.id}
-                tenant={tenant}
-                isSelected={tenant.id === selectedId}
-                onClick={() => setSelectedId(tenant.id === selectedId ? null : tenant.id)}
-              />
-            ))
-          )}
-        </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 p-1 bg-surface rounded-lg border border-border w-fit max-w-full">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            title={tab.label}
+            className={cn(
+              'flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
+              activeTab === tab.id
+                ? 'bg-primary-500 text-white'
+                : 'text-muted hover:text-foreground hover:bg-surface-hover'
+            )}
+          >
+            <Icon name={tab.icon} size="sm" />
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Detail panel - full width, shown below when a tenant is selected */}
-      {selected && (
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <TenantDetail tenant={selected} />
+      {/* Tab content */}
+      {activeTab === 'tenants' && (
+        <div className="space-y-6">
+          {/* Tenant list - full width */}
+          <div className="rounded-xl border border-border bg-surface flex flex-col">
+            {/* Search */}
+            <div className="p-4 border-b border-border">
+              <div className="relative">
+                <Icon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar tenant..."
+                  className="w-full bg-surface-elevated border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="p-2 space-y-1">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <Icon name="sync" size="xl" className="animate-spin text-muted" />
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted">
+                  <Icon name="search_off" size="xl" className="mb-2 opacity-50" />
+                  <p className="text-sm">No se encontraron tenants</p>
+                </div>
+              ) : (
+                filtered.map(tenant => (
+                  <TenantRow
+                    key={tenant.id}
+                    tenant={tenant}
+                    isSelected={tenant.id === selectedId}
+                    onClick={() => setSelectedId(tenant.id === selectedId ? null : tenant.id)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Detail panel */}
+          {selected && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <TenantDetail tenant={selected} />
+            </div>
+          )}
         </div>
       )}
+
+      {activeTab === 'demo' && <DemoInstanceCard />}
     </div>
   )
 }
