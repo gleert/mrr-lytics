@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>
 
-export type LimitType = 'instances' | 'team_members' | 'history_days' | 'exports' | 'clients'
+export type LimitType = 'instances' | 'history_days' | 'exports' | 'clients'
 
 export interface LimitCheckResult {
   allowed: boolean
@@ -158,16 +158,6 @@ async function checkLimitAgainstPlan(
       break
     }
 
-    case 'team_members': {
-      const { count } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-      current = count ?? 0
-      break
-    }
-
     case 'clients': {
       const { data } = await supabase.rpc('get_tenant_usage', {
         p_tenant_id: tenantId,
@@ -277,7 +267,6 @@ export async function getSubscriptionLimits(tenantId: string): Promise<{
     limits: limits as Record<LimitType, number>,
     usage: {
       instances: usage?.[0]?.instances_count ?? 0,
-      team_members: usage?.[0]?.team_members_count ?? 0,
       clients: usage?.[0]?.clients_count ?? 0,
     },
   }

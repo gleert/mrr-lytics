@@ -1,7 +1,6 @@
 import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
-import { checkSubscriptionLimit, TrialExpiredError } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,16 +72,14 @@ export async function GET() {
       last_sign_in: authUserMap.get(m.id)?.last_sign_in_at || m.last_login_at || null,
     }))
 
-    const limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
-
     return success({
       members: teamMembers,
       current_user_id: authId,
       current_user_role: currentUser.role,
       limits: {
-        current: limitCheck.current,
-        max: limitCheck.limit,
-        can_invite: limitCheck.allowed,
+        current: teamMembers.length,
+        max: -1,
+        can_invite: true,
       },
     })
   } catch (err) {
@@ -115,25 +112,6 @@ export async function POST(request: Request) {
 
     if (!currentUser || currentUser.role !== 'admin') {
       return error(new Error('Only admins can invite team members'), 403)
-    }
-
-    // Check subscription limit
-    let limitCheck
-    try {
-      limitCheck = await checkSubscriptionLimit(tenantId, 'team_members')
-    } catch (limitErr) {
-      if (limitErr instanceof TrialExpiredError) {
-        return error(limitErr, 402)
-      }
-      console.error('[team/invite] subscription check failed:', limitErr)
-      // Don't block invites if subscription check fails
-      limitCheck = { allowed: true, current: 0, limit: 999 }
-    }
-    if (!limitCheck.allowed) {
-      return error(
-        new Error(`Team member limit reached. Your plan allows ${limitCheck.limit} members.`),
-        403
-      )
     }
 
     const body = await request.json()

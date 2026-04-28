@@ -803,6 +803,7 @@ export const en = {
           accountManager: 'Business plan now includes a dedicated account manager for prioritized support and roadmap input',
           onboarding: 'Business plan now includes white-glove onboarding assistance to set up instances, categories and team members on day one',
           historyTiers: 'Historical data window now scales by plan: 1 year (Starter), 2 years (Advanced), 5 years (Pro and Business)',
+          unlimitedTeamMembers: 'Team members are no longer capped per plan — invite as many people as you need on every tier',
           monthlyOnlyPricing: 'Pricing simplified to monthly billing only — yearly toggle is hidden when no plan offers an annual price',
           starterDefault: 'New tenants now land on the Starter plan in active status; Free plan is retired from the public catalog and existing Free tenants were migrated to Starter',
           pricingAlignment: 'Marketing site, pricing API, and billing dashboard now share a single source of truth for prices, limits and features — Business is consistently $149 everywhere',

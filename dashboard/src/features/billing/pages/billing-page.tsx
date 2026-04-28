@@ -218,12 +218,6 @@ export function BillingPage() {
                   limit={subscription.plan.limits.instances}
                 />
 
-                <UsageMeter
-                  label={t('billing.teamMembers', 'Team Members')}
-                  current={subscription.usage.team_members}
-                  limit={subscription.plan.limits.team_members}
-                />
-
                 {typeof subscription.plan.limits.webhooks === 'number' && (
                   <UsageMeter
                     label={t('billing.webhooks', 'Webhooks')}

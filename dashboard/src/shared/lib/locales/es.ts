@@ -800,6 +800,7 @@ export const es = {
           accountManager: 'El plan Business incluye ahora un account manager dedicado con soporte priorizado e influencia directa en el roadmap',
           onboarding: 'El plan Business incluye ahora asistencia de onboarding personalizada para configurar instancias, categorías y miembros del equipo desde el primer día',
           historyTiers: 'La ventana de datos históricos escala por plan: 1 año (Starter), 2 años (Advanced), 5 años (Pro y Business)',
+          unlimitedTeamMembers: 'Los miembros del equipo dejan de tener límite por plan — invita a tantas personas como necesites en cualquier nivel',
           monthlyOnlyPricing: 'Precios simplificados a solo facturación mensual — el toggle anual se oculta automáticamente cuando ningún plan tiene precio anual',
           starterDefault: 'Los nuevos tenants empiezan ahora en el plan Starter en estado activo; el plan Free se retira del catálogo público y los tenants existentes en Free han sido migrados a Starter',
           pricingAlignment: 'Web de marketing, API de precios y panel de facturación comparten una única fuente de verdad para precios, límites y features — Business marca $149 de forma consistente en todos los sitios',

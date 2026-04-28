@@ -16,7 +16,6 @@ export interface SubscriptionPlan {
   }
   limits: {
     instances: number
-    team_members: number
     history_days: number
     clients?: number
     webhooks?: number
@@ -46,7 +45,6 @@ export interface Subscription {
 
 export interface SubscriptionUsage {
   instances: number
-  team_members: number
   clients: number
   webhooks: number
   oldest_data: string | null

@@ -131,16 +131,10 @@ export function BillingSection() {
               {t('billing.usage', 'Usage')}
             </p>
             
-            <UsageMeter 
+            <UsageMeter
               label={t('billing.whmcsInstances', 'WHMCS Instances')}
               current={usage.instances}
               limit={plan.limits.instances}
-            />
-
-            <UsageMeter 
-              label={t('billing.teamMembers', 'Team Members')}
-              current={usage.team_members}
-              limit={plan.limits.team_members}
             />
 
             <div className="flex items-center justify-between text-sm">

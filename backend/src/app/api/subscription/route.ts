@@ -130,7 +130,6 @@ export async function GET() {
       },
       usage: {
         instances: usage?.[0]?.instances_count ?? 0,
-        team_members: usage?.[0]?.team_members_count ?? 0,
         clients: usage?.[0]?.clients_count ?? 0,
         webhooks: webhooksCount ?? 0,
         oldest_data: usage?.[0]?.oldest_snapshot_date ?? null,
