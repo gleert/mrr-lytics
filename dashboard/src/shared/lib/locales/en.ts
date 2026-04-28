@@ -796,6 +796,10 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v270: {
+          demoEndpoint: 'New demo WHMCS endpoint at api.mrrlytics.com/api/demo/whmcs — connect it as a regular instance with the public demo API key to populate the dashboard with sample data without setting up a real WHMCS install',
+          demoEvolves: 'The demo dataset evolves on its own with each sync: new clients sign up over time, monthly invoices accumulate, and a small share of services churn — keeping every chart and KPI alive',
+        },
         v260: {
           newPlanLineup: 'New plan lineup: Starter ($15), Advanced ($29), Pro ($79) and Business ($149) — replacing the previous Free/Starter/Pro/Business catalog',
           clientsLimit: 'New per-plan limit on number of WHMCS clients (1,000 / 2,500 / 10,000 / unlimited) surfaced as a usage meter on the billing page',
