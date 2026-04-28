@@ -115,19 +115,21 @@ export async function POST() {
       return error(new Error('Failed to create user record'), 500)
     }
 
-    // Assign free plan subscription
-    const { data: freePlan } = await supabase
+    // Assign default plan subscription (Starter). The DB trigger usually handles
+    // this on tenant creation, but we upsert here to cover legacy paths and
+    // keep the route idempotent.
+    const { data: defaultPlan } = await supabase
       .from('subscription_plans')
       .select('id')
-      .eq('id', 'free')
+      .eq('is_default', true)
       .single()
 
-    if (freePlan) {
+    if (defaultPlan) {
       await supabase
         .from('subscriptions')
         .upsert({
           tenant_id: tenant.id,
-          plan_id: 'free',
+          plan_id: defaultPlan.id,
           status: 'active',
         }, { onConflict: 'tenant_id' })
     }

@@ -29,6 +29,10 @@ const CHANGELOG: ChangelogEntry[] = [
     changes: [
       { type: 'feature',     text: 'changelog.entries.v260.newPlanLineup' },
       { type: 'feature',     text: 'changelog.entries.v260.clientsLimit' },
+      { type: 'feature',     text: 'changelog.entries.v260.apiAccess' },
+      { type: 'feature',     text: 'changelog.entries.v260.accountManager' },
+      { type: 'feature',     text: 'changelog.entries.v260.onboarding' },
+      { type: 'feature',     text: 'changelog.entries.v260.historyTiers' },
       { type: 'improvement', text: 'changelog.entries.v260.monthlyOnlyPricing' },
       { type: 'improvement', text: 'changelog.entries.v260.starterDefault' },
       { type: 'fix',         text: 'changelog.entries.v260.pricingAlignment' },

@@ -15,15 +15,16 @@ import {
 } from '../hooks/use-superadmin-actions'
 
 const PLANS = [
-  { id: 'free', name: 'Free', price: 0 },
-  { id: 'starter', name: 'Starter', price: 19 },
-  { id: 'pro', name: 'Pro', price: 49 },
-  { id: 'business', name: 'Business', price: 99 },
+  { id: 'starter', name: 'Starter', price: 15 },
+  { id: 'advanced', name: 'Advanced', price: 29 },
+  { id: 'pro', name: 'Pro', price: 79 },
+  { id: 'business', name: 'Business', price: 149 },
 ]
 
 const PLAN_COLORS: Record<string, string> = {
   free: 'bg-muted/10 text-muted border-muted/20',
   starter: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  advanced: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   pro: 'bg-primary-500/10 text-primary-400 border-primary-500/20',
   business: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 }

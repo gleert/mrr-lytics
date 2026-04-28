@@ -796,6 +796,10 @@ export const es = {
         v260: {
           newPlanLineup: 'Nueva oferta de planes: Starter ($15), Advanced ($29), Pro ($79) y Business ($149) — sustituye al anterior catálogo Free/Starter/Pro/Business',
           clientsLimit: 'Nuevo límite por plan según número de clientes WHMCS (1.000 / 2.500 / 10.000 / ilimitado) visible como medidor de uso en la página de facturación',
+          apiAccess: 'Acceso a la API disponible ahora en los planes Pro y Business para consultar tus datos de MRR, churn e ingresos de forma programática',
+          accountManager: 'El plan Business incluye ahora un account manager dedicado con soporte priorizado e influencia directa en el roadmap',
+          onboarding: 'El plan Business incluye ahora asistencia de onboarding personalizada para configurar instancias, categorías y miembros del equipo desde el primer día',
+          historyTiers: 'La ventana de datos históricos escala por plan: 1 año (Starter), 2 años (Advanced), 5 años (Pro y Business)',
           monthlyOnlyPricing: 'Precios simplificados a solo facturación mensual — el toggle anual se oculta automáticamente cuando ningún plan tiene precio anual',
           starterDefault: 'Los nuevos tenants empiezan ahora en el plan Starter en estado activo; el plan Free se retira del catálogo público y los tenants existentes en Free han sido migrados a Starter',
           pricingAlignment: 'Web de marketing, API de precios y panel de facturación comparten una única fuente de verdad para precios, límites y features — Business marca $149 de forma consistente en todos los sitios',

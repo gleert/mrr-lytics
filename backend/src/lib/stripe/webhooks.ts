@@ -226,11 +226,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, even
     return
   }
 
-  // Downgrade to free plan
+  // Downgrade to the default plan (Starter)
   await supabase
     .from('subscriptions')
     .update({
-      plan_id: 'free',
+      plan_id: 'starter',
       status: 'active',
       stripe_subscription_id: null,
       billing_interval: null,
@@ -244,7 +244,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, even
     .eq('tenant_id', sub.tenant_id)
 
   // Log event
-  await logSubscriptionEvent(sub.tenant_id, 'canceled', sub.plan_id, 'free', eventId)
+  await logSubscriptionEvent(sub.tenant_id, 'canceled', sub.plan_id, 'starter', eventId)
 }
 
 /**
