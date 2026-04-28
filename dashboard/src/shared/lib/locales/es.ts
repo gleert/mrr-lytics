@@ -112,6 +112,7 @@ export const es = {
       usage: 'Uso',
       whmcsInstances: 'Instancias WHMCS',
       teamMembers: 'Miembros del Equipo',
+      clients: 'Clientes',
       webhooks: 'Webhooks',
       dataHistory: 'Historial de Datos',
       unlimited: 'Ilimitado',
@@ -792,6 +793,13 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v260: {
+          newPlanLineup: 'Nueva oferta de planes: Starter ($15), Advanced ($29), Pro ($79) y Business ($149) — sustituye al anterior catálogo Free/Starter/Pro/Business',
+          clientsLimit: 'Nuevo límite por plan según número de clientes WHMCS (1.000 / 2.500 / 10.000 / ilimitado) visible como medidor de uso en la página de facturación',
+          monthlyOnlyPricing: 'Precios simplificados a solo facturación mensual — el toggle anual se oculta automáticamente cuando ningún plan tiene precio anual',
+          starterDefault: 'Los nuevos tenants empiezan ahora en el plan Starter en estado activo; el plan Free se retira del catálogo público y los tenants existentes en Free han sido migrados a Starter',
+          pricingAlignment: 'Web de marketing, API de precios y panel de facturación comparten una única fuente de verdad para precios, límites y features — Business marca $149 de forma consistente en todos los sitios',
+        },
         v250: {
           creditNotes: 'Las notas de crédito / abonos (líneas de factura negativas con tipo vacío) ahora aparecen como categoría propia "Credit Notes" en los desgloses de ingresos y como resumen compacto en la tarjeta "Pendiente de cobro" de /revenue',
           forecastCalloutMtd: 'El bloque de proyección del dashboard ahora muestra el MRR proyectado siempre en el mes en curso (MTD), independiente del filtro global de tiempo — sin fluctuaciones al cambiar el periodo',

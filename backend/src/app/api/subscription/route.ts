@@ -71,7 +71,7 @@ export async function GET() {
       .eq('tenant_id', auth.tenant_id)
       .eq('type', 'webhook')
 
-    // Calculate trial days remaining (for any trialing subscription, including free)
+    // Calculate trial days remaining (for any trialing subscription)
     let trialDaysRemaining: number | null = null
     let trialExpired = false
     if (subscription.trial_end) {
@@ -79,7 +79,7 @@ export async function GET() {
       const now = new Date()
       const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       trialDaysRemaining = Math.max(0, daysLeft)
-      trialExpired = subscription.plan_id === 'free' && daysLeft <= 0
+      trialExpired = subscription.status === 'trialing' && daysLeft <= 0
     }
 
     // Format response - subscription_plans is an object (not array) due to foreign key
@@ -131,6 +131,7 @@ export async function GET() {
       usage: {
         instances: usage?.[0]?.instances_count ?? 0,
         team_members: usage?.[0]?.team_members_count ?? 0,
+        clients: usage?.[0]?.clients_count ?? 0,
         webhooks: webhooksCount ?? 0,
         oldest_data: usage?.[0]?.oldest_snapshot_date ?? null,
       },

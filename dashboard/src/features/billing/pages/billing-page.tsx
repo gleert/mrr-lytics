@@ -32,25 +32,10 @@ export function BillingPage() {
   const showCanceled = searchParams.get('canceled') === 'true'
 
   const handleSelectPlan = async (planId: string) => {
-    if (planId === 'free') {
-      // Downgrade to free - use manual endpoint in dev mode
-      if (devMode) {
-        try {
-          await changePlan.mutateAsync({ plan_id: 'free', simulate_trial: false })
-        } catch (error) {
-          console.error('Failed to change plan:', error)
-        }
-        return
-      }
-      // In production, open portal to cancel
-      handleManageSubscription()
-      return
-    }
-
     // If we already know we're in dev mode, use manual endpoint directly
     if (devMode) {
       try {
-        await changePlan.mutateAsync({ plan_id: planId, simulate_trial: true })
+        await changePlan.mutateAsync({ plan_id: planId, simulate_trial: false })
       } catch (error) {
         console.error('Failed to change plan:', error)
       }
@@ -88,6 +73,7 @@ export function BillingPage() {
 
   const isLoading = subLoading || plansLoading
   const isChangingPlan = createCheckout.isPending || changePlan.isPending
+  const plansHaveYearly = !!plans?.some((p) => typeof p.price.yearly === 'number' && p.price.yearly > 0)
 
   if (isLoading) {
     return (
@@ -218,23 +204,33 @@ export function BillingPage() {
                   {t('billing.usage', 'Usage')}
                 </p>
                 
-                <UsageMeter 
+                {typeof subscription.plan.limits.clients === 'number' && (
+                  <UsageMeter
+                    label={t('billing.clients', 'Clients')}
+                    current={subscription.usage.clients}
+                    limit={subscription.plan.limits.clients}
+                  />
+                )}
+
+                <UsageMeter
                   label={t('billing.whmcsInstances', 'WHMCS Instances')}
                   current={subscription.usage.instances}
                   limit={subscription.plan.limits.instances}
                 />
 
-                <UsageMeter 
+                <UsageMeter
                   label={t('billing.teamMembers', 'Team Members')}
                   current={subscription.usage.team_members}
                   limit={subscription.plan.limits.team_members}
                 />
 
-                <UsageMeter 
-                  label={t('billing.webhooks', 'Webhooks')}
-                  current={subscription.usage.webhooks}
-                  limit={subscription.plan.limits.webhooks}
-                />
+                {typeof subscription.plan.limits.webhooks === 'number' && (
+                  <UsageMeter
+                    label={t('billing.webhooks', 'Webhooks')}
+                    current={subscription.usage.webhooks}
+                    limit={subscription.plan.limits.webhooks}
+                  />
+                )}
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted">{t('billing.dataHistory', 'Data History')}</span>
@@ -260,10 +256,12 @@ export function BillingPage() {
                 {t('billing.choosePlan', 'Choose the plan that works best for you')}
               </CardDescription>
             </div>
-            <BillingIntervalToggle 
-              value={billingInterval} 
-              onChange={setBillingInterval} 
-            />
+            {plansHaveYearly && (
+              <BillingIntervalToggle
+                value={billingInterval}
+                onChange={setBillingInterval}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -279,7 +277,7 @@ export function BillingPage() {
               <PlanCard
                 key={plan.id}
                 plan={plan}
-                currentPlanId={subscription?.plan.id || 'free'}
+                currentPlanId={subscription?.plan.id || 'starter'}
                 billingInterval={billingInterval}
                 onSelect={handleSelectPlan}
                 isLoading={isChangingPlan}

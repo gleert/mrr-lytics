@@ -113,6 +113,7 @@ export const en = {
       usage: 'Usage',
       whmcsInstances: 'WHMCS Instances',
       teamMembers: 'Team Members',
+      clients: 'Clients',
       webhooks: 'Webhooks',
       dataHistory: 'Data History',
       unlimited: 'Unlimited',
@@ -795,6 +796,13 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v260: {
+          newPlanLineup: 'New plan lineup: Starter ($15), Advanced ($29), Pro ($79) and Business ($149) — replacing the previous Free/Starter/Pro/Business catalog',
+          clientsLimit: 'New per-plan limit on number of WHMCS clients (1,000 / 2,500 / 10,000 / unlimited) surfaced as a usage meter on the billing page',
+          monthlyOnlyPricing: 'Pricing simplified to monthly billing only — yearly toggle is hidden when no plan offers an annual price',
+          starterDefault: 'New tenants now land on the Starter plan in active status; Free plan is retired from the public catalog and existing Free tenants were migrated to Starter',
+          pricingAlignment: 'Marketing site, pricing API, and billing dashboard now share a single source of truth for prices, limits and features — Business is consistently $149 everywhere',
+        },
         v250: {
           creditNotes: 'Credit notes / abonos (negative invoice lines with empty type) are now surfaced as a dedicated "Credit Notes" category in revenue breakdowns and shown as a compact summary in the /revenue pending card',
           forecastCalloutMtd: 'Dashboard forecast callout now shows projected MRR pinned to month-to-date, independent of the global time filter — no more fluctuations when switching periods',

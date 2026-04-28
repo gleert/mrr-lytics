@@ -14,29 +14,25 @@ interface PlanCardProps {
   devMode?: boolean
 }
 
-export function PlanCard({ 
-  plan, 
-  currentPlanId, 
-  billingInterval, 
+export function PlanCard({
+  plan,
+  currentPlanId,
+  billingInterval,
   onSelect,
   isLoading,
   devMode = false,
 }: PlanCardProps) {
   const { t } = useTranslation()
   const isCurrent = plan.id === currentPlanId
-  const isUpgrade = !isCurrent && !plan.is_free
-  const isDowngrade = !isCurrent && plan.is_free && currentPlanId !== 'free'
+  const hasYearly = typeof plan.price.yearly === 'number' && plan.price.yearly > 0
+  const showYearly = billingInterval === 'year' && hasYearly
 
-  const price = billingInterval === 'year' 
-    ? plan.price.yearly_monthly_equivalent 
-    : plan.price.monthly_display
-
-  const totalPrice = billingInterval === 'year'
-    ? plan.price.yearly_display
+  const price = showYearly && plan.price.yearly_monthly_equivalent
+    ? plan.price.yearly_monthly_equivalent
     : plan.price.monthly_display
 
   return (
-    <Card 
+    <Card
       className={cn(
         'relative p-6 transition-all',
         plan.is_popular && 'ring-2 ring-primary-500',
@@ -67,25 +63,14 @@ export function PlanCard({
 
       {/* Price */}
       <div className="mt-4">
-        {plan.is_free ? (
-          <div>
-            <span className="text-4xl font-bold text-foreground">{t('billing.free', 'Free')}</span>
-            <p className="text-sm text-primary-400 font-medium mt-1">
-              {t('billing.trialDuration', '15-day trial')}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-foreground">{price}</span>
-              <span className="text-muted">/mo</span>
-            </div>
-            {billingInterval === 'year' && (
-              <p className="text-sm text-muted mt-1">
-                {totalPrice}/year ({plan.price.yearly_savings_percent}% off)
-              </p>
-            )}
-          </>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-bold text-foreground">{price}</span>
+          <span className="text-muted">/mo</span>
+        </div>
+        {showYearly && plan.price.yearly_display && (
+          <p className="text-sm text-muted mt-1">
+            {plan.price.yearly_display}/year ({plan.price.yearly_savings_percent}% off)
+          </p>
         )}
       </div>
 
@@ -105,20 +90,8 @@ export function PlanCard({
           <Button variant="outline" className="w-full" disabled>
             {t('billing.currentPlan', 'Current Plan')}
           </Button>
-        ) : plan.is_free ? (
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={() => onSelect(plan.id)}
-            disabled={isLoading}
-          >
-            {isDowngrade 
-              ? t('billing.downgrade', 'Downgrade') 
-              : t('billing.getStarted', 'Get Started')}
-            {devMode && <span className="ml-1 text-warning">(Dev)</span>}
-          </Button>
         ) : (
-          <Button 
+          <Button
             variant={plan.is_popular ? 'default' : 'outline'}
             className="w-full"
             onClick={() => onSelect(plan.id)}
@@ -131,9 +104,7 @@ export function PlanCard({
               </>
             ) : (
               <>
-                {isUpgrade 
-                  ? t('billing.upgrade', 'Upgrade') 
-                  : t('billing.subscribe', 'Subscribe')}
+                {t('billing.subscribe', 'Subscribe')}
                 {devMode && <span className="ml-1 text-warning">(Dev)</span>}
               </>
             )}

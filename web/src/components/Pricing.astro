@@ -9,10 +9,10 @@ const { lang = defaultLang } = Astro.props
 const t = useTranslations(lang)
 
 const plans = [
-  { key: 'free' as const, price: '$0', href: 'https://app.mrrlytics.com/register', featured: false },
-  { key: 'starter' as const, price: '$19', href: 'https://app.mrrlytics.com/register?plan=starter', featured: false },
-  { key: 'pro' as const, price: '$49', href: 'https://app.mrrlytics.com/register?plan=pro', featured: true },
-  { key: 'business' as const, price: '$149', href: 'mailto:sales@mrrlytics.com', featured: false },
+  { key: 'starter' as const, price: '$15', href: 'https://app.mrrlytics.com/register?plan=starter', featured: false },
+  { key: 'advanced' as const, price: '$29', href: 'https://app.mrrlytics.com/register?plan=advanced', featured: false },
+  { key: 'pro' as const, price: '$79', href: 'https://app.mrrlytics.com/register?plan=pro', featured: true },
+  { key: 'business' as const, price: '$149', href: 'https://app.mrrlytics.com/register?plan=business', featured: false },
 ]
 ---
 

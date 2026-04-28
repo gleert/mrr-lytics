@@ -42,3 +42,5 @@ yarn-error.log*
 opencode.json
 
 .vercel
+.rotation-backup/
+.backups/

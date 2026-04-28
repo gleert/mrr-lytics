@@ -38,28 +38,29 @@ export async function GET() {
     }
 
     // Format response with computed fields
-    const formattedPlans = plans.map((plan) => ({
-      id: plan.id,
-      name: plan.name,
-      description: plan.description,
-      price: {
-        monthly: plan.price_monthly,
-        yearly: plan.price_yearly,
-        monthly_display: formatPrice(plan.price_monthly),
-        yearly_display: formatPrice(plan.price_yearly),
-        yearly_monthly_equivalent: formatPrice(Math.round(plan.price_yearly / 12)),
-        yearly_savings_percent: plan.price_monthly > 0 
-          ? Math.round((1 - (plan.price_yearly / 12) / plan.price_monthly) * 100)
-          : 0,
-      },
-      limits: plan.limits,
-      features: plan.features,
-      is_free: plan.id === 'free',
-      is_trial: plan.id === 'free',
-      trial_days: plan.id === 'free' ? (plan.limits as Record<string, number>)?.trial_days ?? 15 : null,
-      is_default: plan.is_default,
-      is_popular: plan.id === 'pro', // Mark Pro as popular
-    }))
+    const formattedPlans = plans.map((plan) => {
+      const hasYearly = typeof plan.price_yearly === 'number' && plan.price_yearly > 0
+      return {
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        price: {
+          monthly: plan.price_monthly,
+          yearly: plan.price_yearly,
+          monthly_display: formatPrice(plan.price_monthly),
+          yearly_display: hasYearly ? formatPrice(plan.price_yearly) : null,
+          yearly_monthly_equivalent: hasYearly ? formatPrice(Math.round(plan.price_yearly / 12)) : null,
+          yearly_savings_percent: hasYearly && plan.price_monthly > 0
+            ? Math.round((1 - (plan.price_yearly / 12) / plan.price_monthly) * 100)
+            : 0,
+        },
+        limits: plan.limits,
+        features: plan.features,
+        is_free: plan.price_monthly === 0,
+        is_default: plan.is_default,
+        is_popular: plan.id === 'pro',
+      }
+    })
 
     return success({
       plans: formattedPlans,

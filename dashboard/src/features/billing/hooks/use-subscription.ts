@@ -8,18 +8,22 @@ export interface SubscriptionPlan {
   description: string
   price: {
     monthly: number
-    yearly: number
+    yearly: number | null
     monthly_display: string
-    yearly_display: string
-    yearly_monthly_equivalent: string
+    yearly_display: string | null
+    yearly_monthly_equivalent: string | null
     yearly_savings_percent: number
   }
   limits: {
     instances: number
     team_members: number
     history_days: number
-    webhooks: number
+    clients?: number
+    webhooks?: number
     exports: boolean
+    api_access?: boolean
+    account_manager?: boolean
+    onboarding?: boolean
   }
   features: string[]
   is_free: boolean
@@ -43,6 +47,7 @@ export interface Subscription {
 export interface SubscriptionUsage {
   instances: number
   team_members: number
+  clients: number
   webhooks: number
   oldest_data: string | null
 }

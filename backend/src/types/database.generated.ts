@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -272,6 +277,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          ip: string | null
+          lang: string | null
+          message: string
+          name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          ip?: string | null
+          lang?: string | null
+          message: string
+          name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          ip?: string | null
+          lang?: string | null
+          message?: string
+          name?: string
+          subject?: string
+        }
+        Relationships: []
       }
       metrics_daily: {
         Row: {
@@ -598,7 +636,7 @@ export type Database = {
           limits: Json
           name: string
           price_monthly: number
-          price_yearly: number
+          price_yearly: number | null
           sort_order: number
           stripe_price_id_monthly: string | null
           stripe_price_id_yearly: string | null
@@ -615,7 +653,7 @@ export type Database = {
           limits?: Json
           name: string
           price_monthly?: number
-          price_yearly?: number
+          price_yearly?: number | null
           sort_order?: number
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null
@@ -632,7 +670,7 @@ export type Database = {
           limits?: Json
           name?: string
           price_monthly?: number
-          price_yearly?: number
+          price_yearly?: number | null
           sort_order?: number
           stripe_price_id_monthly?: string | null
           stripe_price_id_yearly?: string | null
@@ -793,41 +831,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_tenants: {
-        Row: {
-          created_at: string
-          id: string
-          is_default: boolean
-          role: Database["public"]["Enums"]["user_role"]
-          tenant_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          role?: Database["public"]["Enums"]["user_role"]
-          tenant_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          role?: Database["public"]["Enums"]["user_role"]
-          tenant_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_tenants_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       users: {
         Row: {
           avatar_url: string | null
@@ -883,6 +886,7 @@ export type Database = {
           duedate: string | null
           id: string
           instance_id: string
+          invoice_action: number | null
           invoicecount: number | null
           recur: number | null
           recurcycle: string | null
@@ -897,6 +901,7 @@ export type Database = {
           duedate?: string | null
           id?: string
           instance_id: string
+          invoice_action?: number | null
           invoicecount?: number | null
           recur?: number | null
           recurcycle?: string | null
@@ -911,6 +916,7 @@ export type Database = {
           duedate?: string | null
           id?: string
           instance_id?: string
+          invoice_action?: number | null
           invoicecount?: number | null
           recur?: number | null
           recurcycle?: string | null
@@ -971,6 +977,7 @@ export type Database = {
       }
       whmcs_clients: {
         Row: {
+          closed_at: string | null
           companyname: string | null
           created_at: string | null
           credit: number | null
@@ -979,6 +986,7 @@ export type Database = {
           datecreated: string | null
           defaultgateway: string | null
           domains_count: number | null
+          email: string | null
           first_payment_date: string | null
           firstname: string | null
           groupid: number | null
@@ -996,6 +1004,7 @@ export type Database = {
           whmcs_id: number
         }
         Insert: {
+          closed_at?: string | null
           companyname?: string | null
           created_at?: string | null
           credit?: number | null
@@ -1004,6 +1013,7 @@ export type Database = {
           datecreated?: string | null
           defaultgateway?: string | null
           domains_count?: number | null
+          email?: string | null
           first_payment_date?: string | null
           firstname?: string | null
           groupid?: number | null
@@ -1021,6 +1031,7 @@ export type Database = {
           whmcs_id: number
         }
         Update: {
+          closed_at?: string | null
           companyname?: string | null
           created_at?: string | null
           credit?: number | null
@@ -1029,6 +1040,7 @@ export type Database = {
           datecreated?: string | null
           defaultgateway?: string | null
           domains_count?: number | null
+          email?: string | null
           first_payment_date?: string | null
           firstname?: string | null
           groupid?: number | null
@@ -1218,6 +1230,7 @@ export type Database = {
           created_at: string | null
           id: string
           last_sync_at: string | null
+          module_version: string | null
           name: string
           settings: Json | null
           slug: string
@@ -1235,6 +1248,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_sync_at?: string | null
+          module_version?: string | null
           name: string
           settings?: Json | null
           slug: string
@@ -1252,6 +1266,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_sync_at?: string | null
+          module_version?: string | null
           name?: string
           settings?: Json | null
           slug?: string
@@ -1522,18 +1537,9 @@ export type Database = {
           billingcycle: string | null
           instance_id: string | null
           mrr_contribution: number | null
-          raw_amount: number | null
           service_count: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "whmcs_hosting_instance_id_fkey"
-            columns: ["instance_id"]
-            isOneToOne: false
-            referencedRelation: "whmcs_instances"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       mv_mrr_current: {
         Row: {
@@ -1543,15 +1549,7 @@ export type Database = {
           instance_id: string | null
           mrr: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "whmcs_hosting_instance_id_fkey"
-            columns: ["instance_id"]
-            isOneToOne: false
-            referencedRelation: "whmcs_instances"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       mv_revenue_by_product: {
         Row: {
@@ -1569,6 +1567,44 @@ export type Database = {
             columns: ["instance_id"]
             isOneToOne: false
             referencedRelation: "whmcs_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_tenants: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          is_default: boolean | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_default?: never
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_default?: never
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1836,6 +1872,7 @@ export type Database = {
       get_tenant_usage: {
         Args: { p_tenant_id: string }
         Returns: {
+          clients_count: number
           instances_count: number
           oldest_snapshot_date: string
           team_members_count: number
@@ -1869,7 +1906,11 @@ export type Database = {
         Returns: number
       }
       populate_metrics_daily: {
-        Args: { p_date?: string; p_instance_id: string }
+        Args: {
+          p_date?: string
+          p_instance_id: string
+          p_skip_refresh?: boolean
+        }
         Returns: string
       }
       process_pending_snapshot_retries: { Args: never; Returns: number }
@@ -2031,4 +2072,3 @@ export const Constants = {
     },
   },
 } as const
-

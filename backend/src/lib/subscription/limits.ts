@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>
 
-export type LimitType = 'instances' | 'team_members' | 'history_days' | 'exports'
+export type LimitType = 'instances' | 'team_members' | 'history_days' | 'exports' | 'clients'
 
 export interface LimitCheckResult {
   allowed: boolean
@@ -95,15 +95,15 @@ export async function checkSubscriptionLimit(
     )
   }
 
-  // Check if free trial has expired
-  if (subscription.plan_id === 'free' && subscription.trial_end) {
+  // Check if a trial (any plan) has expired
+  if (subscription.status === 'trialing' && subscription.trial_end) {
     const trialEnd = new Date(subscription.trial_end)
     if (trialEnd < new Date()) {
       throw new TrialExpiredError(subscription.plan_id)
     }
   }
 
-  // If subscription is not in an active state (canceled, unpaid, etc.) and not free trialing
+  // If subscription is not in an active state (canceled, unpaid, etc.)
   if (!['active', 'trialing'].includes(subscription.status)) {
     throw new TrialExpiredError(subscription.plan_id)
   }
@@ -165,6 +165,14 @@ async function checkLimitAgainstPlan(
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
       current = count ?? 0
+      break
+    }
+
+    case 'clients': {
+      const { data } = await supabase.rpc('get_tenant_usage', {
+        p_tenant_id: tenantId,
+      })
+      current = data?.[0]?.clients_count ?? 0
       break
     }
 
@@ -231,8 +239,8 @@ export async function getSubscriptionLimits(tenantId: string): Promise<{
     .in('status', ['active', 'trialing'])
     .single()
 
-  let planId = 'free'
-  let planName = 'Free'
+  let planId = 'starter'
+  let planName = 'Starter'
   let limits: Record<string, number> = {}
 
   if (subscription) {
@@ -244,17 +252,17 @@ export async function getSubscriptionLimits(tenantId: string): Promise<{
     planName = plan.name
     limits = plan.limits
   } else {
-    // Use free plan
-    const { data: freePlan } = await supabase
+    // No subscription found — fall back to the default plan
+    const { data: defaultPlan } = await supabase
       .from('subscription_plans')
       .select('id, name, limits')
       .eq('is_default', true)
       .single()
 
-    if (freePlan) {
-      planId = freePlan.id
-      planName = freePlan.name
-      limits = freePlan.limits as Record<string, number>
+    if (defaultPlan) {
+      planId = defaultPlan.id
+      planName = defaultPlan.name
+      limits = defaultPlan.limits as Record<string, number>
     }
   }
 
@@ -270,6 +278,7 @@ export async function getSubscriptionLimits(tenantId: string): Promise<{
     usage: {
       instances: usage?.[0]?.instances_count ?? 0,
       team_members: usage?.[0]?.team_members_count ?? 0,
+      clients: usage?.[0]?.clients_count ?? 0,
     },
   }
 }
