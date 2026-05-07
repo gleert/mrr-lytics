@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { calculateMrrLive } from '@/lib/metrics/mrr-live'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -269,20 +270,22 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Get paid invoices for revenue calculation
-    const { data: paidInvoices, error: invoicesError } = await supabase
+    const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
+
+    const { data: periodInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('subtotal, client_id')
+      .select('subtotal')
       .in('instance_id', instanceIds)
-      .eq('status', 'Paid')
-      .gte('datepaid', startDate.toISOString().split('T')[0])
-      .lte('datepaid', endDate.toISOString().split('T')[0])
+      .in('status', revenueStatuses)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
       throw new Error(`Failed to fetch invoices: ${invoicesError.message}`)
     }
 
-    const revenueInPeriod = paidInvoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
+    const revenueInPeriod = periodInvoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
 
     return success({
       total_clients: totalRealClients,
