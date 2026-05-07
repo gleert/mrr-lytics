@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
-import { parseDateRange } from '@/utils/date-helpers'
+import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
+import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { startDate, endDate } = parseDateRange(period, startDateParam, endDateParam)
+    const historyLimit = await getHistoryDaysLimit(auth.tenant_id)
+    const { startDate, endDate } = applyHistoryLimit(parseDateRange(period, startDateParam, endDateParam), historyLimit)
     const today = new Date()
     const thirtyDaysFromNow = new Date(today)
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)

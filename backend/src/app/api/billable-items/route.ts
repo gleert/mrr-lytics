@@ -1,7 +1,8 @@
 import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
-import { parseDateRange } from '@/utils/date-helpers'
+import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
+import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,7 +72,8 @@ export async function GET(request: Request) {
       return success({ items: [], total_mrr: 0 })
     }
 
-    const { startDate, endDate } = parseDateRange(period, startDateParam, endDateParam)
+    const historyLimit = await getHistoryDaysLimit(tenantIds[0])
+    const { startDate, endDate } = applyHistoryLimit(parseDateRange(period, startDateParam, endDateParam), historyLimit)
     const startStr = startDate.toISOString().split('T')[0]
     const endStr = endDate.toISOString().split('T')[0]
 

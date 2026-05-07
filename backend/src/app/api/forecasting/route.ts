@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
-import { parseDateRange } from '@/utils/date-helpers'
+import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
+import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 
 export const dynamic = 'force-dynamic'
@@ -50,8 +51,8 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    // Parse the period to get date range
-    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
+    const historyLimit = await getHistoryDaysLimit(auth.tenant_id)
+    const { startDate, endDate, days } = applyHistoryLimit(parseDateRange(period, startDateParam, endDateParam), historyLimit)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
+import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,8 +61,9 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    // Parse days (default 30, max 365)
-    const days = Math.min(Math.max(parseInt(daysParam || '30', 10) || 30, 1), 365)
+    const historyLimit = await getHistoryDaysLimit(auth.tenant_id)
+    const maxDays = historyLimit === -1 ? 365 : Math.min(365, historyLimit)
+    const days = Math.min(maxDays, Math.max(parseInt(daysParam || '30', 10) || 30, 1))
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

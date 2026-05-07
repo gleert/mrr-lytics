@@ -110,6 +110,20 @@ export function parseDateRange(
 }
 
 /**
+ * Clamp a date range so it does not exceed the tenant's history_days plan limit.
+ * maxDays === -1 means unlimited (no clamping).
+ */
+export function applyHistoryLimit(range: DateRange, maxDays: number): DateRange {
+  if (maxDays === -1) return range
+
+  const minStart = new Date(range.endDate.getTime() - maxDays * 24 * 60 * 60 * 1000)
+  if (range.startDate >= minStart) return range
+
+  const days = Math.ceil((range.endDate.getTime() - minStart.getTime()) / (1000 * 60 * 60 * 24))
+  return { startDate: minStart, endDate: range.endDate, days }
+}
+
+/**
  * Format date for display
  */
 export function formatDateForDisplay(date: Date): string {

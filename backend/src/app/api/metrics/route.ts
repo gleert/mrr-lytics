@@ -5,7 +5,8 @@ import { getAuthContext } from '@/lib/auth'
 import { calculateMrrLive, calculateChurnMultiInstance, calculateRevenueByProductMultiInstance } from '@/lib/metrics'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
-import { parseDateRange } from '@/utils/date-helpers'
+import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
+import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { cached } from '@/lib/cache'
 
 export const dynamic = 'force-dynamic'
@@ -52,8 +53,8 @@ export async function GET(request: NextRequest) {
       throw new Error('No instance specified')
     }
 
-    // Parse date range
-    const { startDate, endDate, days } = parseDateRange(period, startDateParam, endDateParam)
+    const historyLimit = await getHistoryDaysLimit(auth.tenant_id)
+    const { startDate, endDate, days } = applyHistoryLimit(parseDateRange(period, startDateParam, endDateParam), historyLimit)
 
     // Try to get metrics from metrics_daily first (fast path)
     const cacheKey = `metrics:${instanceIds.sort().join(',')}:${period}`

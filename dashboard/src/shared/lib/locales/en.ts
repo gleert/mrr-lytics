@@ -1226,6 +1226,8 @@ export const en = {
       from:             'From',
       to:               'To',
       apply:            'Apply',
+      historyLimit:     'Your plan allows data from {{date}} onwards',
+      dateTooEarly:     'Date is before your plan allows ({{date}})',
     },
 
     // WHMCS Instances

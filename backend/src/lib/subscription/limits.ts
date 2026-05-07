@@ -201,6 +201,39 @@ async function checkLimitAgainstPlan(
 }
 
 /**
+ * Return the history_days limit for a tenant (-1 = unlimited).
+ * Falls back to the default plan if no active subscription exists.
+ */
+export async function getHistoryDaysLimit(tenantId: string): Promise<number> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('subscription_plans(limits)')
+    .eq('tenant_id', tenantId)
+    .in('status', ['active', 'trialing'])
+    .single()
+
+  const limits = (sub?.subscription_plans as unknown as { limits: Record<string, number> } | null)?.limits
+
+  if (limits?.history_days !== undefined) return limits.history_days
+
+  // Fall back to the default plan
+  const { data: defaultPlan } = await supabase
+    .from('subscription_plans')
+    .select('limits')
+    .eq('is_default', true)
+    .single()
+
+  const defaultLimits = defaultPlan?.limits as Record<string, number> | null
+  return defaultLimits?.history_days ?? 365
+}
+
+/**
  * Get all limits for a tenant's current plan
  */
 export async function getSubscriptionLimits(tenantId: string): Promise<{

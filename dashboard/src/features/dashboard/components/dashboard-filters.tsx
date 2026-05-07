@@ -4,20 +4,22 @@ import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
 import { useFilters, PERIOD_PRESETS, type WhmcsInstance, type PeriodPreset } from '@/app/providers'
 import { cn } from '@/shared/lib/utils'
+import { useSubscription } from '@/features/billing/hooks/use-subscription'
 
-function CustomDateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CustomDateModal({ open, onClose, minDate }: { open: boolean; onClose: () => void; minDate?: string }) {
   const { t } = useTranslation()
   const { customDateRange, setCustomDateRange } = useFilters()
   const [start, setStart] = React.useState(customDateRange?.start || '')
   const [end, setEnd] = React.useState(customDateRange?.end || '')
 
-  // Sync with existing range when opened
+  // Sync with existing range when opened, clamping start to minDate if needed
   React.useEffect(() => {
-    if (open && customDateRange) {
-      setStart(customDateRange.start)
-      setEnd(customDateRange.end)
+    if (open) {
+      const savedStart = customDateRange?.start || ''
+      setStart(minDate && savedStart && savedStart < minDate ? minDate : savedStart)
+      setEnd(customDateRange?.end || '')
     }
-  }, [open, customDateRange])
+  }, [open, customDateRange, minDate])
 
   const handleApply = () => {
     if (start && end && start <= end) {
@@ -48,12 +50,20 @@ function CustomDateModal({ open, onClose }: { open: boolean; onClose: () => void
 
         {/* Body */}
         <div className="p-5 space-y-4">
+          {minDate && (
+            <div className="flex items-center gap-1.5 text-xs text-muted">
+              <Icon name="info" size="sm" />
+              <span>{t('filters.historyLimit', { date: minDate })}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="block text-sm font-medium">{t('filters.from')}</label>
               <input
                 type="date"
                 value={start}
+                min={minDate}
                 onChange={e => setStart(e.target.value)}
                 className={cn(
                   'w-full h-10 rounded-lg border border-border bg-surface-elevated px-3 text-sm',
@@ -78,6 +88,9 @@ function CustomDateModal({ open, onClose }: { open: boolean; onClose: () => void
           {start && end && start > end && (
             <p className="text-xs text-error">{t('filters.invalidRange', 'Start date must be before end date')}</p>
           )}
+          {minDate && start && start < minDate && (
+            <p className="text-xs text-error">{t('filters.dateTooEarly', { date: minDate })}</p>
+          )}
         </div>
 
         {/* Footer */}
@@ -85,7 +98,11 @@ function CustomDateModal({ open, onClose }: { open: boolean; onClose: () => void
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('common.cancel', 'Cancel')}
           </Button>
-          <Button size="sm" onClick={handleApply} disabled={!start || !end || start > end}>
+          <Button
+            size="sm"
+            onClick={handleApply}
+            disabled={!start || !end || start > end || (!!minDate && start < minDate)}
+          >
             <Icon name="check" size="sm" className="mr-1.5" />
             {t('filters.apply')}
           </Button>
@@ -111,6 +128,12 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
     isLoadingTenants,
     hasMultipleInstances,
   } = useFilters()
+
+  const { data: subscriptionData } = useSubscription()
+  const historyDays = subscriptionData?.plan?.limits?.history_days ?? -1
+  const minDate = historyDays === -1
+    ? undefined
+    : new Date(Date.now() - historyDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   const [instanceDropdownOpen, setInstanceDropdownOpen] = React.useState(false)
   const [periodDropdownOpen, setPeriodDropdownOpen] = React.useState(false)
@@ -209,7 +232,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
           {periodDropdownOpen && <PeriodDropdownContent />}
         </div>
 
-        <CustomDateModal open={customModalOpen} onClose={() => setCustomModalOpen(false)} />
+        <CustomDateModal open={customModalOpen} onClose={() => setCustomModalOpen(false)} minDate={minDate} />
       </div>
     )
   }
@@ -362,7 +385,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
         </div>
       )}
 
-      <CustomDateModal open={customModalOpen} onClose={() => setCustomModalOpen(false)} />
+      <CustomDateModal open={customModalOpen} onClose={() => setCustomModalOpen(false)} minDate={minDate} />
     </div>
   )
 }
