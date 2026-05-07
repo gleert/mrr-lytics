@@ -76,14 +76,7 @@ export function ClientsPage() {
       </div>
 
       {/* KPI Cards - Row 1: Client counts */}
-      <div data-tour="kpi-clients" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-        <KPICard
-          title={t('clients.totalClients')}
-          value={stats?.total_clients ?? 0}
-          loading={statsLoading}
-          icon={<Icon name="groups" size="2xl" />}
-          accentColor="primary"
-        />
+      <div data-tour="kpi-clients" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard
           title={t('clients.activeClients')}
           value={stats?.active_clients ?? 0}
@@ -105,15 +98,13 @@ export function ClientsPage() {
           icon={<Icon name="person_remove" size="2xl" />}
           accentColor="warning"
         />
-        <div className="col-span-2 lg:col-span-1">
-          <KPICard
-            title={t('clients.inactiveClients')}
-            value={stats?.inactive_clients ?? 0}
-            loading={statsLoading}
-            icon={<Icon name="person_off" size="2xl" />}
-            accentColor="error"
-          />
-        </div>
+        <KPICard
+          title={t('clients.inactiveClients')}
+          value={stats?.inactive_clients ?? 0}
+          loading={statsLoading}
+          icon={<Icon name="person_off" size="2xl" />}
+          accentColor="error"
+        />
       </div>
 
       {/* Top Clients Block */}
