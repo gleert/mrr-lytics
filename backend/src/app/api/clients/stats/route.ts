@@ -209,9 +209,9 @@ export async function GET(request: NextRequest) {
     // Calculate total MRR
     const totalMrr = Object.values(clientMrr).reduce((sum, mrr) => sum + mrr, 0)
     
-    // Calculate ARPU (Average Revenue Per User)
+    // Calculate ARPU (Average Revenue Per User) — denominator matches /forecasting: all active clients
     const clientsWithRevenue = Object.keys(clientMrr).length
-    const arpu = clientsWithRevenue > 0 ? totalMrr / clientsWithRevenue : 0
+    const arpu = activeClients.length > 0 ? totalMrr / activeClients.length : 0
 
     // Calculate average LTV (simplified: ARPU * average lifetime in months)
     const averageLifetimeMonths = 24
