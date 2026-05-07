@@ -6,6 +6,7 @@ import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
+import { calculateMrrLive } from '@/lib/metrics/mrr-live'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,12 +98,15 @@ export async function GET(request: NextRequest) {
       }, { instance_ids: instanceIds })
     }
 
-    // Get all active services with their amounts
-    const { data: services, error: servicesError } = await supabase
-      .from('whmcs_hosting')
-      .select('client_id, amount, billingcycle, domainstatus')
-      .in('instance_id', instanceIds)
-      .eq('domainstatus', 'Active')
+    // Full MRR from all sources (hosting + billable items + domains) — single source of truth
+    const [mrrLive, { data: services, error: servicesError }] = await Promise.all([
+      calculateMrrLive(instanceIds),
+      supabase
+        .from('whmcs_hosting')
+        .select('client_id, amount, billingcycle, domainstatus')
+        .in('instance_id', instanceIds)
+        .eq('domainstatus', 'Active'),
+    ])
 
     if (servicesError) {
       throw new Error('Failed to fetch services')
@@ -206,10 +210,13 @@ export async function GET(request: NextRequest) {
       clientMrr[service.client_id] += monthlyAmount
     })
 
-    // Calculate total MRR
-    const totalMrr = Object.values(clientMrr).reduce((sum, mrr) => sum + mrr, 0)
-    
-    // Calculate ARPU (Average Revenue Per User) — denominator matches /forecasting: all active clients
+    // Per-client MRR total (hosting only) — used for concentration metric
+    const hostingMrr = Object.values(clientMrr).reduce((sum, mrr) => sum + mrr, 0)
+
+    // Full MRR (hosting + billable items + domains) — matches /forecasting source of truth
+    const totalMrr = mrrLive.total
+
+    // ARPU: full MRR / all active clients (matches /forecasting exactly)
     const clientsWithRevenue = Object.keys(clientMrr).length
     const arpu = activeClients.length > 0 ? totalMrr / activeClients.length : 0
 
@@ -252,13 +259,13 @@ export async function GET(request: NextRequest) {
     })
     const clientsWithoutServices = activeClients.length - clientsWithServices.size
 
-    // Revenue concentration — % of MRR from top 5 clients
+    // Revenue concentration — % of MRR from top 5 clients (hosting MRR used for per-client ranking)
     const sortedClientMrr = Object.entries(clientMrr)
       .map(([id, mrr]) => ({ id, mrr }))
       .sort((a, b) => b.mrr - a.mrr)
     const top5Mrr = sortedClientMrr.slice(0, 5).reduce((sum, c) => sum + c.mrr, 0)
-    const revenueConcentration = totalMrr > 0
-      ? Math.round((top5Mrr / totalMrr) * 10000) / 100
+    const revenueConcentration = hostingMrr > 0
+      ? Math.round((top5Mrr / hostingMrr) * 10000) / 100
       : 0
 
     // Get paid invoices for revenue calculation
