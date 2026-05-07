@@ -1160,7 +1160,7 @@ export const en = {
       arpu: 'ARPU',
       ltv: 'Client LTV',
       revenueInPeriod: 'Revenue in Period',
-      clientsWithRevenue: 'Paying Clients',
+      clientsWithRevenue: 'Invoiced Clients',
       clientList: 'Client List',
       clientListDesc: 'Detailed view of all clients with filters and sorting',
       comingSoon: 'Client table coming soon',

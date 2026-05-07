@@ -1157,7 +1157,7 @@ export const es = {
       arpu: 'ARPU',
       ltv: 'LTV del Cliente',
       revenueInPeriod: 'Ingresos del Período',
-      clientsWithRevenue: 'Clientes de Pago',
+      clientsWithRevenue: 'Clientes Facturados',
       clientList: 'Lista de Clientes',
       clientListDesc: 'Vista detallada de todos los clientes con filtros y ordenamiento',
       comingSoon: 'Tabla de clientes próximamente',

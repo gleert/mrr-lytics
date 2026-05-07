@@ -218,7 +218,6 @@ export async function GET(request: NextRequest) {
     const totalMrr = mrrLive.total
 
     // ARPU: full MRR / all active clients (matches /forecasting exactly)
-    const clientsWithRevenue = Object.keys(clientMrr).length
     const arpu = activeClients.length > 0 ? totalMrr / activeClients.length : 0
 
     // Calculate average LTV (simplified: ARPU * average lifetime in months)
@@ -274,7 +273,7 @@ export async function GET(request: NextRequest) {
 
     const { data: periodInvoices, error: invoicesError } = await supabase
       .from('whmcs_invoices')
-      .select('subtotal')
+      .select('subtotal, client_id')
       .in('instance_id', instanceIds)
       .in('status', revenueStatuses)
       .gte('date', startDate.toISOString().split('T')[0])
@@ -286,6 +285,7 @@ export async function GET(request: NextRequest) {
     }
 
     const revenueInPeriod = periodInvoices?.reduce((sum, inv) => sum + Number(inv.subtotal), 0) || 0
+    const clientsWithRevenue = new Set(periodInvoices?.map(inv => inv.client_id)).size
 
     return success({
       total_clients: totalRealClients,
