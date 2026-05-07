@@ -220,9 +220,17 @@ export async function GET(request: NextRequest) {
     // ARPU: full MRR / all active clients (matches /forecasting exactly)
     const arpu = activeClients.length > 0 ? totalMrr / activeClients.length : 0
 
-    // Calculate average LTV (simplified: ARPU * average lifetime in months)
-    const averageLifetimeMonths = 24
-    const ltv = arpu * averageLifetimeMonths
+    // LTV = ARPU / monthly_churn_rate
+    // monthly_churn_rate = churned_in_period / active_clients / (days / 30)
+    // Capped: min 0.5% churn (200 months max), max 20% churn (5 months min)
+    // Falls back to 2% (50 months) when no churn observed in the period
+    const periodMonths = days / 30
+    const rawMonthlyChurn = activeClients.length > 0 && (churnedClients?.length ?? 0) > 0
+      ? (churnedClients!.length / activeClients.length) / periodMonths
+      : 0.02
+    const monthlyChurnRate = Math.min(0.20, Math.max(0.005, rawMonthlyChurn))
+    const avgLifetimeMonths = 1 / monthlyChurnRate
+    const ltv = arpu * avgLifetimeMonths
 
     // Total real clients = active + inactive + closed (with services only)
     const totalRealClients = activeClients.length + inactiveClients.length + closedClients.length
