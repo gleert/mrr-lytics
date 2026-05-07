@@ -15,6 +15,7 @@ interface KPICardProps {
   loading?: boolean
   icon?: React.ReactNode
   accentColor?: 'primary' | 'success' | 'warning' | 'error' | 'info'
+  hint?: string
 }
 
 const accentColors = {
@@ -54,6 +55,7 @@ export function KPICard({
   loading = false,
   icon,
   accentColor = 'primary',
+  hint,
 }: KPICardProps) {
   const { t } = useTranslation()
   const { formatCurrency, formatPercent, formatNumber } = useCurrency()
@@ -133,6 +135,10 @@ export function KPICard({
             </div>
             <span className="text-xs text-muted-foreground">{changeLabel || t('common.vsPreviousPeriod')}</span>
           </div>
+        )}
+
+        {hint && !changePercent && (
+          <p className="mt-2 sm:mt-3 text-xs text-muted">{hint}</p>
         )}
       </CardContent>
     </Card>

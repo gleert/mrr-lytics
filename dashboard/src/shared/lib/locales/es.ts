@@ -1158,6 +1158,7 @@ export const es = {
       ltv: 'LTV del Cliente',
       revenueInPeriod: 'Ingresos del Período',
       clientsWithRevenue: 'Clientes Facturados',
+      ltvHint: 'Basado en el churn de los últimos 12 meses',
       clientList: 'Lista de Clientes',
       clientListDesc: 'Vista detallada de todos los clientes con filtros y ordenamiento',
       comingSoon: 'Tabla de clientes próximamente',

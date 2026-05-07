@@ -221,14 +221,19 @@ export async function GET(request: NextRequest) {
     const arpu = activeClients.length > 0 ? totalMrr / activeClients.length : 0
 
     // LTV = ARPU / monthly_churn_rate
-    // monthly_churn_rate = churned_in_period / active_clients / (days / 30)
-    // Capped: min 0.5% churn (200 months max), max 20% churn (5 months min)
-    // Falls back to 2% (50 months) when no churn observed in the period
-    const periodMonths = days / 30
-    const rawMonthlyChurn = activeClients.length > 0 && (churnedClients?.length ?? 0) > 0
-      ? (churnedClients!.length / activeClients.length) / periodMonths
+    // Churn rate always from a fixed 12-month rolling window (independent of the selected period)
+    // so LTV stays stable regardless of which period filter the user has selected.
+    // Capped: min 0.5% (200 months max), max 20% (5 months min).
+    // Falls back to 2% (50 months) when no churn observed in the last 12 months.
+    const now = new Date()
+    const twelveMonthsAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+    const churned12m = clients?.filter(c =>
+      c.status === 'Closed' && c.closed_at && new Date(c.closed_at) >= twelveMonthsAgo
+    ).length ?? 0
+    const rawMonthlyChurn12m = activeClients.length > 0 && churned12m > 0
+      ? (churned12m / activeClients.length) / 12
       : 0.02
-    const monthlyChurnRate = Math.min(0.20, Math.max(0.005, rawMonthlyChurn))
+    const monthlyChurnRate = Math.min(0.20, Math.max(0.005, rawMonthlyChurn12m))
     const avgLifetimeMonths = 1 / monthlyChurnRate
     const ltv = arpu * avgLifetimeMonths
 
@@ -244,7 +249,6 @@ export async function GET(request: NextRequest) {
     const netGrowth = (newClients?.length || 0) - (churnedClients?.length || 0)
 
     // Average client age in months (from datecreated of active clients)
-    const now = new Date()
     let totalAgeMonths = 0
     let clientsWithDate = 0
     activeClients.forEach(c => {

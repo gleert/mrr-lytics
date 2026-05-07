@@ -1161,6 +1161,7 @@ export const en = {
       ltv: 'Client LTV',
       revenueInPeriod: 'Revenue in Period',
       clientsWithRevenue: 'Invoiced Clients',
+      ltvHint: 'Based on last 12 months churn',
       clientList: 'Client List',
       clientListDesc: 'Detailed view of all clients with filters and sorting',
       comingSoon: 'Client table coming soon',

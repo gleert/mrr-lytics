@@ -127,6 +127,7 @@ export function ClientsPage() {
           loading={statsLoading}
           icon={<Icon name="savings" size="2xl" />}
           accentColor="success"
+          hint={t('clients.ltvHint')}
         />
         <KPICard
           title={t('clients.revenueInPeriod')}
