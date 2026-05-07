@@ -114,9 +114,10 @@ function CustomDateModal({ open, onClose, minDate }: { open: boolean; onClose: (
 
 interface DashboardFiltersProps {
   showPeriod?: boolean
+  allowedPeriods?: PeriodPreset[]
 }
 
-export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
+export function DashboardFilters({ showPeriod = true, allowedPeriods }: DashboardFiltersProps) {
   const { t } = useTranslation()
   const {
     tenants,
@@ -172,6 +173,18 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
   }
 
   const { customDateRange } = useFilters()
+
+  const visiblePresets = allowedPeriods
+    ? PERIOD_PRESETS.filter(p => allowedPeriods.includes(p.value))
+    : PERIOD_PRESETS
+
+  // If current period is not in the allowed list, switch to the first allowed preset
+  React.useEffect(() => {
+    if (allowedPeriods && !allowedPeriods.includes(period)) {
+      setPeriod(allowedPeriods[0])
+    }
+  }, [allowedPeriods, period, setPeriod])
+
   const currentPeriodLabel = period === 'custom' && customDateRange
     ? `${customDateRange.start} — ${customDateRange.end}`
     : t(PERIOD_PRESETS.find(p => p.value === period)?.labelKey || 'filters.30d')
@@ -179,7 +192,7 @@ export function DashboardFilters({ showPeriod = true }: DashboardFiltersProps) {
   const PeriodDropdownContent = () => (
     <div className="absolute right-0 top-full mt-1 z-40 min-w-[210px] rounded-lg border border-border bg-background shadow-lg">
       <div className="p-1">
-        {PERIOD_PRESETS.map((preset) => (
+        {visiblePresets.map((preset) => (
           <button
             key={preset.value}
             className={cn(

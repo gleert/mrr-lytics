@@ -59,7 +59,7 @@ export function ForecastingPage() {
           <h1 className="text-2xl font-semibold text-foreground">{t('forecasting.title')}</h1>
           <p className="text-muted">{t('forecasting.subtitle')}</p>
         </div>
-        <DashboardFilters />
+        <DashboardFilters allowedPeriods={['mtd', 'this_quarter', 'this_year']} />
       </div>
 
       {/* Forecast callout banner */}
