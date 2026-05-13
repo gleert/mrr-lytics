@@ -177,13 +177,18 @@ export async function GET(request: NextRequest) {
 
     // Generate monthly movement data
     const movementData: MovementDataPoint[] = []
+    const now = new Date()
 
     for (let i = 0; i < months; i++) {
       const monthDate = new Date(startDate)
       monthDate.setMonth(startDate.getMonth() + i)
 
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
-      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
+      const naturalMonthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
+      // Cap at "now" for the current month so future-dated terminationdates
+      // (pending cancellations scheduled later this month) don't get counted
+      // as already churned and pull net_change negative mid-month.
+      const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
       const prevMonthEnd = new Date(monthStart.getTime() - 1)
 
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
