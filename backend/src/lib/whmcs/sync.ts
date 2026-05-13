@@ -213,14 +213,23 @@ export async function syncInstance(
     // Skipping the refresh when totalRecords === 0 caused stale MRR/ARR after
     // DB migrations that recreate materialized views without re-populating them.
 
-    // Update all client metrics (MRR, services count, etc.)
+    // Update all client metrics (MRR, services count, etc.).
+    // supabase.rpc() does NOT throw on server-side errors — it returns them
+    // in the { error } field. Without destructuring it the failure was
+    // indistinguishable from success and current_mrr / services_count on
+    // whmcs_clients drifted on every sync for instances where this RPC failed.
     try {
-      await supabase.rpc('update_all_client_metrics', {
-        p_instance_id: instance.id,
-      })
+      const { error: clientMetricsError } = await supabase.rpc(
+        'update_all_client_metrics',
+        { p_instance_id: instance.id }
+      )
+      if (clientMetricsError) throw clientMetricsError
       console.log(`[Sync] Updated client metrics for instance ${instance.id}`)
     } catch (clientMetricsError) {
-      console.error('Failed to update client metrics:', clientMetricsError)
+      const msg = clientMetricsError instanceof Error ? clientMetricsError.message : String(clientMetricsError)
+      console.error(
+        `[STALE-METRICS][Sync] update_all_client_metrics FAILED for instance ${instance.id}: ${msg}`
+      )
     }
 
     // Populate metrics_daily (this also refreshes materialized views).
