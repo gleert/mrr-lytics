@@ -21,7 +21,7 @@ export function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 300)
   const [sortField, setSortField] = useState('whmcs_id')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
 
   const { data: clientsData, isLoading: listLoading } = useClientsList({
