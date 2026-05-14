@@ -252,7 +252,7 @@ export function ProductStats({ products, productGroups, isLoading: productsLoadi
                 <Icon name="info" size="sm" className="text-muted shrink-0" />
                 <span className="text-muted">
                   {mrrBreakdown.using_categories
-                    ? t('products.stats.categoriesActive', { pct: formatPercent(100 - mrrBreakdown.uncategorized_mrr_pct, { decimals: 0 }) })
+                    ? t('products.stats.categoriesActive', { pct: Math.round(100 - mrrBreakdown.uncategorized_mrr_pct) })
                     : t('products.stats.categoriesInactive')}
                 </span>
               </div>

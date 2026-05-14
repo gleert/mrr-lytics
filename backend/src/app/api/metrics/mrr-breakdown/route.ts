@@ -187,12 +187,16 @@ export async function GET(request: NextRequest) {
       if (domain.monthly <= 0) return
       const resolvedName = 'Domains'
       const resolvedColor = '#06B6D4' // Cyan
-      const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory: false }
+      // Domains form their own category in the breakdown chart, so they
+      // count as categorized — otherwise uncategorized_mrr_pct can never
+      // hit 0 even when every product/billable item has a category.
+      categorizedMRR += domain.monthly
+      const existing = groupTotals.get(resolvedName) || { mrr: 0, count: 0, color: resolvedColor, hasCategory: true }
       groupTotals.set(resolvedName, {
         mrr: existing.mrr + domain.monthly,
         count: existing.count + 1,
         color: existing.color || resolvedColor,
-        hasCategory: false,
+        hasCategory: true,
       })
     })
 
