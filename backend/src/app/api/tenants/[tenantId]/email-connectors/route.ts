@@ -8,12 +8,13 @@ export const dynamic = 'force-dynamic'
 
 interface CreateEmailConnectorBody {
   name: string
-  host: string
-  port: number
-  secure: boolean
-  user: string
-  password: string
-  from: string
+  use_platform?: boolean
+  host?: string
+  port?: number
+  secure?: boolean
+  user?: string
+  password?: string
+  from?: string
   to: string
   events: WebhookEventType[]
 }
@@ -106,18 +107,34 @@ export async function POST(
 
     // Validate required fields
     if (!body.name?.trim()) return error(new Error('Name is required'), 400)
-    if (!body.host?.trim()) return error(new Error('SMTP host is required'), 400)
-    if (!body.port || typeof body.port !== 'number') return error(new Error('SMTP port is required'), 400)
-    if (!body.user?.trim()) return error(new Error('SMTP username is required'), 400)
-    if (!body.password?.trim()) return error(new Error('SMTP password is required'), 400)
-    if (!body.from?.trim()) return error(new Error('From address is required'), 400)
     if (!body.to?.trim()) return error(new Error('Recipient address is required'), 400)
     if (!body.events?.length) return error(new Error('At least one event must be selected'), 400)
+
+    const usePlatform = body.use_platform === true
+    if (!usePlatform) {
+      if (!body.host?.trim()) return error(new Error('SMTP host is required'), 400)
+      if (!body.port || typeof body.port !== 'number') return error(new Error('SMTP port is required'), 400)
+      if (!body.user?.trim()) return error(new Error('SMTP username is required'), 400)
+      if (!body.password?.trim()) return error(new Error('SMTP password is required'), 400)
+      if (!body.from?.trim()) return error(new Error('From address is required'), 400)
+    }
 
     const invalidEvents = body.events.filter(e => !WEBHOOK_EVENTS.includes(e as WebhookEventType))
     if (invalidEvents.length > 0) {
       return error(new Error(`Invalid event types: ${invalidEvents.join(', ')}`), 400)
     }
+
+    const config: Record<string, unknown> = usePlatform
+      ? { use_platform: true, to: body.to.trim() }
+      : {
+          host: body.host!.trim(),
+          port: body.port,
+          secure: !!body.secure,
+          user: body.user!.trim(),
+          password: body.password,
+          from: body.from!.trim(),
+          to: body.to.trim(),
+        }
 
     const { data: connector, error: createError } = await supabase
       .from('connectors')
@@ -125,15 +142,7 @@ export async function POST(
         tenant_id: tenantId,
         type: 'email',
         name: body.name.trim(),
-        config: {
-          host: body.host.trim(),
-          port: body.port,
-          secure: !!body.secure,
-          user: body.user.trim(),
-          password: body.password,
-          from: body.from.trim(),
-          to: body.to.trim(),
-        },
+        config,
         events: body.events,
         enabled: true,
       })

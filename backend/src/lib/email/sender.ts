@@ -12,7 +12,29 @@ export async function sendEmailNotification(
   eventType: WebhookEventType,
   eventData: Record<string, unknown>
 ): Promise<SendEmailResult> {
-  const { host, port, secure, user, password, from, to } = connector.config
+  // When `use_platform` is set, send through the platform's shared SMTP
+  // (same env the /api/contact handler uses) instead of tenant-supplied
+  // credentials — tenant only configures the recipient.
+  const usePlatform = connector.config.use_platform === true
+  const host = usePlatform ? process.env.SMTP_HOST : connector.config.host
+  const portRaw = usePlatform ? process.env.SMTP_PORT : connector.config.port
+  const port = typeof portRaw === 'number' ? portRaw : Number(portRaw || '465')
+  const secure = usePlatform ? port === 465 : !!connector.config.secure
+  const user = usePlatform ? process.env.SMTP_USER : connector.config.user
+  const password = usePlatform ? process.env.SMTP_PASS : connector.config.password
+  const from = usePlatform
+    ? (process.env.SMTP_FROM || `MRRlytics <${user}>`)
+    : connector.config.from
+  const to = connector.config.to
+
+  if (!host || !user || !password || !from || !to) {
+    return {
+      success: false,
+      error: usePlatform
+        ? 'Platform SMTP env vars are not configured'
+        : 'Email connector is missing required SMTP fields',
+    }
+  }
 
   try {
     const transporter = nodemailer.createTransport({

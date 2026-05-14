@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 interface UpdateEmailConnectorBody {
   name?: string
+  use_platform?: boolean
   host?: string
   port?: number
   secure?: boolean
@@ -84,18 +85,30 @@ export async function PATCH(
       }
     }
 
-    // Build updated config — merge existing config with any new values
+    // Build updated config — merge existing config with any new values.
+    // If switching to platform mode, drop the per-tenant SMTP fields so
+    // they don't linger encrypted in the row.
     const existingConfig = existing.config as Record<string, unknown>
-    const updatedConfig = {
-      ...existingConfig,
-      ...(body.host !== undefined && { host: body.host.trim() }),
-      ...(body.port !== undefined && { port: body.port }),
-      ...(body.secure !== undefined && { secure: !!body.secure }),
-      ...(body.user !== undefined && { user: body.user.trim() }),
-      ...(body.password !== undefined && body.password.trim() && { password: body.password }),
-      ...(body.from !== undefined && { from: body.from.trim() }),
-      ...(body.to !== undefined && { to: body.to.trim() }),
-    }
+    const willBePlatform = body.use_platform !== undefined
+      ? body.use_platform === true
+      : existingConfig.use_platform === true
+
+    const updatedConfig: Record<string, unknown> = willBePlatform
+      ? {
+          use_platform: true,
+          to: (body.to !== undefined ? body.to.trim() : existingConfig.to) as string,
+        }
+      : {
+          ...existingConfig,
+          use_platform: false,
+          ...(body.host !== undefined && { host: body.host.trim() }),
+          ...(body.port !== undefined && { port: body.port }),
+          ...(body.secure !== undefined && { secure: !!body.secure }),
+          ...(body.user !== undefined && { user: body.user.trim() }),
+          ...(body.password !== undefined && body.password.trim() && { password: body.password }),
+          ...(body.from !== undefined && { from: body.from.trim() }),
+          ...(body.to !== undefined && { to: body.to.trim() }),
+        }
 
     // Build the update payload
     const updatePayload: Record<string, unknown> = {
