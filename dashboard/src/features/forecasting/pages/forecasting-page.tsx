@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
   ComposedChart,
+  Area,
   Line,
   Legend,
   ReferenceLine,
@@ -151,89 +152,6 @@ export function ForecastingPage() {
         </div>
       </div>
 
-      {/* Growth Acceleration + Milestone */}
-      {!isLoading && stats && (
-        <div data-tour="growth-milestone" className="grid gap-4 sm:grid-cols-2">
-          {/* Growth Acceleration */}
-          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${
-                stats.growth_acceleration === 'accelerating' ? 'bg-emerald-500/10' :
-                stats.growth_acceleration === 'decelerating' ? 'bg-red-500/10' : 'bg-blue-500/10'
-              }`}>
-                <Icon
-                  name={
-                    stats.growth_acceleration === 'accelerating' ? 'rocket_launch' :
-                    stats.growth_acceleration === 'decelerating' ? 'trending_down' : 'trending_flat'
-                  }
-                  size="md"
-                  className={
-                    stats.growth_acceleration === 'accelerating' ? 'text-emerald-400' :
-                    stats.growth_acceleration === 'decelerating' ? 'text-red-400' : 'text-blue-400'
-                  }
-                />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">{t('forecasting.growthAcceleration')}</h3>
-                <p className={`text-lg font-semibold ${
-                  stats.growth_acceleration === 'accelerating' ? 'text-emerald-400' :
-                  stats.growth_acceleration === 'decelerating' ? 'text-red-400' : 'text-blue-400'
-                }`}>
-                  {t(`forecasting.acceleration.${stats.growth_acceleration}`)}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs text-muted">
-              {t(`forecasting.accelerationDesc.${stats.growth_acceleration}`)}
-            </p>
-          </div>
-
-          {/* Milestone */}
-          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500/10 shrink-0">
-                <Icon name="flag" size="md" className="text-amber-400" />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">{t('forecasting.nextMilestone')}</h3>
-                {stats.next_milestone && stats.months_to_milestone ? (
-                  <p className="text-lg font-semibold">
-                    {formatCurrency(stats.next_milestone, { maximumFractionDigits: 0 })}
-                  </p>
-                ) : (
-                  <p className="text-lg font-semibold text-muted">—</p>
-                )}
-              </div>
-            </div>
-            {stats.next_milestone && stats.months_to_milestone ? (
-              <div className="space-y-2">
-                <p className="text-xs text-muted">
-                  {t('forecasting.milestoneDesc', { months: stats.months_to_milestone })}
-                </p>
-                {/* Progress bar to milestone */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 rounded-full bg-surface-elevated overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-amber-500"
-                      style={{ width: `${Math.min((stats.current_mrr / stats.next_milestone) * 100, 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted font-medium">
-                    {Math.round((stats.current_mrr / stats.next_milestone) * 100)}%
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted">
-                {stats.projected_growth <= 0
-                  ? t('forecasting.milestoneNegativeGrowth')
-                  : t('forecasting.milestoneReached')}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Forecast Breakdown Section */}
       <div className="space-y-4">
         <div>
@@ -242,7 +160,7 @@ export function ForecastingPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Revenue Trend Chart */}
+          {/* MRR Trend Chart */}
           <div className="rounded-xl border border-border bg-surface">
             <div className="flex items-center gap-3 p-4 border-b border-border">
               <Icon name="show_chart" size="lg" className="text-primary-400" />
@@ -254,104 +172,130 @@ export function ForecastingPage() {
             <div className="p-4">
               {isLoading ? (
                 <ChartSkeleton height={260} />
-              ) : !stats?.revenue_trend?.length ? (
+              ) : !stats?.mrr_trend?.length ? (
                 <div className="flex flex-col items-center justify-center h-64 text-muted gap-1">
                   <Icon name="bar_chart" size="xl" className="mb-1 opacity-50" />
                   <p className="font-medium">{t('forecasting.noData')}</p>
                   <p className="text-xs">{t('forecasting.noDataHint')}</p>
                 </div>
-              ) : (
-                <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
-                      data={stats.revenue_trend}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="var(--color-border)"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={{ stroke: 'var(--color-border)' }}
-                        tickFormatter={(value) => {
-                          if (stats.bucket_type === 'monthly') {
-                            const [year, month] = value.split('-')
-                            return `${month}/${year.slice(2)}`
-                          }
-                          const d = new Date(value)
-                          return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-                        }}
-                      />
-                      <YAxis
-                        tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={{ stroke: 'var(--color-border)' }}
-                        tickFormatter={(value) => formatCurrencyCompact(value)}
-                      />
-                      <Tooltip
-                        cursor={{ fill: 'var(--color-border)', opacity: 0.3 }}
-                        content={
-                          <ChartTooltip
-                            valueFormatter={(v) => formatCurrency(v)}
-                          />
-                        }
-                      />
-                      <Legend
-                        formatter={(value) => (
-                          <span className="text-sm">
-                            {value === 'projected' ? t('forecasting.projectionLabel') : value}
-                          </span>
-                        )}
-                      />
-                      {/* Reference line at the projection point */}
-                      {stats.revenue_trend.length > 1 && (
-                        <ReferenceLine
-                          x={stats.revenue_trend[stats.revenue_trend.length - 2].date}
-                          stroke="var(--color-muted)"
-                          strokeDasharray="5 5"
-                          label={{
-                            value: t('forecasting.projectionLabel'),
-                            position: 'top',
-                            fill: 'var(--color-muted)',
-                            fontSize: 10
+              ) : (() => {
+                const splitDate = stats.mrr_trend.find(p => p.mrr !== undefined && p.baseline !== undefined)?.date
+                return (
+                  <div className="h-[220px] sm:h-[260px] lg:h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={stats.mrr_trend}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
+                        <defs>
+                          <linearGradient id="mrrAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.18} />
+                            <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={{ stroke: 'var(--color-border)' }}
+                          tickFormatter={(v) => {
+                            if (/^\d{4}$/.test(v)) return v
+                            if (v.includes('-Q')) {
+                              const [y, q] = v.split('-')
+                              return `${q}/${y.slice(2)}`
+                            }
+                            const [y, m] = v.split('-')
+                            return `${m}/${y.slice(2)}`
                           }}
                         />
-                      )}
-                      <Bar
-                        dataKey="revenue"
-                        name={t('forecasting.revenue')}
-                        radius={[4, 4, 0, 0]}
-                      >
-                        {stats.revenue_trend.map((_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={index === stats.revenue_trend.length - 1
-                              ? '#7C3AED'
-                              : '#10B981'
-                            }
-                            opacity={index === stats.revenue_trend.length - 1 ? 0.5 : 1}
-                            strokeWidth={index === stats.revenue_trend.length - 1 ? 2 : 0}
-                            stroke={index === stats.revenue_trend.length - 1 ? '#7C3AED' : 'none'}
-                            strokeDasharray={index === stats.revenue_trend.length - 1 ? '4 2' : ''}
+                        <YAxis
+                          tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={{ stroke: 'var(--color-border)' }}
+                          tickFormatter={(v) => formatCurrencyCompact(v)}
+                        />
+                        <Tooltip
+                          content={
+                            <ChartTooltip
+                              labelFormatter={(v) => {
+                                if (/^\d{4}$/.test(v)) return v
+                                if (v.includes('-Q')) {
+                                  const [y, q] = v.split('-')
+                                  return `${q} ${y}`
+                                }
+                                const [y, m] = v.split('-')
+                                return `${m}/${y}`
+                              }}
+                              valueFormatter={(v) => formatCurrency(v)}
+                            />
+                          }
+                        />
+                        <Legend
+                          formatter={(value) => (
+                            <span className="text-xs text-muted">
+                              {value === 'mrr' ? t('forecasting.mrrLabel')
+                                : value === 'baseline' ? t('forecasting.baseline')
+                                : value === 'optimistic' ? t('forecasting.optimistic')
+                                : value === 'pessimistic' ? t('forecasting.pessimistic')
+                                : value}
+                            </span>
+                          )}
+                        />
+                        {splitDate && (
+                          <ReferenceLine
+                            x={splitDate}
+                            stroke="var(--color-muted)"
+                            strokeDasharray="4 4"
+                            label={{ value: t('forecasting.projectionLabel'), position: 'top', fill: 'var(--color-muted)', fontSize: 10 }}
                           />
-                        ))}
-                      </Bar>
-                      <Line
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="var(--color-primary)"
-                        strokeWidth={2}
-                        dot={false}
-                        name={t('forecasting.trend')}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+                        )}
+                        <Area
+                          type="monotone"
+                          dataKey="mrr"
+                          name="mrr"
+                          stroke="#7C3AED"
+                          strokeWidth={2}
+                          fill="url(#mrrAreaGrad)"
+                          dot={{ r: 3, fill: '#7C3AED', strokeWidth: 0 }}
+                          activeDot={{ r: 4 }}
+                          connectNulls={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="optimistic"
+                          name="optimistic"
+                          stroke="#10B981"
+                          strokeWidth={2}
+                          strokeDasharray="6 3"
+                          dot={false}
+                          connectNulls={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="baseline"
+                          name="baseline"
+                          stroke="#7C3AED"
+                          strokeWidth={2}
+                          strokeDasharray="6 3"
+                          dot={false}
+                          connectNulls={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="pessimistic"
+                          name="pessimistic"
+                          stroke="#F59E0B"
+                          strokeWidth={2}
+                          strokeDasharray="6 3"
+                          dot={false}
+                          connectNulls={false}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              })()}
             </div>
           </div>
 
