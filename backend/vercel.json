@@ -1,5 +1,10 @@
 {
   "framework": "nextjs",
+  "functions": {
+    "src/app/api/cron/sync/route.ts": {
+      "maxDuration": 800
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/sync",
