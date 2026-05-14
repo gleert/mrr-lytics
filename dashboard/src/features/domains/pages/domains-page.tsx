@@ -65,6 +65,7 @@ export function DomainsPage() {
   const [sortField, setSortField] = useState('domain')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
   
   // Get all TLDs from stats for filter dropdown
   const availableTlds = stats?.all_tlds || []
@@ -76,7 +77,7 @@ export function DomainsPage() {
     sort: sortField,
     order: sortOrder,
     page: currentPage,
-    limit: 25,
+    limit: pageSize,
   })
 
   const handleSort = (field: string) => {
@@ -827,30 +828,47 @@ export function DomainsPage() {
         </div>
 
         {/* Pagination */}
-        {domainsData && domainsData.pagination.total_pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-            <p className="text-sm text-muted">
-              {t('domains.showingPage', { 
-                page: domainsData.pagination.page, 
-                total: domainsData.pagination.total_pages 
-              })}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={!domainsData.pagination.has_prev}
-                className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('common.previous')}
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => p + 1)}
-                disabled={!domainsData.pagination.has_next}
-                className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('common.next')}
-              </button>
+        {domainsData && domainsData.pagination.total > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted">
+                {t('domains.showingPage', {
+                  page: domainsData.pagination.page,
+                  total: domainsData.pagination.total_pages
+                })}
+              </p>
+              <label className="flex items-center gap-2 text-sm text-muted">
+                {t('common.show')}
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+                  className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </label>
             </div>
+            {domainsData.pagination.total_pages > 1 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={!domainsData.pagination.has_prev}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('common.previous')}
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={!domainsData.pagination.has_next}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('common.next')}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

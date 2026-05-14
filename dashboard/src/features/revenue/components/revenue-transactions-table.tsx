@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useRevenueTransactions, type TransactionFilters } from '../hooks/use-revenue-stats'
+import { useFilters } from '@/app/providers'
 import { formatDate, cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
 
@@ -34,7 +35,13 @@ const INVOICE_STATUSES = ['Paid', 'Unpaid', 'Cancelled', 'Refunded', 'Collection
 export function RevenueTransactionsTable() {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
+  const { period, customDateRange } = useFilters()
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+
+  useEffect(() => {
+    setPage(1)
+  }, [period, customDateRange])
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -49,7 +56,7 @@ export function RevenueTransactionsTable() {
   const [amountMin, setAmountMin] = useState<string>('')
   const [amountMax, setAmountMax] = useState<string>('')
 
-  const { data, isLoading } = useRevenueTransactions(page, 20, filters, sortBy, sortOrder)
+  const { data, isLoading } = useRevenueTransactions(page, pageSize, filters, sortBy, sortOrder)
 
   const transactions = data?.transactions || []
   const pagination = data?.pagination
@@ -410,52 +417,69 @@ export function RevenueTransactionsTable() {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-          <p className="text-sm text-muted">
-            {t('revenue.transactions.showingPage', {
-              page: pagination.page,
-              total: pagination.total_pages,
-            })}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPage(page - 1)}
-              disabled={page <= 1}
-            >
-              <Icon name="chevron_left" size="sm" />
-            </Button>
-            {/* Page numbers */}
-            {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
-              const pageNum = page <= 3
-                ? i + 1
-                : page >= pagination.total_pages - 2
-                  ? pagination.total_pages - 4 + i
-                  : page - 2 + i
-              if (pageNum < 1 || pageNum > pagination.total_pages) return null
-              return (
-                <Button
-                  key={pageNum}
-                  variant={pageNum === page ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setPage(pageNum)}
-                  className="w-8 h-8 p-0"
-                >
-                  {pageNum}
-                </Button>
-              )
-            })}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPage(page + 1)}
-              disabled={page >= pagination.total_pages}
-            >
-              <Icon name="chevron_right" size="sm" />
-            </Button>
+      {pagination && pagination.total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border">
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-muted">
+              {t('revenue.transactions.showingPage', {
+                page: pagination.page,
+                total: pagination.total_pages,
+              })}
+            </p>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              {t('common.show')}
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+                className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+            </label>
           </div>
+          {pagination.total_pages > 1 && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={page <= 1}
+              >
+                <Icon name="chevron_left" size="sm" />
+              </Button>
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                const pageNum = page <= 3
+                  ? i + 1
+                  : page >= pagination.total_pages - 2
+                    ? pagination.total_pages - 4 + i
+                    : page - 2 + i
+                if (pageNum < 1 || pageNum > pagination.total_pages) return null
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === page ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setPage(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={page >= pagination.total_pages}
+              >
+                <Icon name="chevron_right" size="sm" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

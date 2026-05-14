@@ -23,6 +23,7 @@ export function ClientsPage() {
   const [sortField, setSortField] = useState('whmcs_id')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
   const { data: clientsData, isLoading: listLoading } = useClientsList({
     status: statusFilter,
@@ -30,7 +31,7 @@ export function ClientsPage() {
     sort: sortField,
     order: sortOrder,
     page: currentPage,
-    limit: 25,
+    limit: pageSize,
   })
 
   const handleSort = (field: string) => {
@@ -422,7 +423,7 @@ export function ClientsPage() {
         </div>
 
         {/* Pagination */}
-        {clientsData && clientsData.pagination.total_pages > 1 && (() => {
+        {clientsData && clientsData.pagination.total > 0 && (() => {
           const { page, total_pages, has_prev, has_next } = clientsData.pagination
           const pages: (number | '...')[] = []
           for (let i = 1; i <= total_pages; i++) {
@@ -433,44 +434,61 @@ export function ClientsPage() {
             }
           }
           return (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-              <p className="text-sm text-muted">
-                {t('clients.showingPage', { page, total: total_pages })}
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={!has_prev}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Icon name="chevron_left" size="sm" />
-                </button>
-                {pages.map((p, i) =>
-                  p === '...' ? (
-                    <span key={`ellipsis-${i}`} className="w-8 text-center text-sm text-muted">…</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={cn(
-                        'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
-                        p === page
-                          ? 'bg-primary-500 text-white'
-                          : 'border border-border hover:bg-surface-elevated text-foreground'
-                      )}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-                <button
-                  onClick={() => setCurrentPage(p => p + 1)}
-                  disabled={!has_next}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Icon name="chevron_right" size="sm" />
-                </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border">
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-muted">
+                  {t('clients.showingPage', { page, total: total_pages })}
+                </p>
+                <label className="flex items-center gap-2 text-sm text-muted">
+                  {t('common.show')}
+                  <select
+                    value={pageSize}
+                    onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+                    className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </label>
               </div>
+              {total_pages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={!has_prev}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Icon name="chevron_left" size="sm" />
+                  </button>
+                  {pages.map((p, i) =>
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} className="w-8 text-center text-sm text-muted">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={cn(
+                          'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
+                          p === page
+                            ? 'bg-primary-500 text-white'
+                            : 'border border-border hover:bg-surface-elevated text-foreground'
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                  <button
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={!has_next}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Icon name="chevron_right" size="sm" />
+                  </button>
+                </div>
+              )}
             </div>
           )
         })()}

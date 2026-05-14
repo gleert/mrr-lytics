@@ -25,6 +25,7 @@ export const es = {
       vsPreviousPeriod: 'vs período anterior',
       all: 'Todos',
       clearFilters: 'Limpiar filtros',
+      show: 'Mostrar',
     },
 
     // Auth
