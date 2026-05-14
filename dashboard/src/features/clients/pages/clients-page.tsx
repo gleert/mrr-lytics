@@ -119,6 +119,7 @@ export function ClientsPage() {
           loading={statsLoading}
           icon={<Icon name="account_balance_wallet" size="2xl" />}
           accentColor="primary"
+          hint={t('clients.arpuHint')}
         />
         <KPICard
           title={t('clients.ltv')}
