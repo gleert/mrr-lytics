@@ -63,27 +63,11 @@ function formatCell(
   return String(value)
 }
 
-// ─── % of total helper ────────────────────────────────────────────────────────
-
-function computeColumnTotal(rows: ReportRow[], key: string): number {
-  return rows.reduce((sum, row) => {
-    const val = (row as unknown as Record<string, unknown>)[key]
-    return sum + (typeof val === 'number' ? val : 0)
-  }, 0)
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ReportPreviewTable({ rows, columns, isLoading, totalRows, isAtLimit }: ReportPreviewTableProps) {
   const { t } = useTranslation()
   const { formatCurrency, formatPercent, formatNumber } = useCurrency()
-
-  // Pre-compute column totals for % of total
-  const columnTotals = Object.fromEntries(
-    columns
-      .filter(c => c.format === 'currency' || c.format === 'number')
-      .map(c => [c.key, computeColumnTotal(rows, c.key)])
-  )
 
   if (isLoading) {
     return (
@@ -153,11 +137,6 @@ export function ReportPreviewTable({ rows, columns, isLoading, totalRows, isAtLi
                 {columns.map(col => {
                   const value = (row as unknown as Record<string, unknown>)[col.key]
                   const isNumeric = col.format === 'currency' || col.format === 'number' || col.format === 'percent'
-                  const colTotal = columnTotals[col.key]
-                  const numVal = typeof value === 'number' ? value : 0
-                  const pct = colTotal > 0 && (col.format === 'currency' || col.format === 'number')
-                    ? (numVal / colTotal) * 100
-                    : null
 
                   return (
                     <td
@@ -170,11 +149,6 @@ export function ReportPreviewTable({ rows, columns, isLoading, totalRows, isAtLi
                       )}
                     >
                       {formatCell(value, col.format, formatCurrency, (n) => formatPercent(n), formatNumber)}
-                      {pct !== null && (
-                        <span className="ml-1.5 text-muted font-normal">
-                          {formatPercent(pct, { decimals: 0 })}
-                        </span>
-                      )}
                     </td>
                   )
                 })}
