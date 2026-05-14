@@ -376,6 +376,11 @@ export function ClientsPage() {
                   <tr key={client.id} className="hover:bg-surface-elevated/50">
                     <td className="px-4 py-3 text-sm font-mono">
                       #{client.whmcs_id}
+                      {client.datecreated && (
+                        <span className="block text-xs text-muted mt-0.5 font-sans">
+                          {new Date(client.datecreated).toLocaleDateString()}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <div>
