@@ -3,9 +3,10 @@ import { type Lang, languages, getLocalizedPath } from '../i18n'
 
 interface Props {
   lang: Lang
+  direction?: 'up' | 'down'
 }
 
-const { lang } = Astro.props
+const { lang, direction = 'down' } = Astro.props
 
 const currentPath = Astro.url.pathname
 let basePath = currentPath
@@ -32,7 +33,10 @@ for (const l of Object.keys(languages) as Lang[]) {
     </svg>
   </button>
 
-  <div class="lang-menu absolute right-0 mt-3 hidden min-w-[100px] py-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-lg shadow-xl z-50">
+  <div class:list={[
+    "lang-menu absolute right-0 hidden min-w-[100px] py-2 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-lg shadow-xl z-50",
+    direction === 'up' ? 'bottom-full mb-3' : 'mt-3'
+  ]}>
     {(Object.entries(languages) as [Lang, string][]).map(([code, name]) => (
       <a
         href={getLocalizedPath(basePath, code)}
