@@ -209,6 +209,15 @@ export function ProductsPage() {
         <DashboardFilters showPeriod={false} />
       </div>
 
+      {/* Product Statistics */}
+      <div data-tour="product-stats">
+      <ProductStats
+        products={productsData?.products || []}
+        productGroups={productsData?.product_groups || []}
+        isLoading={isLoading}
+      />
+      </div>
+
       {/* Controls */}
       <div data-tour="product-controls" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* View mode toggle - Groups first (primary categorization from WHMCS) */}
@@ -394,15 +403,6 @@ export function ProductsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Product Statistics */}
-      <div data-tour="product-stats">
-      <ProductStats
-        products={productsData?.products || []}
-        productGroups={productsData?.product_groups || []}
-        isLoading={isLoading}
-      />
-      </div>
 
       {/* Category Form Modal */}
       <CategoryFormModal
