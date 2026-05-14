@@ -122,6 +122,7 @@ export function EmailFormModal({
   const isEdit = !!connector
 
   const [name, setName] = React.useState('')
+  const [usePlatform, setUsePlatform] = React.useState(false)
   const [host, setHost] = React.useState('')
   const [port, setPort] = React.useState('587')
   const [secure, setSecure] = React.useState(false)
@@ -135,16 +136,18 @@ export function EmailFormModal({
     if (isOpen) {
       if (connector) {
         setName(connector.name)
-        setHost(connector.config.host)
-        setPort(String(connector.config.port))
-        setSecure(connector.config.secure)
-        setUser(connector.config.user)
+        setUsePlatform(connector.config.use_platform === true)
+        setHost(connector.config.host ?? '')
+        setPort(String(connector.config.port ?? 587))
+        setSecure(connector.config.secure ?? false)
+        setUser(connector.config.user ?? '')
         setPassword('') // Never pre-fill password
-        setFrom(connector.config.from)
+        setFrom(connector.config.from ?? '')
         setTo(connector.config.to)
         setEvents(connector.events)
       } else {
         setName('')
+        setUsePlatform(false)
         setHost('')
         setPort('587')
         setSecure(false)
@@ -163,15 +166,22 @@ export function EmailFormModal({
     if (isEdit) {
       const data: UpdateEmailConnectorData = {}
       if (name !== connector?.name) data.name = name
-      if (host !== connector?.config.host) data.host = host
-      if (portNum !== connector?.config.port) data.port = portNum
-      if (secure !== connector?.config.secure) data.secure = secure
-      if (user !== connector?.config.user) data.user = user
-      if (password.trim()) data.password = password
-      if (from !== connector?.config.from) data.from = from
+      if (usePlatform !== (connector?.config.use_platform === true)) {
+        data.use_platform = usePlatform
+      }
+      if (!usePlatform) {
+        if (host !== (connector?.config.host ?? '')) data.host = host
+        if (portNum !== (connector?.config.port ?? 0)) data.port = portNum
+        if (secure !== (connector?.config.secure ?? false)) data.secure = secure
+        if (user !== (connector?.config.user ?? '')) data.user = user
+        if (password.trim()) data.password = password
+        if (from !== (connector?.config.from ?? '')) data.from = from
+      }
       if (to !== connector?.config.to) data.to = to
       if (JSON.stringify(events) !== JSON.stringify(connector?.events)) data.events = events
       onSubmit(data)
+    } else if (usePlatform) {
+      onSubmit({ name, use_platform: true, to, events })
     } else {
       onSubmit({ name, host, port: portNum, secure, user, password, from, to, events })
     }
@@ -183,8 +193,10 @@ export function EmailFormModal({
     )
   }
 
-  const isValid = name.trim() && host.trim() && port.trim() && user.trim() &&
-    (isEdit || password.trim()) && from.trim() && to.trim() && events.length > 0
+  const isValid = usePlatform
+    ? name.trim() && to.trim() && events.length > 0
+    : name.trim() && host.trim() && port.trim() && user.trim() &&
+      (isEdit || password.trim()) && from.trim() && to.trim() && events.length > 0
 
   if (!isOpen) return null
 
@@ -228,86 +240,99 @@ export function EmailFormModal({
               />
             </div>
 
-            {/* SMTP Host + Port */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2 space-y-1.5">
-                <Label htmlFor="email-host">{t('connectors.emailHost')}</Label>
-                <Input
-                  id="email-host"
-                  value={host}
-                  onChange={(e) => setHost(e.target.value)}
-                  placeholder={t('connectors.emailHostPlaceholder')}
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email-port">{t('connectors.emailPort')}</Label>
-                <Input
-                  id="email-port"
-                  type="number"
-                  min={1}
-                  max={65535}
-                  value={port}
-                  onChange={(e) => setPort(e.target.value)}
-                  placeholder={t('connectors.emailPortPlaceholder')}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* TLS Toggle */}
+            {/* Use Platform SMTP */}
             <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface">
               <div>
-                <p className="text-sm font-medium">{t('connectors.emailSecure')}</p>
-                <p className="text-xs text-muted mt-0.5">{t('connectors.emailSecureHint')}</p>
+                <p className="text-sm font-medium">{t('connectors.emailUsePlatform')}</p>
+                <p className="text-xs text-muted mt-0.5">{t('connectors.emailUsePlatformHint')}</p>
               </div>
-              <Toggle id="email-secure" checked={secure} onChange={setSecure} />
+              <Toggle id="email-use-platform" checked={usePlatform} onChange={setUsePlatform} />
             </div>
 
-            {/* SMTP Username */}
-            <div className="space-y-1.5">
-              <Label htmlFor="email-user">{t('connectors.emailUser')}</Label>
-              <Input
-                id="email-user"
-                type="email"
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-                placeholder={t('connectors.emailUserPlaceholder')}
-                required
-              />
-            </div>
+            {!usePlatform && (
+              <>
+                {/* SMTP Host + Port */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label htmlFor="email-host">{t('connectors.emailHost')}</Label>
+                    <Input
+                      id="email-host"
+                      value={host}
+                      onChange={(e) => setHost(e.target.value)}
+                      placeholder={t('connectors.emailHostPlaceholder')}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email-port">{t('connectors.emailPort')}</Label>
+                    <Input
+                      id="email-port"
+                      type="number"
+                      min={1}
+                      max={65535}
+                      value={port}
+                      onChange={(e) => setPort(e.target.value)}
+                      placeholder={t('connectors.emailPortPlaceholder')}
+                      required
+                    />
+                  </div>
+                </div>
 
-            {/* SMTP Password */}
-            <div className="space-y-1.5">
-              <Label htmlFor="email-password">{t('connectors.emailPassword')}</Label>
-              <Input
-                id="email-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isEdit
-                  ? t('connectors.emailPasswordHint')
-                  : t('connectors.emailPasswordPlaceholder')
-                }
-                required={!isEdit}
-                autoComplete="new-password"
-              />
-              {isEdit && (
-                <p className="text-xs text-muted">{t('connectors.emailPasswordHint')}</p>
-              )}
-            </div>
+                {/* TLS Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface">
+                  <div>
+                    <p className="text-sm font-medium">{t('connectors.emailSecure')}</p>
+                    <p className="text-xs text-muted mt-0.5">{t('connectors.emailSecureHint')}</p>
+                  </div>
+                  <Toggle id="email-secure" checked={secure} onChange={setSecure} />
+                </div>
 
-            {/* From */}
-            <div className="space-y-1.5">
-              <Label htmlFor="email-from">{t('connectors.emailFrom')}</Label>
-              <Input
-                id="email-from"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                placeholder={t('connectors.emailFromPlaceholder')}
-                required
-              />
-            </div>
+                {/* SMTP Username */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-user">{t('connectors.emailUser')}</Label>
+                  <Input
+                    id="email-user"
+                    type="email"
+                    value={user}
+                    onChange={(e) => setUser(e.target.value)}
+                    placeholder={t('connectors.emailUserPlaceholder')}
+                    required
+                  />
+                </div>
+
+                {/* SMTP Password */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-password">{t('connectors.emailPassword')}</Label>
+                  <Input
+                    id="email-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={isEdit
+                      ? t('connectors.emailPasswordHint')
+                      : t('connectors.emailPasswordPlaceholder')
+                    }
+                    required={!isEdit}
+                    autoComplete="new-password"
+                  />
+                  {isEdit && (
+                    <p className="text-xs text-muted">{t('connectors.emailPasswordHint')}</p>
+                  )}
+                </div>
+
+                {/* From */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-from">{t('connectors.emailFrom')}</Label>
+                  <Input
+                    id="email-from"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    placeholder={t('connectors.emailFromPlaceholder')}
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             {/* To */}
             <div className="space-y-1.5">

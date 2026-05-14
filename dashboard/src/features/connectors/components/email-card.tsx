@@ -22,7 +22,9 @@ export function EmailCard({
 }: EmailCardProps) {
   const { t } = useTranslation()
 
-  const smtpInfo = `${connector.config.host}:${connector.config.port}`
+  const smtpInfo = connector.config.use_platform
+    ? t('connectors.emailPlatformBadge')
+    : `${connector.config.host}:${connector.config.port}`
 
   return (
     <Card className={`relative overflow-hidden ${!connector.enabled ? 'opacity-50' : ''}`}>

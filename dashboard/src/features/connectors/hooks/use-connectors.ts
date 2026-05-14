@@ -84,13 +84,14 @@ export interface EmailConnector {
   type: 'email'
   name: string
   config: {
-    host: string
-    port: number
-    secure: boolean
-    user: string
-    from: string
+    use_platform?: boolean // true = uses platform SMTP, other SMTP fields absent
+    host?: string
+    port?: number
+    secure?: boolean
+    user?: string
+    from?: string
     to: string
-    has_password: boolean
+    has_password?: boolean
     // password is never returned by the API
   }
   events: WebhookEventType[]
@@ -101,18 +102,20 @@ export interface EmailConnector {
 
 export interface CreateEmailConnectorData {
   name: string
-  host: string
-  port: number
-  secure: boolean
-  user: string
-  password: string
-  from: string
+  use_platform?: boolean
+  host?: string
+  port?: number
+  secure?: boolean
+  user?: string
+  password?: string
+  from?: string
   to: string
   events: WebhookEventType[]
 }
 
 export interface UpdateEmailConnectorData {
   name?: string
+  use_platform?: boolean
   host?: string
   port?: number
   secure?: boolean
