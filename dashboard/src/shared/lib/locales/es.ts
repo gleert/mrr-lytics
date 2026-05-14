@@ -234,7 +234,7 @@ export const es = {
         totalItems: 'Ítems Recurrentes',
         totalMrr: 'Contribución MRR',
         categorized: 'Categorizados',
-        avgAmount: 'Importe Medio',
+        avgMrr: 'MRR Medio',
       },
       table: {
         description: 'Descripción',

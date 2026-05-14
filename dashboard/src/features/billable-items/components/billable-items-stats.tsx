@@ -20,12 +20,12 @@ export function BillableItemsStats({ items, totalMrr, isLoading }: BillableItems
       totalItems > 0
         ? Math.round((activeItems.filter(i => i.category !== null).length / totalItems) * 1000) / 10
         : 0
-    const avgAmount =
+    const avgMrr =
       totalItems > 0
-        ? activeItems.reduce((sum, i) => sum + i.amount, 0) / totalItems
+        ? activeItems.reduce((sum, i) => sum + i.monthly_mrr, 0) / totalItems
         : 0
 
-    return { totalItems, categorizedPct, avgAmount }
+    return { totalItems, categorizedPct, avgMrr }
   }, [items])
 
   return (
@@ -55,8 +55,8 @@ export function BillableItemsStats({ items, totalMrr, isLoading }: BillableItems
         accentColor="info"
       />
       <KPICard
-        title={t('billableItems.stats.avgAmount')}
-        value={stats.avgAmount}
+        title={t('billableItems.stats.avgMrr')}
+        value={stats.avgMrr}
         format="currency"
         loading={isLoading}
         icon={<Icon name="payments" size="2xl" />}

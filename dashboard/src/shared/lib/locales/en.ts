@@ -234,7 +234,7 @@ export const en = {
         totalItems: 'Recurring Items',
         totalMrr: 'MRR',
         categorized: 'Categorized',
-        avgAmount: 'Avg. Amount',
+        avgMrr: 'Avg. MRR',
       },
       table: {
         description: 'Description',
