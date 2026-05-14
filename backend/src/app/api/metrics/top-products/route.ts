@@ -51,28 +51,21 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get active hosting services
+    // Get active hosting services.
+    // Status filter and fetched columns must match calculateMrrLive so that
+    // top_products.total_mrr (hosting-only) + billable_items.total_mrr +
+    // domains MRR adds up to the canonical total exposed by /api/metrics.
     const { data: hostingServices, error: hostingError } = await supabase
       .from('whmcs_hosting')
       .select('instance_id, packageid, amount, billingcycle, domainstatus')
       .in('instance_id', instanceIds)
-      .in('domainstatus', ['Active', 'Suspended'])
+      .eq('domainstatus', 'Active')
       .limit(10000)
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
       throw new Error('Failed to fetch hosting data')
     }
-
-    // Get recurring billable items (same filter as mv_mrr_current)
-    const { data: billableItems } = await supabase
-      .from('whmcs_billable_items')
-      .select('instance_id, amount, recurcycle, recurfor, invoicecount')
-      .in('instance_id', instanceIds)
-      .eq('invoice_action', 4)
-      .gt('invoicecount', 0)
-      .or('recurfor.eq.0,invoicecount.lt.recurfor')
-      .limit(10000)
 
     // Get products
     const { data: products, error: productsError } = await supabase
@@ -109,15 +102,10 @@ export async function GET(request: NextRequest) {
       return amount / divisor
     }
 
-    // Add recurring billable items to totalMRR (they have no packageid, counted in total only)
-    let billableItemsMRR = 0
-    billableItems?.forEach(item => {
-      billableItemsMRR += toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || 'monthly')
-    })
-
-    // Aggregate by product
+    // Aggregate by product (hosting only — billable items and domains are
+    // their own breakdown categories and live on different pages).
     const productStats = new Map<string, { id: number; name: string; services: number; mrr: number }>()
-    let totalMRR = billableItemsMRR
+    let totalMRR = 0
 
     hostingServices?.forEach(service => {
       const productKey = `${service.instance_id}:${service.packageid}`
