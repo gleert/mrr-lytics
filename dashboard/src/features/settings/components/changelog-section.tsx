@@ -24,6 +24,31 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.8.0',
+    date: '2026-05-14',
+    changes: [
+      { type: 'feature',     text: 'changelog.entries.v280.emailPlatformSmtp' },
+      { type: 'feature',     text: 'changelog.entries.v280.listsPageSize' },
+      { type: 'feature',     text: 'changelog.entries.v280.clientSignupDate' },
+      { type: 'improvement', text: 'changelog.entries.v280.arpuHint' },
+      { type: 'improvement', text: 'changelog.entries.v280.productsKpisTop' },
+      { type: 'improvement', text: 'changelog.entries.v280.productsMrrCoherence' },
+      { type: 'improvement', text: 'changelog.entries.v280.domainsStatusByPeriod' },
+      { type: 'improvement', text: 'changelog.entries.v280.domainsTldActive' },
+      { type: 'improvement', text: 'changelog.entries.v280.billableAvgMrr' },
+      { type: 'improvement', text: 'changelog.entries.v280.reportsPreviewCleaner' },
+      { type: 'improvement', text: 'changelog.entries.v280.ltvStableWindow' },
+      { type: 'improvement', text: 'changelog.entries.v280.forecastingSimpler' },
+      { type: 'improvement', text: 'changelog.entries.v280.cronTimeoutExtended' },
+      { type: 'improvement', text: 'changelog.entries.v280.mobileMenuPolish' },
+      { type: 'fix',         text: 'changelog.entries.v280.newClientsExcludeClosed' },
+      { type: 'fix',         text: 'changelog.entries.v280.productsChurnCancellations' },
+      { type: 'fix',         text: 'changelog.entries.v280.categorizationConsistency' },
+      { type: 'fix',         text: 'changelog.entries.v280.mrrMovementMonthEnd' },
+      { type: 'security',    text: 'changelog.entries.v280.dbViewsSecurity' },
+    ],
+  },
+  {
     version: '2.7.0',
     date: '2026-04-28',
     changes: [
