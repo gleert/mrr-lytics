@@ -128,11 +128,15 @@ export async function GET(request: NextRequest) {
       return dateStr.substring(0, 7) // YYYY-MM
     }
 
-    // Get new clients in period (with datecreated for bucketing)
+    // Get new clients in period (with datecreated for bucketing).
+    // Exclude Closed: a client created in-period but already closed should not
+    // count as "new" — they've left the customer base and are accounted for in
+    // churn / closed_clients instead.
     const { data: newClients, error: newClientsError } = await supabase
       .from('whmcs_clients')
       .select('id, datecreated')
       .in('instance_id', instanceIds)
+      .neq('status', 'Closed')
       .gte('datecreated', startDate.toISOString().split('T')[0])
       .lte('datecreated', endDate.toISOString().split('T')[0])
 
