@@ -170,14 +170,17 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 6) // Limit to 6 statuses
 
-    // Calculate breakdown by TLD (top 5 + Others)
+    // Calculate breakdown by TLD (top 5 + Others). Only active domains —
+    // the chart represents the current TLD mix, not historical.
     const tldCounts = new Map<string, number>()
-    allDomains.forEach(d => {
-      if (!d.domain) return
-      const parts = d.domain.split('.')
-      const tld = parts.length > 1 ? '.' + parts[parts.length - 1].toLowerCase() : 'Unknown'
-      tldCounts.set(tld, (tldCounts.get(tld) || 0) + 1)
-    })
+    allDomains
+      .filter(d => d.status === 'Active')
+      .forEach(d => {
+        if (!d.domain) return
+        const parts = d.domain.split('.')
+        const tld = parts.length > 1 ? '.' + parts[parts.length - 1].toLowerCase() : 'Unknown'
+        tldCounts.set(tld, (tldCounts.get(tld) || 0) + 1)
+      })
 
     const sortedTlds = Array.from(tldCounts.entries())
       .map(([name, value]) => ({ name, value }))
