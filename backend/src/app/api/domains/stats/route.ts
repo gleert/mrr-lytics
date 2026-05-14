@@ -158,10 +158,22 @@ export async function GET(request: NextRequest) {
       new_domains_change = ((new_domains - prev_new_domains) / prev_new_domains) * 100
     }
 
-    // Calculate breakdown by status
+    // Calculate breakdown by status.
+    // Active is a snapshot of the present (no period filter), every other
+    // status is restricted to the selected period using expirydate as the
+    // "left the base" timestamp — so cancelled/expired counts answer
+    // "how many in this period" rather than "all history".
+    const periodStartStr = startDate.toISOString().split('T')[0]
+    const periodEndStr = endDate.toISOString().split('T')[0]
     const statusCounts = new Map<string, number>()
     allDomains.forEach(d => {
       const status = d.status || 'Unknown'
+      if (status === 'Active') {
+        statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
+        return
+      }
+      if (!d.expirydate) return
+      if (d.expirydate < periodStartStr || d.expirydate > periodEndStr) return
       statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
     })
 
