@@ -821,6 +821,23 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v290: {
+          mrrWeightedChurn: 'Churn rate is now MRR-weighted (revenue churn) instead of service-count based — a 5,000 €/month cancellation now moves the percentage thousands of times more than a 0.83 €/month domain expiring. Multi-instance aggregation properly sums lost MRR over active MRR instead of averaging per-instance rates',
+          mrrMovementDrilldown: 'Click the Nuevo / Perdido pills in the MRR Movement block to open a modal listing every hosting and billable item that contributed to that figure for the current month, with client name, description, monthly amount and the relevant date',
+          instanceModuleVersion: 'Each instance card in Settings → Instances now shows the installed WHMCS module version. Outdated installs are highlighted in amber with a tooltip pointing to the latest available version',
+          churnRateColors: 'Churn rate KPI now flips trend colors (rising = red, dropping = green) and shows the previous value next to the change so it is obvious what is being compared',
+          emptyPillsHidden: 'In the MRR Movement block, pills with a value of 0 are now hidden (Expansion and Contraction had no per-service price history to draw from, and Nuevo/Perdido may be 0 in quiet months). The remaining pills right-align cleanly',
+          churnRateMrrLabel: 'KPI title clarified to "Tasa de Abandono (MRR)" / "Churn Rate (MRR)" so it is explicit that the percentage is weighted by value, not service count',
+          emailIconGeneric: 'Email connector icon is now a generic envelope instead of the Gmail M-shape — the connector works with any SMTP provider, the Gmail-specific colours were misleading',
+          moduleVersionCentralized: 'Latest WHMCS module version centralised in a single backend constant — endpoint, demo data and download URL stay in sync automatically on each release',
+          moduleBannerCacheBust: 'Module update banner no longer caches old version responses in localStorage. The `module-version` query is excluded from the React Query persister so a fresh deploy is detected on the next page load',
+          module135: 'WHMCS module v1.3.5 — restores `module_version` reporting in the export meta (it had silently broken in v1.3.3 when the constant moved to lib/version.php, leaving every install reporting 1.3.2 forever). Re-installing the module is recommended',
+          billableCancellationsInChurn: 'High-value recurring billable items (Magento/Odoo retainers, etc.) cancelled in WHMCS now appear correctly in the churn calculation — a regression introduced while refactoring churn to MRR-weighted dropped them entirely. A 5,125 € retainer cancellation is once again reflected in the rate',
+          multiInstanceChurnWeighting: 'When viewing the dashboard across multiple WHMCS instances, the combined churn rate is now correctly weighted by each instance\'s MRR instead of being a flat average — a tiny instance with high % churn no longer drags the portfolio metric',
+          emailRecordsSynced: 'Sync notification emails: the Records Synced field used to render as "[object Object]". It now shows "clients: 42 · hosting: 18 · domains: 7" — recursively formats nested objects in any event payload',
+          emailManageLink: 'Email footer link "Manage notifications" now points to the connectors settings page instead of being a dead href="#"',
+          emailRawEventType: 'Removed the technical event identifier subtitle (client.churned / sync.completed) under the email heading — the localized label was already there',
+        },
         v280: {
           emailPlatformSmtp: 'New "Send from MRRlytics" email connector — receive notifications without configuring your own SMTP credentials. Toggle inside the email connector form',
           listsPageSize: 'Page-size selector (25 / 50 / 100 / 200) added to the clients, domains and transactions lists',

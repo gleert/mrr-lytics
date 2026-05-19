@@ -818,6 +818,23 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v290: {
+          mrrWeightedChurn: 'La tasa de abandono ahora se pondera por MRR (revenue churn) en vez de contar servicios — una cancelación de 5.000 €/mes mueve el porcentaje miles de veces más que un dominio de 0,83 €/mes. En vistas multi-instancia se suman MRR perdido y MRR activo en lugar de promediar las tasas individuales',
+          mrrMovementDrilldown: 'Click en las pastillas Nuevo / Perdido del bloque "Movimiento de MRR" abre un modal con todas las líneas (hosting y billable items) que aportaron a ese importe en el mes, con nombre del cliente, descripción, importe mensual y fecha relevante',
+          instanceModuleVersion: 'Cada tarjeta de instancia en Ajustes → Instancias muestra ahora la versión instalada del módulo WHMCS. Las instalaciones desactualizadas se resaltan en ámbar con un tooltip indicando la última versión disponible',
+          churnRateColors: 'El KPI de tasa de abandono ahora invierte los colores de tendencia (sube = rojo, baja = verde) y muestra el valor anterior junto al cambio para que quede claro qué se compara',
+          emptyPillsHidden: 'En el bloque "Movimiento de MRR" se ocultan las pastillas con valor 0 (Expansión y Contracción no tienen histórico de precios por servicio del que tirar, y Nuevo/Perdido pueden ser 0 en meses tranquilos). Las pastillas restantes se alinean correctamente a la derecha',
+          churnRateMrrLabel: 'Título del KPI clarificado a "Tasa de Abandono (MRR)" para que sea explícito que el porcentaje se pondera por valor económico, no por número de servicios',
+          emailIconGeneric: 'El icono del conector de email ahora es un sobre genérico en vez de la "M" de Gmail — el conector funciona con cualquier SMTP, los colores de Gmail confundían',
+          moduleVersionCentralized: 'La versión latest del módulo WHMCS centralizada en una sola constante del backend — endpoint, demo data y URL de descarga se sincronizan automáticamente en cada release',
+          moduleBannerCacheBust: 'El banner de actualización de módulo ya no cachea respuestas viejas de versión en localStorage. La query `module-version` queda excluida del persister de React Query, así un nuevo deploy se detecta en la siguiente recarga',
+          module135: 'Módulo WHMCS v1.3.5 — restaura el reporte de `module_version` en el meta del export (se había roto silenciosamente en v1.3.3 cuando la constante se movió a lib/version.php, dejando todas las instalaciones reportando 1.3.2 para siempre). Se recomienda reinstalar el módulo',
+          billableCancellationsInChurn: 'Los items recurrentes de alto valor (retainers Magento/Odoo, etc.) cancelados en WHMCS aparecen ahora correctamente en el cálculo de churn — una regresión al refactorizar churn a MRR-weighted los había dejado fuera. La cancelación de un retainer de 5.125 € vuelve a reflejarse en la tasa',
+          multiInstanceChurnWeighting: 'Al ver el dashboard con varias instancias WHMCS, la tasa combinada de abandono ahora se pondera correctamente por el MRR de cada instancia en vez de ser un promedio plano — una instancia pequeña con churn alto ya no infla la métrica del portfolio',
+          emailRecordsSynced: 'Emails de notificación de sync: el campo "Records Synced" se renderizaba como "[object Object]". Ahora muestra "clients: 42 · hosting: 18 · domains: 7" — formatea recursivamente objetos anidados en cualquier payload de evento',
+          emailManageLink: 'El enlace "Manage notifications" del pie del email ahora apunta a la página de conectores en lugar de ser un href="#" muerto',
+          emailRawEventType: 'Eliminado el subtítulo técnico con el identificador de evento (client.churned / sync.completed) bajo la cabecera del email — el título localizado ya estaba ahí',
+        },
         v280: {
           emailPlatformSmtp: 'Nuevo conector de email "Enviar desde MRRlytics" — recibe notificaciones directamente sin tener que configurar un SMTP propio. Toggle dentro del formulario del conector de email',
           listsPageSize: 'Selector de tamaño de página (25 / 50 / 100 / 200) en los listados de clientes, dominios y transacciones',

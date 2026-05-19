@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useToast } from '@/app/providers'
 import { useFilters } from '@/app/providers'
-import { connectorLogos, WebhookLogo, SlackLogo, GmailLogo, HubspotLogo, SalesforceLogo, ZapierLogo } from '../components/connector-logos'
+import { connectorLogos, WebhookLogo, SlackLogo, EmailLogo, HubspotLogo, SalesforceLogo, ZapierLogo } from '../components/connector-logos'
 import { WebhookFormModal } from '../components/webhook-form-modal'
 import { WebhookCard } from '../components/webhook-card'
 import { DeleteWebhookModal } from '../components/delete-webhook-modal'
@@ -745,7 +745,7 @@ export function ConnectorsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover">
-                        <GmailLogo className="h-7 w-7" />
+                        <EmailLogo className="h-7 w-7" />
                       </div>
                       <div>
                         <h3 className="font-semibold">Email</h3>

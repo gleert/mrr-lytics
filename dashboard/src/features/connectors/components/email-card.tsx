@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
-import { GmailLogo } from './connector-logos'
+import { EmailLogo } from './connector-logos'
 import type { EmailConnector } from '../hooks/use-connectors'
 
 interface EmailCardProps {
@@ -33,7 +33,7 @@ export function EmailCard({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-surface-hover">
-              <GmailLogo className="h-7 w-7" />
+              <EmailLogo className="h-7 w-7" />
             </div>
             <div>
               <h3 className="font-semibold">{connector.name}</h3>

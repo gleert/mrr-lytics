@@ -24,6 +24,27 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.9.0',
+    date: '2026-05-19',
+    changes: [
+      { type: 'feature',     text: 'changelog.entries.v290.mrrWeightedChurn' },
+      { type: 'feature',     text: 'changelog.entries.v290.mrrMovementDrilldown' },
+      { type: 'feature',     text: 'changelog.entries.v290.instanceModuleVersion' },
+      { type: 'improvement', text: 'changelog.entries.v290.churnRateColors' },
+      { type: 'improvement', text: 'changelog.entries.v290.emptyPillsHidden' },
+      { type: 'improvement', text: 'changelog.entries.v290.churnRateMrrLabel' },
+      { type: 'improvement', text: 'changelog.entries.v290.emailIconGeneric' },
+      { type: 'improvement', text: 'changelog.entries.v290.moduleVersionCentralized' },
+      { type: 'improvement', text: 'changelog.entries.v290.moduleBannerCacheBust' },
+      { type: 'fix',         text: 'changelog.entries.v290.module135' },
+      { type: 'fix',         text: 'changelog.entries.v290.billableCancellationsInChurn' },
+      { type: 'fix',         text: 'changelog.entries.v290.multiInstanceChurnWeighting' },
+      { type: 'fix',         text: 'changelog.entries.v290.emailRecordsSynced' },
+      { type: 'fix',         text: 'changelog.entries.v290.emailManageLink' },
+      { type: 'fix',         text: 'changelog.entries.v290.emailRawEventType' },
+    ],
+  },
+  {
     version: '2.8.0',
     date: '2026-05-14',
     changes: [
