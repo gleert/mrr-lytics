@@ -252,6 +252,49 @@ export function useMRRTrend() {
   })
 }
 
+export interface MRRMovementItem {
+  kind: 'hosting' | 'billable'
+  whmcs_id: number
+  client_id: number | null
+  client_name: string
+  description: string
+  monthly_amount: number
+  billing_cycle: string
+  reference_date: string | null
+  instance_id: string
+}
+
+export interface MRRMovementItemsResponse {
+  items: MRRMovementItem[]
+  total: number
+  count: number
+  type: 'new' | 'churned'
+  month: string
+}
+
+/**
+ * Hook to fetch the detailed items behind a New/Churned MRR pill.
+ * Disabled when type is null so we only fetch when the modal opens.
+ */
+export function useMRRMovementItems(type: 'new' | 'churned' | null, month: string | null) {
+  const { currentInstance, getSelectedInstanceIds, allInstances } = useFilters()
+  const instanceKey = currentInstance?.instance_id || 'all'
+
+  return useQuery({
+    queryKey: ['metrics', 'mrr-movement-items', instanceKey, type, month],
+    queryFn: async () => {
+      const params: Record<string, string> = { type: type! }
+      if (month) params.month = month
+      const instanceIds = getSelectedInstanceIds()
+      if (instanceIds.length > 0) params.instance_ids = instanceIds.join(',')
+      const response = await api.get<{ success: boolean; data: MRRMovementItemsResponse }>('/api/metrics/mrr-movement/items', params)
+      return response.data
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!type && allInstances.length > 0,
+  })
+}
+
 /**
  * Hook to fetch monthly MRR movement breakdown
  * @param months Number of months to show (3-12, default: 6)

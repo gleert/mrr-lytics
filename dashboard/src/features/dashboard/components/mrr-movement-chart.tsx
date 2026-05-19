@@ -1,14 +1,17 @@
+import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
 import { useMRRMovement } from '../hooks/use-metrics'
 import { cn } from '@/shared/lib/utils'
 import { useCurrency } from '@/shared/hooks/use-currency'
 import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
+import { MRRMovementItemsModal } from './mrr-movement-items-modal'
 
 export function MRRMovementChart() {
   const { t } = useTranslation()
   const { data, isLoading } = useMRRMovement(6)
   const { formatCurrency, formatCurrencyWithSign } = useCurrency()
+  const [drilldown, setDrilldown] = React.useState<'new' | 'churned' | null>(null)
 
   const latestMonth = data?.movement_data?.[data.movement_data.length - 1]
 
@@ -69,22 +72,38 @@ export function MRRMovementChart() {
         <div className="lg:w-1/2 flex items-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
             {/* New MRR */}
-            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <button
+              type="button"
+              onClick={() => setDrilldown('new')}
+              className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+              title={t('dashboard.mrrMovementItems.openHint')}
+            >
               <div className="flex items-center gap-2">
                 <Icon name="add_circle" size="sm" />
                 <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.newMrr')}</span>
               </div>
-              <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.new_mrr)}</span>
-            </div>
+              <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                +{formatAmount(latestMonth.new_mrr)}
+                <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+              </span>
+            </button>
 
             {/* Churned */}
-            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
+            <button
+              type="button"
+              onClick={() => setDrilldown('churned')}
+              className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+              title={t('dashboard.mrrMovementItems.openHint')}
+            >
               <div className="flex items-center gap-2">
                 <Icon name="remove_circle" size="sm" />
                 <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.churned')}</span>
               </div>
-              <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.churned_mrr)}</span>
-            </div>
+              <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                -{formatAmount(latestMonth.churned_mrr)}
+                <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+              </span>
+            </button>
 
             {/* Expansion — only shown when populated */}
             {latestMonth.expansion_mrr > 0 && (
@@ -110,6 +129,13 @@ export function MRRMovementChart() {
           </div>
         </div>
       </div>
+
+      <MRRMovementItemsModal
+        isOpen={drilldown !== null}
+        onClose={() => setDrilldown(null)}
+        type={drilldown}
+        month={latestMonth.month}
+      />
     </div>
   )
 }

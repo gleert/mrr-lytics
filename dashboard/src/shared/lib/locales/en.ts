@@ -512,6 +512,15 @@ export const en = {
         growthMessage: 'MRR growth this month',
         declineMessage: 'MRR declined this month',
       },
+      mrrMovementItems: {
+        titleNew: 'New MRR — breakdown',
+        titleChurned: 'Churned MRR — breakdown',
+        empty: 'No movement this month',
+        total: 'Total',
+        count_one: '{{count}} service',
+        count_other: '{{count}} services',
+        openHint: 'Click to see the breakdown',
+      },
       // Top Products Section
       topProductsSection: {
         title: 'Product Performance',
