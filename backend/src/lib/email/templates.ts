@@ -90,6 +90,7 @@ export function renderEventEmail({ eventType, eventData }: TemplateData): string
     dateStyle: 'medium',
     timeStyle: 'short',
   })
+  const connectorsUrl = `${process.env.DASHBOARD_URL || 'https://app.mrrlytics.com'}/connectors`
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -128,7 +129,6 @@ export function renderEventEmail({ eventType, eventData }: TemplateData): string
                   <td style="padding-right: 12px; font-size: 28px; vertical-align: middle;">${icon}</td>
                   <td>
                     <div style="font-size: 18px; font-weight: 700; color: #f1f5f9;">${label}</div>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 2px; font-family: monospace;">${eventType}</div>
                   </td>
                 </tr>
               </table>
@@ -148,8 +148,8 @@ export function renderEventEmail({ eventType, eventData }: TemplateData): string
           <tr>
             <td style="padding-top: 20px; text-align: center;">
               <p style="font-size: 12px; color: #475569; margin: 0;">
-                Sent by <strong style="color: #6366f1;">MRRlytics</strong> · 
-                <a href="#" style="color: #475569; text-decoration: underline;">Manage notifications</a>
+                Sent by <strong style="color: #6366f1;">MRRlytics</strong> ·
+                <a href="${connectorsUrl}" style="color: #475569; text-decoration: underline;">Manage notifications</a>
               </p>
             </td>
           </tr>
