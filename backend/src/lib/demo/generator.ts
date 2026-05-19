@@ -11,6 +11,7 @@ import type {
   WhmcsCancellationRequest,
   WhmcsClientClosure,
 } from '@/lib/whmcs/types'
+import { LATEST_MODULE_VERSION } from '@/lib/module/latest-version'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -513,7 +514,7 @@ export function generateDemoState(opts: ResponseOptions): WhmcsApiResponse {
   return {
     success: true,
     meta: {
-      module_version: '1.3.3',
+      module_version: LATEST_MODULE_VERSION,
       whmcs_version: '8.10.1',
       php_version: '8.2.0',
       timezone: 'UTC',
