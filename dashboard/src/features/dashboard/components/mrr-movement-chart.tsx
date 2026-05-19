@@ -71,39 +71,43 @@ export function MRRMovementChart() {
             lands they'll appear automatically. */}
         <div className="lg:w-1/2 flex items-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
-            {/* New MRR */}
-            <button
-              type="button"
-              onClick={() => setDrilldown('new')}
-              className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
-              title={t('dashboard.mrrMovementItems.openHint')}
-            >
-              <div className="flex items-center gap-2">
-                <Icon name="add_circle" size="sm" />
-                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.newMrr')}</span>
-              </div>
-              <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
-                +{formatAmount(latestMonth.new_mrr)}
-                <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
-              </span>
-            </button>
+            {/* New MRR — hidden when 0 */}
+            {latestMonth.new_mrr > 0 && (
+              <button
+                type="button"
+                onClick={() => setDrilldown('new')}
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+                title={t('dashboard.mrrMovementItems.openHint')}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name="add_circle" size="sm" />
+                  <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.newMrr')}</span>
+                </div>
+                <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                  +{formatAmount(latestMonth.new_mrr)}
+                  <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+                </span>
+              </button>
+            )}
 
-            {/* Churned */}
-            <button
-              type="button"
-              onClick={() => setDrilldown('churned')}
-              className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
-              title={t('dashboard.mrrMovementItems.openHint')}
-            >
-              <div className="flex items-center gap-2">
-                <Icon name="remove_circle" size="sm" />
-                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.churned')}</span>
-              </div>
-              <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
-                -{formatAmount(latestMonth.churned_mrr)}
-                <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
-              </span>
-            </button>
+            {/* Churned — hidden when 0 */}
+            {latestMonth.churned_mrr > 0 && (
+              <button
+                type="button"
+                onClick={() => setDrilldown('churned')}
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+                title={t('dashboard.mrrMovementItems.openHint')}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name="remove_circle" size="sm" />
+                  <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.churned')}</span>
+                </div>
+                <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                  -{formatAmount(latestMonth.churned_mrr)}
+                  <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+                </span>
+              </button>
+            )}
 
             {/* Expansion — only shown when populated */}
             {latestMonth.expansion_mrr > 0 && (
