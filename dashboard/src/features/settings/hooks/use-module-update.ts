@@ -9,7 +9,7 @@ interface ModuleVersionInfo {
   released_at: string
 }
 
-function useLatestModuleVersion() {
+export function useLatestModuleVersion() {
   return useQuery({
     queryKey: ['module-version', 'v2'],
     queryFn: () => api.get<ModuleVersionInfo>('/api/module/version'),

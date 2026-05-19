@@ -1290,6 +1290,9 @@ export const es = {
       syncEvery: 'Cada {{hours}}h',
       syncDisabled: 'Sincronización deshabilitada',
       lastSync: 'Última sincronización',
+      moduleVersion: 'Módulo v{{version}}',
+      moduleVersionUnknown: 'Versión del módulo desconocida',
+      moduleOutdatedHint: 'Desactualizado — actualización disponible a v{{latest}}',
       hour: 'hora',
       hours: 'horas',
       status: {

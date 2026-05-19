@@ -10,21 +10,23 @@ import { InstanceCard } from './instance-card'
 import { InstanceFormModal } from './instance-form-modal'
 import { DeleteInstanceModal } from './delete-instance-modal'
 import { ImportDataModal } from './import-data-modal'
-import { 
-  useInstances, 
-  useCreateInstance, 
-  useUpdateInstance, 
+import {
+  useInstances,
+  useCreateInstance,
+  useUpdateInstance,
   useDeleteInstance,
   useSyncInstance,
   type WhmcsInstanceFull,
   type CreateInstanceData,
   type UpdateInstanceData,
 } from '../hooks/use-instances'
+import { useLatestModuleVersion } from '../hooks/use-module-update'
 
 export function InstancesSection() {
   const { t } = useTranslation()
   const toast = useToast()
   const { data: instances, isLoading, error } = useInstances()
+  const { data: latestModuleInfo } = useLatestModuleVersion()
   const createInstance = useCreateInstance()
   const updateInstance = useUpdateInstance()
   const deleteInstance = useDeleteInstance()
@@ -150,6 +152,7 @@ export function InstancesSection() {
                 onDelete={handleDelete}
                 onSync={handleSync}
                 onImport={handleImport}
+                latestModuleVersion={latestModuleInfo?.version}
               />
             ))}
           </div>

@@ -1294,6 +1294,9 @@ export const en = {
       syncEvery: 'Every {{hours}}h',
       syncDisabled: 'Sync disabled',
       lastSync: 'Last sync',
+      moduleVersion: 'Module v{{version}}',
+      moduleVersionUnknown: 'Module version unknown',
+      moduleOutdatedHint: 'Outdated — update available to v{{latest}}',
       hour: 'hour',
       hours: 'hours',
       status: {

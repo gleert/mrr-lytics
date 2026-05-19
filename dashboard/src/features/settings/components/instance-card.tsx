@@ -12,10 +12,24 @@ interface InstanceCardProps {
   onDelete: (instance: WhmcsInstanceFull) => void
   onSync: (instance: WhmcsInstanceFull) => Promise<{ success: boolean; error?: string }>
   onImport: (instance: WhmcsInstanceFull) => void
+  latestModuleVersion?: string
 }
 
-export function InstanceCard({ instance, onEdit, onDelete, onSync, onImport }: InstanceCardProps) {
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (diff !== 0) return diff < 0 ? -1 : 1
+  }
+  return 0
+}
+
+export function InstanceCard({ instance, onEdit, onDelete, onSync, onImport, latestModuleVersion }: InstanceCardProps) {
   const { t } = useTranslation()
+  const moduleOutdated = !!latestModuleVersion && instance.last_sync_at !== null && (
+    !instance.module_version || compareVersions(instance.module_version, latestModuleVersion) < 0
+  )
   const [syncState, setSyncState] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [syncError, setSyncError] = React.useState<string | null>(null)
 
@@ -135,6 +149,20 @@ export function InstanceCard({ instance, onEdit, onDelete, onSync, onImport }: I
                 <Icon name="schedule" size="sm" />
                 <span>
                   {t('instances.lastSync')}: {formatDate(instance.last_sync_at)}
+                </span>
+              </div>
+              <div
+                className={cn(
+                  'flex items-center gap-1.5',
+                  moduleOutdated ? 'text-warning' : 'text-muted'
+                )}
+                title={moduleOutdated && latestModuleVersion ? t('instances.moduleOutdatedHint', { latest: latestModuleVersion }) : undefined}
+              >
+                <Icon name="extension" size="sm" />
+                <span>
+                  {instance.module_version
+                    ? t('instances.moduleVersion', { version: instance.module_version })
+                    : t('instances.moduleVersionUnknown')}
                 </span>
               </div>
             </div>
