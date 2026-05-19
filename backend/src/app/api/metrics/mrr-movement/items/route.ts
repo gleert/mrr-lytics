@@ -72,10 +72,10 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const [hostingRes, billableRes, clientsRes] = await Promise.all([
+    const [hostingRes, billableRes, clientsRes, productsRes] = await Promise.all([
       supabase
         .from('whmcs_hosting')
-        .select('instance_id, whmcs_id, client_id, amount, billingcycle, domainstatus, regdate, terminationdate, name')
+        .select('instance_id, whmcs_id, client_id, packageid, domain, amount, billingcycle, domainstatus, regdate, terminationdate')
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
@@ -87,10 +87,14 @@ export async function GET(request: NextRequest) {
         .from('whmcs_clients')
         .select('instance_id, whmcs_id, firstname, lastname, companyname')
         .in('instance_id', instanceIds),
+      supabase
+        .from('whmcs_products')
+        .select('instance_id, whmcs_id, name')
+        .in('instance_id', instanceIds),
     ])
 
-    if (hostingRes.error) throw new Error('Failed to load hosting')
-    if (billableRes.error) throw new Error('Failed to load billable items')
+    if (hostingRes.error) throw new Error(`Failed to load hosting: ${hostingRes.error.message}`)
+    if (billableRes.error) throw new Error(`Failed to load billable items: ${billableRes.error.message}`)
 
     const clientName = new Map<string, string>()
     ;(clientsRes.data ?? []).forEach(c => {
@@ -98,6 +102,11 @@ export async function GET(request: NextRequest) {
         ? c.companyname
         : [c.firstname, c.lastname].filter(Boolean).join(' ').trim() || `#${c.whmcs_id}`
       clientName.set(`${c.instance_id}:${c.whmcs_id}`, display)
+    })
+
+    const productName = new Map<string, string>()
+    ;(productsRes.data ?? []).forEach(p => {
+      productName.set(`${p.instance_id}:${p.whmcs_id}`, p.name)
     })
 
     const toMonthlyAmount = (amount: number, cycle: string): number => {
@@ -149,12 +158,14 @@ export async function GET(request: NextRequest) {
       const isActive = hostingActiveAt(s, monthEnd)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
+      const product = productName.get(`${s.instance_id}:${s.packageid}`)
+      const description = [product, s.domain].filter(Boolean).join(' — ') || `Service #${s.whmcs_id}`
       items.push({
         kind: 'hosting',
         whmcs_id: s.whmcs_id,
         client_id: s.client_id,
         client_name: clientName.get(`${s.instance_id}:${s.client_id}`) || `#${s.client_id}`,
-        description: s.name || `Service #${s.whmcs_id}`,
+        description,
         monthly_amount: Math.round(mrr * 100) / 100,
         billing_cycle: s.billingcycle || '',
         reference_date: typeParam === 'new' ? s.regdate : s.terminationdate,
