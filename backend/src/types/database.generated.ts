@@ -321,6 +321,9 @@ export type Database = {
           amount_unpaid: number | null
           arpu: number | null
           arr: number | null
+          billable_churn_rate: number | null
+          billable_churned_mrr: number | null
+          billable_churned_services: number | null
           churn_rate: number | null
           churned_clients_day: number | null
           churned_mrr: number | null
@@ -328,7 +331,13 @@ export type Database = {
           closed_clients: number | null
           created_at: string | null
           date: string
+          domains_churn_rate: number | null
+          domains_churned_mrr: number | null
+          domains_churned_services: number | null
           expiring_domains_30d: number | null
+          hosting_churn_rate: number | null
+          hosting_churned_mrr: number | null
+          hosting_churned_services: number | null
           id: string
           inactive_clients: number | null
           instance_id: string
@@ -357,6 +366,9 @@ export type Database = {
           amount_unpaid?: number | null
           arpu?: number | null
           arr?: number | null
+          billable_churn_rate?: number | null
+          billable_churned_mrr?: number | null
+          billable_churned_services?: number | null
           churn_rate?: number | null
           churned_clients_day?: number | null
           churned_mrr?: number | null
@@ -364,7 +376,13 @@ export type Database = {
           closed_clients?: number | null
           created_at?: string | null
           date: string
+          domains_churn_rate?: number | null
+          domains_churned_mrr?: number | null
+          domains_churned_services?: number | null
           expiring_domains_30d?: number | null
+          hosting_churn_rate?: number | null
+          hosting_churned_mrr?: number | null
+          hosting_churned_services?: number | null
           id?: string
           inactive_clients?: number | null
           instance_id: string
@@ -393,6 +411,9 @@ export type Database = {
           amount_unpaid?: number | null
           arpu?: number | null
           arr?: number | null
+          billable_churn_rate?: number | null
+          billable_churned_mrr?: number | null
+          billable_churned_services?: number | null
           churn_rate?: number | null
           churned_clients_day?: number | null
           churned_mrr?: number | null
@@ -400,7 +421,13 @@ export type Database = {
           closed_clients?: number | null
           created_at?: string | null
           date?: string
+          domains_churn_rate?: number | null
+          domains_churned_mrr?: number | null
+          domains_churned_services?: number | null
           expiring_domains_30d?: number | null
+          hosting_churn_rate?: number | null
+          hosting_churned_mrr?: number | null
+          hosting_churned_services?: number | null
           id?: string
           inactive_clients?: number | null
           instance_id?: string
@@ -1661,6 +1688,15 @@ export type Database = {
           churned_services: number
           period_end: string
           period_start: string
+          hosting_churned_services: number
+          hosting_churned_mrr: number
+          hosting_churn_rate: number
+          billable_churned_services: number
+          billable_churned_mrr: number
+          billable_churn_rate: number
+          domains_churned_services: number
+          domains_churned_mrr: number
+          domains_churn_rate: number
         }[]
       }
       calculate_daily_revenue: {

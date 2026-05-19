@@ -410,6 +410,11 @@ export const en = {
       mrr: 'Monthly Recurring Revenue',
       arr: 'Annual Recurring Revenue',
       churnRate: 'Churn Rate',
+      churnBreakdown: {
+        hosting: 'Hosting',
+        billable: 'Billable',
+        domains: 'Domains',
+      },
       activeServices: 'Active Services',
       domains: 'Domains',
       unpaidInvoices: 'Unpaid Invoices',

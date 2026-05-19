@@ -54,6 +54,13 @@ export interface MRRMetrics {
   arr_change?: number
 }
 
+// Per-category churn breakdown
+export interface ChurnCategoryBreakdown {
+  churned_services: number
+  churned_mrr: number
+  churn_rate: number
+}
+
 // Churn metrics from /api/metrics/churn
 export interface ChurnMetrics {
   period_days: number
@@ -64,6 +71,13 @@ export interface ChurnMetrics {
   churn_rate: number
   // Comparison value (vs previous period)
   churn_rate_change?: number
+  // Per-category breakdown (hosting / billable items / domains).
+  // Domains use an expirydate+status proxy — see SQL migration 00049.
+  breakdown?: {
+    hosting: ChurnCategoryBreakdown
+    billable: ChurnCategoryBreakdown
+    domains: ChurnCategoryBreakdown
+  }
 }
 
 // Revenue by product from /api/metrics

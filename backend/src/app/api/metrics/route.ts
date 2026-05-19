@@ -7,6 +7,7 @@ import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
+import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
 import { cached } from '@/lib/cache'
 
 export const dynamic = 'force-dynamic'
@@ -113,6 +114,23 @@ export async function GET(request: NextRequest) {
           churned_mrr: dailyMetrics.churned_mrr,
           churn_rate: dailyMetrics.churn_rate,
           churn_rate_change: changes.churn_rate_change,
+          breakdown: {
+            hosting: {
+              churned_services: dailyMetrics.hosting_churned_services,
+              churned_mrr: dailyMetrics.hosting_churned_mrr,
+              churn_rate: dailyMetrics.hosting_churn_rate,
+            },
+            billable: {
+              churned_services: dailyMetrics.billable_churned_services,
+              churned_mrr: dailyMetrics.billable_churned_mrr,
+              churn_rate: dailyMetrics.billable_churn_rate,
+            },
+            domains: {
+              churned_services: dailyMetrics.domains_churned_services,
+              churned_mrr: dailyMetrics.domains_churned_mrr,
+              churn_rate: dailyMetrics.domains_churn_rate,
+            },
+          },
         },
         revenue_by_product: dailyMetrics.top_products,
         clients: {
@@ -153,7 +171,7 @@ export async function GET(request: NextRequest) {
     const [churn, revenueByProduct, clientsAndInvoices] = await Promise.all([
       calculateChurnMultiInstance(instanceIds, days),
       calculateRevenueByProductMultiInstance(instanceIds),
-      getClientAndInvoiceSummaryMultiInstance(instanceIds, startDate, endDate),
+      getClientAndInvoiceSummaryMultiInstance(instanceIds, startDate, endDate, auth.tenant_id),
     ])
 
     return success({
@@ -229,6 +247,15 @@ async function getMetricsFromDaily(instanceIds: string[]) {
     amount_overdue: acc.amount_overdue + Number(row.amount_overdue || 0),
     churned_mrr: acc.churned_mrr + Number(row.churned_mrr || 0),
     churn_rate: acc.churn_rate + Number(row.churn_rate || 0),
+    hosting_churned_services: acc.hosting_churned_services + (row.hosting_churned_services || 0),
+    hosting_churned_mrr: acc.hosting_churned_mrr + Number(row.hosting_churned_mrr || 0),
+    hosting_churn_rate: acc.hosting_churn_rate + Number(row.hosting_churn_rate || 0),
+    billable_churned_services: acc.billable_churned_services + (row.billable_churned_services || 0),
+    billable_churned_mrr: acc.billable_churned_mrr + Number(row.billable_churned_mrr || 0),
+    billable_churn_rate: acc.billable_churn_rate + Number(row.billable_churn_rate || 0),
+    domains_churned_services: acc.domains_churned_services + (row.domains_churned_services || 0),
+    domains_churned_mrr: acc.domains_churned_mrr + Number(row.domains_churned_mrr || 0),
+    domains_churn_rate: acc.domains_churn_rate + Number(row.domains_churn_rate || 0),
   }), {
     mrr: 0, arr: 0, revenue_day: 0, revenue_mtd: 0,
     active_services: 0, new_services_day: 0, churned_services_day: 0, suspended_services: 0,
@@ -237,10 +264,18 @@ async function getMetricsFromDaily(instanceIds: string[]) {
     paid_invoices_day: 0, unpaid_invoices: 0, overdue_invoices: 0,
     amount_paid_day: 0, amount_unpaid: 0, amount_overdue: 0,
     churned_mrr: 0, churn_rate: 0,
+    hosting_churned_services: 0, hosting_churned_mrr: 0, hosting_churn_rate: 0,
+    billable_churned_services: 0, billable_churned_mrr: 0, billable_churn_rate: 0,
+    domains_churned_services: 0, domains_churned_mrr: 0, domains_churn_rate: 0,
   })
 
-  // Average churn rate across instances
-  aggregated.churn_rate = data.length > 0 ? aggregated.churn_rate / data.length : 0
+  // Average churn rates across instances (rates are not summable)
+  if (data.length > 0) {
+    aggregated.churn_rate = aggregated.churn_rate / data.length
+    aggregated.hosting_churn_rate = aggregated.hosting_churn_rate / data.length
+    aggregated.billable_churn_rate = aggregated.billable_churn_rate / data.length
+    aggregated.domains_churn_rate = aggregated.domains_churn_rate / data.length
+  }
 
   // Calculate ARPU
   const arpu = aggregated.active_clients > 0 
@@ -338,7 +373,7 @@ async function getPreviousPeriodMetrics(instanceIds: string[], days: number) {
   return aggregated
 }
 
-async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], startDate: Date, endDate: Date) {
+async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], startDate: Date, endDate: Date, tenantId: string) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -377,27 +412,32 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
     { active: 0, inactive: 0, closed: 0, total: 0 }
   )
 
-  // Get invoice summary with date filter (across all instances)
-  const { data: invoices } = await supabase
-    .from('whmcs_invoices')
-    .select('status, subtotal')
-    .in('instance_id', instanceIds)
-    .gte('date', startDate.toISOString().split('T')[0])
-    .lte('date', endDate.toISOString().split('T')[0])
+  const [revenueStatuses, invoicesResult] = await Promise.all([
+    getRevenueInvoiceStatuses(supabase, tenantId),
+    supabase
+      .from('whmcs_invoices')
+      .select('status, subtotal')
+      .in('instance_id', instanceIds)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0]),
+  ])
 
-  // Calculate invoice metrics from filtered data
-  // WHMCS transitions Unpaid → Overdue when duedate passes; both count as unpaid.
-  const paidInvoices = invoices?.filter(i => i.status === 'Paid') || []
+  const invoices = invoicesResult.data
+
+  // Revenue invoices: statuses configured by the tenant
+  const revenueInvoices = invoices?.filter(i => revenueStatuses.includes(i.status as never)) || []
+  // Unpaid/overdue: always shown as AR health metric regardless of revenue config
+  // WHMCS transitions Unpaid → Overdue when duedate passes; both count as outstanding.
   const unpaidInvoices = invoices?.filter(i => i.status === 'Unpaid' || i.status === 'Overdue') || []
 
   return {
     clients: clientSummary,
     invoices: {
-      paid_count: paidInvoices.length,
+      paid_count: revenueInvoices.length,
       unpaid_count: unpaidInvoices.length,
-      total_paid: paidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
+      total_paid: revenueInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
       total_unpaid: unpaidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
-      revenue_last_30_days: paidInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
+      revenue_last_30_days: revenueInvoices.reduce((sum, i) => sum + Number(i.subtotal), 0),
     },
   }
 }

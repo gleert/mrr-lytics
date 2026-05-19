@@ -40,6 +40,16 @@ export function DashboardPage() {
   const queryClient = useQueryClient()
   const toast = useToast()
   const { data: metrics, isLoading: metricsLoading, isFetching: metricsFetching, dataUpdatedAt } = useMetrics()
+  const churnBreakdown = metrics?.churn.breakdown
+  const churnBreakdownNode = churnBreakdown ? (
+    <span className="flex flex-wrap gap-x-2 gap-y-0.5 tabular-nums">
+      <span>{t('dashboard.churnBreakdown.hosting')} {churnBreakdown.hosting.churn_rate.toFixed(2)}%</span>
+      <span aria-hidden="true">·</span>
+      <span>{t('dashboard.churnBreakdown.billable')} {churnBreakdown.billable.churn_rate.toFixed(2)}%</span>
+      <span aria-hidden="true">·</span>
+      <span>{t('dashboard.churnBreakdown.domains')} {churnBreakdown.domains.churn_rate.toFixed(2)}%</span>
+    </span>
+  ) : undefined
   const { data: syncStatus, isLoading: syncLoading } = useSyncStatus()
   const { data: cancellationsData, isLoading: cancellationsLoading } = usePendingCancellations(10)
 
@@ -168,6 +178,7 @@ export function DashboardPage() {
           loading={metricsLoading}
           icon={<Icon name="trending_down" size="2xl" />}
           accentColor={(metrics?.churn.churn_rate ?? 0) > 5 ? 'error' : 'warning'}
+          details={churnBreakdownNode}
         />
       </div>
 

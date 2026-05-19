@@ -101,6 +101,12 @@ export interface MrrMetrics {
   calculated_at: string
 }
 
+export interface ChurnCategoryBreakdown {
+  churned_services: number
+  churned_mrr: number
+  churn_rate: number
+}
+
 export interface ChurnMetrics {
   period_days: number
   period_start: string
@@ -108,6 +114,11 @@ export interface ChurnMetrics {
   churned_services: number
   churned_mrr: number
   churn_rate: number
+  breakdown?: {
+    hosting: ChurnCategoryBreakdown
+    billable: ChurnCategoryBreakdown
+    domains: ChurnCategoryBreakdown
+  }
 }
 
 export interface RevenueByProduct {

@@ -16,6 +16,7 @@ interface KPICardProps {
   icon?: React.ReactNode
   accentColor?: 'primary' | 'success' | 'warning' | 'error' | 'info'
   hint?: string
+  details?: React.ReactNode
 }
 
 const accentColors = {
@@ -56,6 +57,7 @@ export function KPICard({
   icon,
   accentColor = 'primary',
   hint,
+  details,
 }: KPICardProps) {
   const { t } = useTranslation()
   const { formatCurrency, formatPercent, formatNumber } = useCurrency()
@@ -139,6 +141,12 @@ export function KPICard({
 
         {hint && !changePercent && (
           <p className="mt-2 sm:mt-3 text-xs text-muted">{hint}</p>
+        )}
+
+        {details && (
+          <div className="mt-2 text-xs text-muted-foreground leading-snug">
+            {details}
+          </div>
         )}
       </CardContent>
     </Card>
