@@ -66,7 +66,12 @@ function getQueryClient() {
         queryClient: browserQueryClient,
         persister: localStoragePersister,
         maxAge: 30 * 60 * 1000, // 30 minutes
-        buster: 'v1', // Change this to bust cache
+        buster: 'v2', // Change this to bust cache
+        dehydrateOptions: {
+          // Don't persist module-version: it's the update banner source — must always
+          // reflect the live endpoint, not a possibly-stale localStorage snapshot.
+          shouldDehydrateQuery: (query) => query.queryKey[0] !== 'module-version',
+        },
       })
     }
     return browserQueryClient
