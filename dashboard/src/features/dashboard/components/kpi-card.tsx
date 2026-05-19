@@ -17,6 +17,10 @@ interface KPICardProps {
   accentColor?: 'primary' | 'success' | 'warning' | 'error' | 'info'
   hint?: string
   details?: React.ReactNode
+  /** When true, a positive change is bad (churn, overdue, etc) and gets red instead of green. */
+  lowerIsBetter?: boolean
+  /** Prior value to display alongside the change pill, so the comparison is explicit. */
+  previousValue?: number
 }
 
 const accentColors = {
@@ -58,6 +62,8 @@ export function KPICard({
   accentColor = 'primary',
   hint,
   details,
+  lowerIsBetter = false,
+  previousValue,
 }: KPICardProps) {
   const { t } = useTranslation()
   const { formatCurrency, formatPercent, formatNumber } = useCurrency()
@@ -82,7 +88,23 @@ export function KPICard({
     return 'neutral'
   }, [changePercent])
 
+  // For "lower is better" KPIs (churn, overdue) the colour semantic flips:
+  // up = bad (red), down = good (green). Icon direction stays factual.
+  const isGoodChange = trend === 'up' ? !lowerIsBetter : trend === 'down' ? lowerIsBetter : null
+
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus
+
+  const formattedPreviousValue = React.useMemo(() => {
+    if (previousValue === undefined) return null
+    switch (format) {
+      case 'currency':
+        return formatCurrency(previousValue)
+      case 'percent':
+        return formatPercent(previousValue, { decimals: 2 })
+      default:
+        return formatNumber(previousValue)
+    }
+  }, [previousValue, format, formatCurrency, formatPercent, formatNumber])
 
   if (loading) {
     return (
@@ -123,19 +145,24 @@ export function KPICard({
         </p>
 
         {changePercent !== undefined && (
-          <div className="mt-2 sm:mt-3 flex items-center gap-2">
+          <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
             <div
               className={cn(
                 'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                trend === 'up' && 'bg-success/10 text-success',
-                trend === 'down' && 'bg-error/10 text-error',
-                trend === 'neutral' && 'bg-muted/10 text-muted'
+                isGoodChange === true && 'bg-success/10 text-success',
+                isGoodChange === false && 'bg-error/10 text-error',
+                isGoodChange === null && 'bg-muted/10 text-muted'
               )}
             >
               <TrendIcon className="h-3 w-3" />
               {formatPercent(changePercent, { sign: true })}
             </div>
-            <span className="text-xs text-muted-foreground">{changeLabel || t('common.vsPreviousPeriod')}</span>
+            <span className="text-xs text-muted-foreground">
+              {changeLabel || t('common.vsPreviousPeriod')}
+              {formattedPreviousValue !== null && (
+                <> · {t('common.previousValue', { value: formattedPreviousValue })}</>
+              )}
+            </span>
           </div>
         )}
 

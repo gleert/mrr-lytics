@@ -174,6 +174,12 @@ export function DashboardPage() {
           title={t('dashboard.churnRate')}
           value={metrics?.churn.churn_rate ?? 0}
           changePercent={metrics?.churn.churn_rate_change}
+          previousValue={
+            metrics?.churn.churn_rate !== undefined && metrics?.churn.churn_rate_change !== undefined
+              ? Math.round((metrics.churn.churn_rate - metrics.churn.churn_rate_change) * 100) / 100
+              : undefined
+          }
+          lowerIsBetter
           format="percent"
           loading={metricsLoading}
           icon={<Icon name="trending_down" size="2xl" />}

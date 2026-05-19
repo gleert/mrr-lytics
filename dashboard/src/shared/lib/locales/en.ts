@@ -23,6 +23,7 @@ export const en = {
       next: 'Next',
       previous: 'Previous',
       vsPreviousPeriod: 'vs previous period',
+      previousValue: 'was {{value}}',
       all: 'All',
       clearFilters: 'Clear filters',
       show: 'Show',
