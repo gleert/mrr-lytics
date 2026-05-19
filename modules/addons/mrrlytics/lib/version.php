@@ -9,4 +9,4 @@
  * @package MRRlytics
  */
 
-define('MRRLYTICS_VERSION', '1.3.4');
+define('MRRLYTICS_VERSION', '1.3.5');

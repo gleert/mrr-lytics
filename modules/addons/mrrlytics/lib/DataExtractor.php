@@ -219,7 +219,7 @@ class DataExtractor
         }
         
         return [
-            'module_version' => self::VERSION,
+            'module_version' => \MRRLYTICS_VERSION,
             'whmcs_version' => $whmcsVersion,
             'php_version'   => PHP_VERSION,
             'timezone'      => date_default_timezone_get(),
