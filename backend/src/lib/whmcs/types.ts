@@ -37,6 +37,7 @@ export interface WhmcsMeta {
     clients: number
     cancellation_requests: number
     client_closures: number
+    billable_item_cancellations?: number
   }
 }
 
@@ -51,6 +52,7 @@ export interface WhmcsData {
   clients: WhmcsClient[]
   cancellation_requests: WhmcsCancellationRequest[]
   client_closures: WhmcsClientClosure[]
+  billable_item_cancellations?: WhmcsBillableItemCancellation[]
 }
 
 export interface WhmcsHosting {
@@ -220,4 +222,10 @@ export interface WhmcsClientClosure {
   userid: number                // Client ID
   date: string                  // Timestamp of the status change
   description: string           // e.g. "Client Status changed to Closed"
+}
+
+export interface WhmcsBillableItemCancellation {
+  id: number
+  date: string                  // Activity log entry timestamp
+  description: string           // e.g. "Modified Billable Item Charge - ID #195"
 }

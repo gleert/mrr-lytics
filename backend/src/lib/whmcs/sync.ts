@@ -811,6 +811,41 @@ async function syncAllTables(
     counts.client_closures = earliestClosureByClient.size
   }
 
+  // Sync billable item cancellations — backfill cancelled_at from activity log.
+  // tblactivitylog descriptions look like "Modified Billable Item Charge - ID #X"
+  // or "Cancelled Billable Item Charge - ID #X". We don't know the exact phrasing
+  // across WHMCS versions, so we extract the first integer that follows the
+  // word "Item" in the description. For each billable item we keep the most
+  // recent log date — that's the best proxy for "when it stopped recurring"
+  // when the current invoice_action != 4.
+  if (data.data.billable_item_cancellations && data.data.billable_item_cancellations.length > 0) {
+    const lastEventByItem = new Map<number, string>()
+    for (const entry of data.data.billable_item_cancellations) {
+      const match = entry.description?.match(/Item[^0-9]*?(\d+)/i)
+      if (!match) continue
+      const itemId = parseInt(match[1], 10)
+      if (!Number.isFinite(itemId)) continue
+      const ts = sanitizeTimestamp(entry.date)
+      if (!ts) continue
+      const existing = lastEventByItem.get(itemId)
+      if (!existing || ts > existing) {
+        lastEventByItem.set(itemId, ts)
+      }
+    }
+
+    for (const [whmcsItemId, eventAt] of lastEventByItem) {
+      const { error } = await supabase
+        .from('whmcs_billable_items')
+        .update({ cancelled_at: eventAt })
+        .eq('instance_id', instanceId)
+        .eq('whmcs_id', whmcsItemId)
+        .neq('invoice_action', 4)   // only cancelled items
+        .is('cancelled_at', null)   // don't overwrite trigger-captured dates
+      if (error) console.error(`Sync billable_item_cancellations error (item ${whmcsItemId}):`, error)
+    }
+    counts.billable_item_cancellations = lastEventByItem.size
+  }
+
   return counts
 }
 

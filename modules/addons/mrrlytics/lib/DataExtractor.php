@@ -138,6 +138,10 @@ class DataExtractor
             return $this->getClientClosures();
         });
 
+        $data['billable_item_cancellations'] = $this->safeExtract('billable_item_cancellations', function() {
+            return $this->getBillableItemCancellations();
+        });
+
         $response = [
             'success' => empty($this->errors),
             'meta'    => $this->getMeta(),
@@ -705,6 +709,48 @@ class DataExtractor
 
         } catch (\Exception $e) {
             throw new \Exception('Failed to query tblactivitylog: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Extract billable item modification events from the activity log.
+     *
+     * Filters entries whose description contains "Billable Item". The
+     * backend extracts the billable item ID from each description and
+     * uses the max(date) per ID as a cancellation timestamp proxy when
+     * the item's current invoice_action is not 4 (Recurring).
+     *
+     * @return array
+     */
+    private function getBillableItemCancellations()
+    {
+        try {
+            $tableExists = Capsule::schema()->hasTable('tblactivitylog');
+            if (!$tableExists) {
+                $this->recordCounts['billable_item_cancellations'] = 0;
+                return [];
+            }
+        } catch (\Exception $e) {
+            $this->recordCounts['billable_item_cancellations'] = 0;
+            return [];
+        }
+
+        try {
+            $query = Capsule::table('tblactivitylog')
+                ->select(['id', 'date', 'description'])
+                ->where('description', 'like', '%illable Item%');
+
+            $results = $query->orderBy('id', 'asc')
+                ->limit($this->limit)
+                ->offset($this->offset)
+                ->get();
+
+            $rows = $this->collectionToArray($results);
+            $this->recordCounts['billable_item_cancellations'] = count($rows);
+            return $rows;
+
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to query tblactivitylog for billable items: ' . $e->getMessage());
         }
     }
 

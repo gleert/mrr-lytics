@@ -908,6 +908,7 @@ export type Database = {
       whmcs_billable_items: {
         Row: {
           amount: number | null
+          cancelled_at: string | null
           client_id: number | null
           description: string | null
           duedate: string | null
@@ -923,6 +924,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          cancelled_at?: string | null
           client_id?: number | null
           description?: string | null
           duedate?: string | null
@@ -938,6 +940,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          cancelled_at?: string | null
           client_id?: number | null
           description?: string | null
           duedate?: string | null

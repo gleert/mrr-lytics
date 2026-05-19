@@ -71,6 +71,7 @@ class MRRlyticsExporter
             'clients' => 'tblclients',
             'cancellation_requests' => 'tblcancelrequests',
             'client_closures'       => 'tblactivitylog',
+            'billable_item_cancellations' => 'tblactivitylog',
         ];
         
         $tableIndex = 0;
@@ -136,6 +137,14 @@ class MRRlyticsExporter
                 if ($key === 'client_closures') {
                     $query->where('userid', '>', 0)
                           ->where('description', 'like', '%Status changed to Closed%');
+                }
+
+                // Billable item modifications: catch any activity log entry whose
+                // description mentions "Billable Item" / "billable item". The backend
+                // picks the most recent date per item ID as a cancellation timestamp
+                // proxy when the current invoice_action != 4 (Recurring).
+                if ($key === 'billable_item_cancellations') {
+                    $query->where('description', 'like', '%illable Item%');
                 }
 
                 if (!empty($columns)) {
@@ -237,6 +246,9 @@ class MRRlyticsExporter
             ],
             'client_closures' => [
                 'id', 'userid', 'date', 'description',
+            ],
+            'billable_item_cancellations' => [
+                'id', 'date', 'description',
             ],
         ];
         
