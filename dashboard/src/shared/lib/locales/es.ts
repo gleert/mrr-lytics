@@ -410,7 +410,7 @@ export const es = {
       refreshing: 'Actualizando datos...',
       mrr: 'Ingreso Mensual Recurrente',
       arr: 'Ingreso Anual Recurrente',
-      churnRate: 'Tasa de Abandono',
+      churnRate: 'Tasa de Abandono (MRR)',
       churnBreakdown: {
         hosting: 'Hosting',
         billable: 'Billable',
