@@ -246,16 +246,16 @@ async function getMetricsFromDaily(instanceIds: string[]) {
     amount_unpaid: acc.amount_unpaid + Number(row.amount_unpaid || 0),
     amount_overdue: acc.amount_overdue + Number(row.amount_overdue || 0),
     churned_mrr: acc.churned_mrr + Number(row.churned_mrr || 0),
-    churn_rate: acc.churn_rate + Number(row.churn_rate || 0),
+    active_mrr_start: acc.active_mrr_start + Number(row.active_mrr_start || 0),
     hosting_churned_services: acc.hosting_churned_services + (row.hosting_churned_services || 0),
     hosting_churned_mrr: acc.hosting_churned_mrr + Number(row.hosting_churned_mrr || 0),
-    hosting_churn_rate: acc.hosting_churn_rate + Number(row.hosting_churn_rate || 0),
+    hosting_active_mrr_start: acc.hosting_active_mrr_start + Number(row.hosting_active_mrr_start || 0),
     billable_churned_services: acc.billable_churned_services + (row.billable_churned_services || 0),
     billable_churned_mrr: acc.billable_churned_mrr + Number(row.billable_churned_mrr || 0),
-    billable_churn_rate: acc.billable_churn_rate + Number(row.billable_churn_rate || 0),
+    billable_active_mrr_start: acc.billable_active_mrr_start + Number(row.billable_active_mrr_start || 0),
     domains_churned_services: acc.domains_churned_services + (row.domains_churned_services || 0),
     domains_churned_mrr: acc.domains_churned_mrr + Number(row.domains_churned_mrr || 0),
-    domains_churn_rate: acc.domains_churn_rate + Number(row.domains_churn_rate || 0),
+    domains_active_mrr_start: acc.domains_active_mrr_start + Number(row.domains_active_mrr_start || 0),
   }), {
     mrr: 0, arr: 0, revenue_day: 0, revenue_mtd: 0,
     active_services: 0, new_services_day: 0, churned_services_day: 0, suspended_services: 0,
@@ -263,19 +263,20 @@ async function getMetricsFromDaily(instanceIds: string[]) {
     total_domains: 0, active_domains: 0, expiring_domains_30d: 0,
     paid_invoices_day: 0, unpaid_invoices: 0, overdue_invoices: 0,
     amount_paid_day: 0, amount_unpaid: 0, amount_overdue: 0,
-    churned_mrr: 0, churn_rate: 0,
-    hosting_churned_services: 0, hosting_churned_mrr: 0, hosting_churn_rate: 0,
-    billable_churned_services: 0, billable_churned_mrr: 0, billable_churn_rate: 0,
-    domains_churned_services: 0, domains_churned_mrr: 0, domains_churn_rate: 0,
+    churned_mrr: 0, active_mrr_start: 0,
+    hosting_churned_services: 0, hosting_churned_mrr: 0, hosting_active_mrr_start: 0,
+    billable_churned_services: 0, billable_churned_mrr: 0, billable_active_mrr_start: 0,
+    domains_churned_services: 0, domains_churned_mrr: 0, domains_active_mrr_start: 0,
   })
 
-  // Average churn rates across instances (rates are not summable)
-  if (data.length > 0) {
-    aggregated.churn_rate = aggregated.churn_rate / data.length
-    aggregated.hosting_churn_rate = aggregated.hosting_churn_rate / data.length
-    aggregated.billable_churn_rate = aggregated.billable_churn_rate / data.length
-    aggregated.domains_churn_rate = aggregated.domains_churn_rate / data.length
-  }
+  // Portfolio-level MRR-weighted churn rate: SUM(churned_mrr) / SUM(active_mrr_start).
+  // Falls back to 0 when no data has active_mrr_start populated yet (pre-migration rows).
+  const rateOrZero = (numerator: number, denominator: number) =>
+    denominator > 0 ? Math.round((numerator / denominator) * 10000) / 100 : 0
+  const churn_rate = rateOrZero(aggregated.churned_mrr, aggregated.active_mrr_start)
+  const hosting_churn_rate = rateOrZero(aggregated.hosting_churned_mrr, aggregated.hosting_active_mrr_start)
+  const billable_churn_rate = rateOrZero(aggregated.billable_churned_mrr, aggregated.billable_active_mrr_start)
+  const domains_churn_rate = rateOrZero(aggregated.domains_churned_mrr, aggregated.domains_active_mrr_start)
 
   // Calculate ARPU
   const arpu = aggregated.active_clients > 0 
@@ -326,6 +327,10 @@ async function getMetricsFromDaily(instanceIds: string[]) {
 
   return {
     ...aggregated,
+    churn_rate,
+    hosting_churn_rate,
+    billable_churn_rate,
+    domains_churn_rate,
     arpu,
     mrr_by_cycle,
     top_products,
@@ -351,7 +356,7 @@ async function getPreviousPeriodMetrics(instanceIds: string[], days: number) {
 
   const { data, error: dbError } = await supabase
     .from('metrics_daily')
-    .select('mrr, arr, active_clients, churn_rate')
+    .select('mrr, arr, active_clients, churn_rate, churned_mrr, active_mrr_start')
     .in('instance_id', instanceIds)
     .eq('date', lastMonthDate)
 
@@ -359,18 +364,29 @@ async function getPreviousPeriodMetrics(instanceIds: string[], days: number) {
     return null
   }
 
-  // Aggregate across all instances
+  // Aggregate across all instances. For churn_rate we re-derive from totals
+  // (MRR-weighted) when active_mrr_start is populated; older rows predate
+  // migration 00052 and only have the per-instance rate, so fall back to a
+  // straight average there.
   const aggregated = data.reduce((acc, row) => ({
     mrr: acc.mrr + Number(row.mrr || 0),
     arr: acc.arr + Number(row.arr || 0),
     active_clients: acc.active_clients + (row.active_clients || 0),
-    churn_rate: acc.churn_rate + Number(row.churn_rate || 0),
-  }), { mrr: 0, arr: 0, active_clients: 0, churn_rate: 0 })
+    churned_mrr: acc.churned_mrr + Number(row.churned_mrr || 0),
+    active_mrr_start: acc.active_mrr_start + Number(row.active_mrr_start || 0),
+    rate_sum: acc.rate_sum + Number(row.churn_rate || 0),
+  }), { mrr: 0, arr: 0, active_clients: 0, churned_mrr: 0, active_mrr_start: 0, rate_sum: 0 })
 
-  // Average churn rate across instances
-  aggregated.churn_rate = data.length > 0 ? aggregated.churn_rate / data.length : 0
+  const churn_rate = aggregated.active_mrr_start > 0
+    ? Math.round((aggregated.churned_mrr / aggregated.active_mrr_start) * 10000) / 100
+    : (data.length > 0 ? aggregated.rate_sum / data.length : 0)
 
-  return aggregated
+  return {
+    mrr: aggregated.mrr,
+    arr: aggregated.arr,
+    active_clients: aggregated.active_clients,
+    churn_rate,
+  }
 }
 
 async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], startDate: Date, endDate: Date, tenantId: string) {

@@ -315,12 +315,14 @@ export type Database = {
         Row: {
           active_clients: number | null
           active_domains: number | null
+          active_mrr_start: number | null
           active_services: number | null
           amount_overdue: number | null
           amount_paid_day: number | null
           amount_unpaid: number | null
           arpu: number | null
           arr: number | null
+          billable_active_mrr_start: number | null
           billable_churn_rate: number | null
           billable_churned_mrr: number | null
           billable_churned_services: number | null
@@ -331,10 +333,12 @@ export type Database = {
           closed_clients: number | null
           created_at: string | null
           date: string
+          domains_active_mrr_start: number | null
           domains_churn_rate: number | null
           domains_churned_mrr: number | null
           domains_churned_services: number | null
           expiring_domains_30d: number | null
+          hosting_active_mrr_start: number | null
           hosting_churn_rate: number | null
           hosting_churned_mrr: number | null
           hosting_churned_services: number | null
@@ -360,12 +364,14 @@ export type Database = {
         Insert: {
           active_clients?: number | null
           active_domains?: number | null
+          active_mrr_start?: number | null
           active_services?: number | null
           amount_overdue?: number | null
           amount_paid_day?: number | null
           amount_unpaid?: number | null
           arpu?: number | null
           arr?: number | null
+          billable_active_mrr_start?: number | null
           billable_churn_rate?: number | null
           billable_churned_mrr?: number | null
           billable_churned_services?: number | null
@@ -376,10 +382,12 @@ export type Database = {
           closed_clients?: number | null
           created_at?: string | null
           date: string
+          domains_active_mrr_start?: number | null
           domains_churn_rate?: number | null
           domains_churned_mrr?: number | null
           domains_churned_services?: number | null
           expiring_domains_30d?: number | null
+          hosting_active_mrr_start?: number | null
           hosting_churn_rate?: number | null
           hosting_churned_mrr?: number | null
           hosting_churned_services?: number | null
@@ -405,12 +413,14 @@ export type Database = {
         Update: {
           active_clients?: number | null
           active_domains?: number | null
+          active_mrr_start?: number | null
           active_services?: number | null
           amount_overdue?: number | null
           amount_paid_day?: number | null
           amount_unpaid?: number | null
           arpu?: number | null
           arr?: number | null
+          billable_active_mrr_start?: number | null
           billable_churn_rate?: number | null
           billable_churned_mrr?: number | null
           billable_churned_services?: number | null
@@ -421,10 +431,12 @@ export type Database = {
           closed_clients?: number | null
           created_at?: string | null
           date?: string
+          domains_active_mrr_start?: number | null
           domains_churn_rate?: number | null
           domains_churned_mrr?: number | null
           domains_churned_services?: number | null
           expiring_domains_30d?: number | null
+          hosting_active_mrr_start?: number | null
           hosting_churn_rate?: number | null
           hosting_churned_mrr?: number | null
           hosting_churned_services?: number | null
@@ -1689,17 +1701,21 @@ export type Database = {
           churn_rate: number
           churned_mrr: number
           churned_services: number
+          active_mrr_start: number
           period_end: string
           period_start: string
           hosting_churned_services: number
           hosting_churned_mrr: number
           hosting_churn_rate: number
+          hosting_active_mrr_start: number
           billable_churned_services: number
           billable_churned_mrr: number
           billable_churn_rate: number
+          billable_active_mrr_start: number
           domains_churned_services: number
           domains_churned_mrr: number
           domains_churn_rate: number
+          domains_active_mrr_start: number
         }[]
       }
       calculate_daily_revenue: {
