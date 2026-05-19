@@ -70,13 +70,13 @@ export function MRRMovementChart() {
             empty pills would just confuse. When historical price tracking
             lands they'll appear automatically. */}
         <div className="lg:w-1/2 flex items-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
+          <div className="flex flex-wrap justify-end gap-2 sm:gap-3 w-full">
             {/* New MRR — hidden when 0 */}
             {latestMonth.new_mrr > 0 && (
               <button
                 type="button"
                 onClick={() => setDrilldown('new')}
-                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left w-full sm:w-auto sm:min-w-[14rem]"
                 title={t('dashboard.mrrMovementItems.openHint')}
               >
                 <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export function MRRMovementChart() {
               <button
                 type="button"
                 onClick={() => setDrilldown('churned')}
-                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left"
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left w-full sm:w-auto sm:min-w-[14rem]"
                 title={t('dashboard.mrrMovementItems.openHint')}
               >
                 <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export function MRRMovementChart() {
 
             {/* Expansion — only shown when populated */}
             {latestMonth.expansion_mrr > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg w-full sm:w-auto sm:min-w-[14rem]">
                 <div className="flex items-center gap-2">
                   <Icon name="trending_up" size="sm" />
                   <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.expansion')}</span>
@@ -122,7 +122,7 @@ export function MRRMovementChart() {
 
             {/* Contraction — only shown when populated */}
             {latestMonth.contraction_mrr > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg w-full sm:w-auto sm:min-w-[14rem]">
                 <div className="flex items-center gap-2">
                   <Icon name="trending_down" size="sm" />
                   <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.contraction')}</span>

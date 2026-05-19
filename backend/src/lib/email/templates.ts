@@ -38,6 +38,12 @@ function formatValue(value: unknown): string {
   if (value === null || value === undefined) return '—'
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
   if (typeof value === 'number') return value.toLocaleString()
+  if (Array.isArray(value)) return value.map(formatValue).join(', ')
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${formatValue(v)}`)
+      .join(' · ')
+  }
   return String(value)
 }
 
