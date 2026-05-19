@@ -43,7 +43,7 @@ export function MRRMovementChart() {
   return (
     <div className={cn(
       "rounded-xl overflow-hidden p-5 sm:p-8",
-      isPositive ? "bg-primary-600" : "bg-red-600"
+      isPositive ? "bg-primary-600" : "bg-slate-700"
     )}>
       <div className="flex flex-col lg:flex-row gap-5 sm:gap-8">
         {/* Left side - Main info (50%) */}
