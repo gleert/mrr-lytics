@@ -25,9 +25,25 @@ export const RECURRING_TYPES = [
 ] as const
 
 /**
- * Load the set of `instance_id:whmcs_id` keys for every recurring billable
- * item (`invoice_action = 4`). Pair with `isRecurringItem` to classify
- * invoice lines whose `type='Item'` and `relid` points to one of these.
+ * Load the set of `instance_id:whmcs_id` keys for every billable item that
+ * is — OR ever was — recurring. Used by `isRecurringItem` to classify
+ * historical invoice lines whose `type='Item'` and `relid` points to one
+ * of these items.
+ *
+ * Heuristic for "ever was recurring":
+ *   - invoice_action = 4              (currently recurring)
+ *   - cancelled_at IS NOT NULL        (recurring → cancelled, captured by 00051 trigger)
+ *   - invoicecount > 1                (had multiple billing cycles in WHMCS, so
+ *                                      was recurring at some point even if the
+ *                                      cancellation predates the trigger)
+ *
+ * Pre-trigger cancellations (cancelled_at NULL, invoice_action != 4) are
+ * caught by the invoicecount > 1 fallback — a one-shot item would have
+ * invoicecount ≤ 1, a long-running retainer has many invoices.
+ *
+ * Without this fix a 5125 €/mo retainer cancelled in WHMCS would flip all
+ * its past invoices (~148 k € of revenue) from "Recurring" to "One-time"
+ * the moment it was cancelled.
  */
 export async function fetchRecurringBillableSet(
   supabase: SupabaseClient,
@@ -36,11 +52,18 @@ export async function fetchRecurringBillableSet(
   if (instanceIds.length === 0) return new Set()
   const { data } = await supabase
     .from('whmcs_billable_items')
-    .select('instance_id, whmcs_id')
+    .select('instance_id, whmcs_id, invoice_action, cancelled_at, invoicecount')
     .in('instance_id', instanceIds)
-    .eq('invoice_action', 4)
     .limit(10000)
-  return new Set((data ?? []).map(r => `${r.instance_id}:${r.whmcs_id}`))
+  return new Set(
+    (data ?? [])
+      .filter(r =>
+        r.invoice_action === 4 ||
+        r.cancelled_at !== null ||
+        (r.invoicecount ?? 0) > 1
+      )
+      .map(r => `${r.instance_id}:${r.whmcs_id}`)
+  )
 }
 
 /**
