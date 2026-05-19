@@ -61,7 +61,11 @@ export function MRRMovementChart() {
           </div>
         </div>
 
-        {/* Right side - Movement pills (50%) */}
+        {/* Right side - Movement pills (50%).
+            Expansion/contraction are hidden when 0 — they're hardcoded to 0
+            for now because we don't snapshot per-service prices, so the
+            empty pills would just confuse. When historical price tracking
+            lands they'll appear automatically. */}
         <div className="lg:w-1/2 flex items-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
             {/* New MRR */}
@@ -73,24 +77,6 @@ export function MRRMovementChart() {
               <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.new_mrr)}</span>
             </div>
 
-            {/* Expansion */}
-            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
-              <div className="flex items-center gap-2">
-                <Icon name="trending_up" size="sm" />
-                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.expansion')}</span>
-              </div>
-              <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.expansion_mrr)}</span>
-            </div>
-
-            {/* Contraction */}
-            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
-              <div className="flex items-center gap-2">
-                <Icon name="trending_down" size="sm" />
-                <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.contraction')}</span>
-              </div>
-              <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.contraction_mrr)}</span>
-            </div>
-
             {/* Churned */}
             <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-2">
@@ -99,6 +85,28 @@ export function MRRMovementChart() {
               </div>
               <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.churned_mrr)}</span>
             </div>
+
+            {/* Expansion — only shown when populated */}
+            {latestMonth.expansion_mrr > 0 && (
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg">
+                <div className="flex items-center gap-2">
+                  <Icon name="trending_up" size="sm" />
+                  <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.expansion')}</span>
+                </div>
+                <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.expansion_mrr)}</span>
+              </div>
+            )}
+
+            {/* Contraction — only shown when populated */}
+            {latestMonth.contraction_mrr > 0 && (
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg">
+                <div className="flex items-center gap-2">
+                  <Icon name="trending_down" size="sm" />
+                  <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.contraction')}</span>
+                </div>
+                <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.contraction_mrr)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
