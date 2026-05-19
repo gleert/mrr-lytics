@@ -76,9 +76,8 @@ export async function GET(request: NextRequest) {
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
         .in('instance_id', instanceIds)
-        .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
       supabase
@@ -112,7 +111,8 @@ export async function GET(request: NextRequest) {
       return base * (recur || 1)
     }
 
-    const billableWasActiveAt = (
+    // Lifecycle check: did the item exist and not yet complete its recurfor schedule?
+    const billableLifecycleActiveAt = (
       startDate: Date,
       recurfor: number,
       cycleMonths: number,
@@ -126,12 +126,39 @@ export async function GET(request: NextRequest) {
       return Math.floor(monthsDiff / cycleMonths) < recurfor
     }
 
-    // Pre-compute billable item start dates
+    /**
+     * Was a billable item active at a given date?
+     *
+     * `strict` mode = check at the "right now" observation point. Only items
+     * with invoice_action=4 count as active. Used for the current month's
+     * monthEnd so that a cancelled item (Magento retainer with invoice_action=0,
+     * cancelled_at=NULL, future duedate) is correctly detected as having
+     * churned in the current month.
+     *
+     * Non-strict mode = check at a past date. Uses cancelled_at when known,
+     * falls back to the duedate proxy for legacy cancellations whose timestamp
+     * we never captured.
+     */
+    const billableActiveAt = (
+      item: { startDate: Date; cycleMonths: number; recurfor: number; invoiceAction: number; cancelledAt: Date | null; dueDate: Date },
+      date: Date,
+      strict: boolean,
+    ): boolean => {
+      if (!billableLifecycleActiveAt(item.startDate, item.recurfor, item.cycleMonths, date)) return false
+      if (item.invoiceAction === 4) return true
+      if (strict) return false
+      if (item.cancelledAt) return item.cancelledAt > date
+      return item.dueDate >= date
+    }
+
     type BillableItemMovement = {
       startDate: Date
       cycleMonths: number
       recurfor: number
       mrr: number
+      invoiceAction: number
+      cancelledAt: Date | null
+      dueDate: Date
     }
     const billableWithStart: BillableItemMovement[] = (billableItems || []).flatMap(item => {
       if (!item.duedate) return []
@@ -141,7 +168,15 @@ export async function GET(request: NextRequest) {
       const dueDate = new Date(item.duedate)
       const startDate = new Date(dueDate)
       startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
-      return [{ startDate, cycleMonths, recurfor: item.recurfor ?? 0, mrr }]
+      return [{
+        startDate,
+        cycleMonths,
+        recurfor: item.recurfor ?? 0,
+        mrr,
+        invoiceAction: item.invoice_action ?? 0,
+        cancelledAt: item.cancelled_at ? new Date(item.cancelled_at) : null,
+        dueDate,
+      }]
     })
 
     const getMonthlyAmount = (service: typeof hostingServices[0]): number =>
@@ -190,6 +225,11 @@ export async function GET(request: NextRequest) {
       // as already churned and pull net_change negative mid-month.
       const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
       const prevMonthEnd = new Date(monthStart.getTime() - 1)
+      // Strict invoice_action check only at the most recent observation point
+      // (current month). For older months we have no historical invoice_action
+      // snapshot, so the cancelled_at + duedate proxy is the best we can do —
+      // and applying strict there would back-date cancellations into past months.
+      const isCurrentMonth = naturalMonthEnd > now
 
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
 
@@ -211,8 +251,8 @@ export async function GET(request: NextRequest) {
       })
 
       billableWithStart.forEach(item => {
-        const wasActive = billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, prevMonthEnd)
-        const isActive  = billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, monthEnd)
+        const wasActive = billableActiveAt(item, prevMonthEnd, false)
+        const isActive  = billableActiveAt(item, monthEnd, isCurrentMonth)
 
         if (wasActive) starting_mrr += item.mrr
         if (isActive)  ending_mrr   += item.mrr

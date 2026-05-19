@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
     const naturalMonthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
     const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
     const prevMonthEnd = new Date(monthStart.getTime() - 1)
+    const isCurrentMonth = naturalMonthEnd > now
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, client_id, description, amount, recurcycle, recur, invoicecount, recurfor, duedate, cancelled_at')
+        .select('instance_id, whmcs_id, client_id, description, amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
         .in('instance_id', instanceIds)
         .gt('invoicecount', 0)
         .limit(10000),
@@ -131,7 +132,16 @@ export async function GET(request: NextRequest) {
       return ['Active', 'Suspended'].includes(s.domainstatus)
     }
 
-    const billableActiveAt = (b: { duedate: string | null; invoicecount: number | null; recurcycle: string | null; recur: number | null; recurfor: number | null; cancelled_at: string | null; invoice_action?: number }, date: Date): boolean => {
+    // Mirrors the asymmetric logic from /api/metrics/mrr-movement and
+    // calculate_churn: non-strict uses cancelled_at + duedate proxy
+    // (permissive, suitable for past observation points); strict only
+    // accepts invoice_action=4 (used at the current-time observation point
+    // so cancelled items show up as churned in the current month).
+    const billableActiveAt = (
+      b: { duedate: string | null; invoicecount: number | null; recurcycle: string | null; recur: number | null; recurfor: number | null; cancelled_at: string | null; invoice_action?: number | null },
+      date: Date,
+      strict: boolean,
+    ): boolean => {
       if (!b.duedate) return false
       const cycleMonths = ((b.recurcycle || '').toLowerCase().startsWith('year') ? 12 : 1) * (b.recur || 1)
       if (cycleMonths === 0) return false
@@ -144,9 +154,10 @@ export async function GET(request: NextRequest) {
         const monthsDiff = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth())
         if (Math.floor(monthsDiff / cycleMonths) >= recurfor) return false
       }
-      // cancellation observed before this date → no longer active
-      if (b.cancelled_at && new Date(b.cancelled_at) <= date) return false
-      return true
+      if (b.invoice_action === 4) return true
+      if (strict) return false
+      if (b.cancelled_at) return new Date(b.cancelled_at) > date
+      return due >= date
     }
 
     const items: MovementItem[] = []
@@ -176,8 +187,8 @@ export async function GET(request: NextRequest) {
     ;(billableRes.data ?? []).forEach(b => {
       const mrr = toMonthlyAmount(Number(b.amount) || 0, b.recurcycle || '')
       if (mrr === 0) return
-      const wasActive = billableActiveAt(b, prevMonthEnd)
-      const isActive = billableActiveAt(b, monthEnd)
+      const wasActive = billableActiveAt(b, prevMonthEnd, false)
+      const isActive = billableActiveAt(b, monthEnd, isCurrentMonth)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
       items.push({
