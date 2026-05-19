@@ -112,9 +112,8 @@ export async function GET(request: NextRequest) {
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
         .in('instance_id', instanceIds)
-        .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
       supabase
@@ -184,27 +183,13 @@ export async function GET(request: NextRequest) {
       return base * (recur || 1)
     }
 
-    // Was billable item active at a given date?
-    // Uses estimated start date: duedate - invoicecount * cycleMonths
-    const billableWasActiveAt = (
-      startDate: Date,
-      recurfor: number,
-      cycleMonths: number,
-      date: Date,
-    ): boolean => {
-      if (startDate > date) return false
-      if (recurfor === 0) return true
-      const monthsDiff =
-        (date.getFullYear() - startDate.getFullYear()) * 12 +
-        (date.getMonth() - startDate.getMonth())
-      return Math.floor(monthsDiff / cycleMonths) < recurfor
-    }
-
-    // Pre-compute billable item start dates
     type BillableItemWithStart = {
       startDate: Date
       cycleMonths: number
       recurfor: number
+      invoiceAction: number
+      cancelledAt: Date | null
+      dueDate: Date
       monthlyMrr: number
       categoryName: string
       categoryColor: string
@@ -223,11 +208,34 @@ export async function GET(request: NextRequest) {
         startDate,
         cycleMonths,
         recurfor: item.recurfor ?? 0,
+        invoiceAction: item.invoice_action ?? 0,
+        cancelledAt: item.cancelled_at ? new Date(item.cancelled_at) : null,
+        dueDate,
         monthlyMrr,
         categoryName: cat?.name ?? 'Uncategorized',
         categoryColor: cat?.color ?? '',
       }]
     })
+
+    // Was the billable item active at a given date?
+    // Asymmetric like calculate_churn / mrr-movement: strict at "now" so a
+    // currently-cancelled item drops off the trend line on the relevant month;
+    // permissive in the past so historical months still show its MRR.
+    const nowTs = Date.now()
+    const billableActiveAt = (item: BillableItemWithStart, date: Date): boolean => {
+      if (item.startDate > date) return false
+      if (item.recurfor > 0) {
+        const monthsDiff =
+          (date.getFullYear() - item.startDate.getFullYear()) * 12 +
+          (date.getMonth() - item.startDate.getMonth())
+        if (Math.floor(monthsDiff / item.cycleMonths) >= item.recurfor) return false
+      }
+      if (item.invoiceAction === 4) return true
+      // Strict near present
+      if (date.getTime() >= nowTs - 1000) return false
+      if (item.cancelledAt) return item.cancelledAt > date
+      return item.dueDate >= date
+    }
 
     // Generate 12 months of data
     const monthlyData: MonthlyDataPoint[] = []
@@ -306,7 +314,7 @@ export async function GET(request: NextRequest) {
 
       // Add recurring billable items active during this month
       billableWithStart.forEach(item => {
-        if (!billableWasActiveAt(item.startDate, item.recurfor, item.cycleMonths, monthEnd)) return
+        if (!billableActiveAt(item, monthEnd)) return
 
         groupMRR[item.categoryName] = (groupMRR[item.categoryName] || 0) + item.monthlyMrr
         totalMRR += item.monthlyMrr

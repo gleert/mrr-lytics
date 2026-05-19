@@ -82,9 +82,8 @@ export async function GET(request: NextRequest) {
         .eq('domainstatus', 'Active'),
       supabase
         .from('whmcs_billable_items')
-        .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, recurfor, invoicecount, duedate, invoice_action, cancelled_at')
         .in('instance_id', instanceIds)
-        .eq('invoice_action', 4)
         .gt('invoicecount', 0)
         .limit(10000),
       supabase
@@ -221,20 +220,66 @@ export async function GET(request: NextRequest) {
     const dailyData: DailyMRRPoint[] = []
     const categoryColors: Record<string, string> = {}
 
-    // Pre-compute billable items MRR per category (constant across all days)
-    // Filter in JS: column-to-column OR comparisons don't work in PostgREST .or()
-    const activeBillableItems = (billableItems ?? []).filter(
-      item => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
-    )
-    const billableDailyMRR: Array<{ monthlyMrr: number; category: { name: string; color: string } }> = []
-    activeBillableItems.forEach(item => {
+    // Pre-compute billable items metadata — but active state has to be
+    // evaluated per day so cancelled items only contribute on the days they
+    // were actually live. Same asymmetric logic as calculate_churn:
+    //   - cancelled_at known → active before that date, inactive after
+    //   - cancelled_at NULL + invoice_action != 4 → legacy cancellation, fall
+    //     back to duedate proxy (active until duedate, then inactive)
+    //   - invoice_action = 4 → active across the whole window
+    type BillableDaily = {
+      startDate: Date
+      cycleMonths: number
+      recurfor: number
+      invoiceAction: number
+      cancelledAt: Date | null
+      dueDate: Date
+      monthlyMrr: number
+      category: { name: string; color: string }
+    }
+    const getCycleMonths = (recurcycle: string | null, recur: number | null): number => {
+      const base = (recurcycle || '').toLowerCase().startsWith('year') ? 12 : 1
+      return base * (recur || 1)
+    }
+    const billableSeries: BillableDaily[] = (billableItems ?? []).flatMap(item => {
+      if (!item.duedate) return []
       const monthlyMrr = toMonthlyAmount(Number(item.amount) || 0, item.recurcycle || '')
-      if (monthlyMrr === 0) return
+      if (monthlyMrr === 0) return []
+      const cycleMonths = getCycleMonths(item.recurcycle, item.recur ?? null)
+      if (cycleMonths === 0) return []
+      const dueDate = new Date(item.duedate)
+      const startDate = new Date(dueDate)
+      startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
       const key = `${item.instance_id}:${item.whmcs_id}`
       const cat = billableCategoryMap.get(key) ?? { name: 'Uncategorized', color: '#6B7280' }
       categoryColors[cat.name] = cat.color
-      billableDailyMRR.push({ monthlyMrr, category: cat })
+      return [{
+        startDate,
+        cycleMonths,
+        recurfor: item.recurfor ?? 0,
+        invoiceAction: item.invoice_action ?? 0,
+        cancelledAt: item.cancelled_at ? new Date(item.cancelled_at) : null,
+        dueDate,
+        monthlyMrr,
+        category: cat,
+      }]
     })
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const billableActiveOn = (b: BillableDaily, date: Date): boolean => {
+      if (b.startDate > date) return false
+      if (b.recurfor > 0) {
+        const monthsDiff =
+          (date.getFullYear() - b.startDate.getFullYear()) * 12 +
+          (date.getMonth() - b.startDate.getMonth())
+        if (Math.floor(monthsDiff / b.cycleMonths) >= b.recurfor) return false
+      }
+      if (b.invoiceAction === 4) return true
+      // Strict at "today" so currently-cancelled items don't get credit for today
+      if (date >= todayStart) return false
+      if (b.cancelledAt) return b.cancelledAt > date
+      return b.dueDate >= date
+    }
 
     // Pre-compute domain MRR (constant across all days — already filtered status=Active)
     let domainDailyMRR = 0
@@ -289,10 +334,13 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // Add recurring billable items (active items are constant across all days in range)
-      billableDailyMRR.forEach(({ monthlyMrr, category }) => {
-        categoryTotals[category.name] = (categoryTotals[category.name] || 0) + monthlyMrr
-        totalMRR += monthlyMrr
+      // Add recurring billable items — evaluate per day so cancelled items
+      // drop out of the chart on the day they were cancelled instead of being
+      // missing from every historical day.
+      billableSeries.forEach(item => {
+        if (!billableActiveOn(item, currentDate)) return
+        categoryTotals[item.category.name] = (categoryTotals[item.category.name] || 0) + item.monthlyMrr
+        totalMRR += item.monthlyMrr
       })
 
       // Add domain recurring revenue (constant — all active domains)
