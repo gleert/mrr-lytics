@@ -7,6 +7,14 @@ export interface RevenueTrendPoint {
   revenue: number
 }
 
+export interface MrrTrendPoint {
+  date: string
+  mrr?: number
+  baseline?: number
+  pessimistic?: number
+  optimistic?: number
+}
+
 export interface BillingCycleBreakdown {
   name: string
   count: number
@@ -42,6 +50,7 @@ export interface ForecastingStats {
   projected_arpu: number
   // Growth acceleration
   growth_acceleration: 'accelerating' | 'stable' | 'decelerating'
+  growth_acceleration_pct?: number
   // Milestone
   next_milestone: number | null
   months_to_milestone: number | null
@@ -49,6 +58,8 @@ export interface ForecastingStats {
   mrr_delta: number
   // Breakdown data
   revenue_trend: RevenueTrendPoint[]
+  mrr_trend: MrrTrendPoint[]
+  mrr_trend_granularity: 'month' | 'quarter' | 'year'
   billing_cycle_breakdown: BillingCycleBreakdown[]
   // Scenario comparison
   scenarios: Scenarios

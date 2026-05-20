@@ -5,6 +5,8 @@ import { success, error } from '@/utils/api-response'
 import { checkSubscriptionLimit, SubscriptionLimitError, TrialExpiredError } from '@/lib/subscription'
 import { z } from 'zod'
 
+const INSTANCE_SELECT = 'id, tenant_id, name, slug, whmcs_url, whmcs_api_identifier, sync_enabled, sync_interval_hours, last_sync_at, status, settings, color, module_version, created_at, updated_at'
+
 export const dynamic = 'force-dynamic'
 
 const createInstanceSchema = z.object({
@@ -55,7 +57,7 @@ export async function GET() {
     // Get all instances for user's tenants
     const { data: instances, error: instancesError } = await supabase
       .from('whmcs_instances')
-      .select('*')
+      .select(INSTANCE_SELECT)
       .in('tenant_id', tenantIds)
       .order('name')
 
@@ -148,13 +150,13 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         whmcs_url,
-        whmcs_api_secret: api_token, // Store the token
+        whmcs_api_secret: api_token,
         color: color || '#7C3AED',
         sync_enabled,
         sync_interval_hours,
         status: 'active',
       })
-      .select()
+      .select(INSTANCE_SELECT)
       .single()
 
     if (createError) {

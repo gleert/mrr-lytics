@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Section } from '@/shared/components/ui/section'
 import { useTheme, useFilters, useToast, type Currency, CURRENCY_CONFIG } from '@/app/providers'
 import { api } from '@/shared/lib/api'
+import { cn } from '@/shared/lib/utils'
 
 const SUPPORTED_CURRENCIES: Currency[] = ['EUR', 'USD', 'GBP']
 
@@ -52,6 +53,17 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
   }
 
   // Organization + revenue accounting fields
+  const ALL_STATUSES: { key: string; localeKey: string; defaultOn: boolean }[] = [
+    { key: 'Paid',            localeKey: 'Paid',           defaultOn: true  },
+    { key: 'Unpaid',          localeKey: 'Unpaid',         defaultOn: true  },
+    { key: 'Payment Pending', localeKey: 'PaymentPending', defaultOn: true  },
+    { key: 'Cancelled',       localeKey: 'Cancelled',      defaultOn: false },
+    { key: 'Refunded',        localeKey: 'Refunded',       defaultOn: false },
+    { key: 'Collections',     localeKey: 'Collections',    defaultOn: false },
+    { key: 'Draft',           localeKey: 'Draft',          defaultOn: false },
+  ]
+  const DEFAULT_STATUSES = ALL_STATUSES.filter(s => s.defaultOn).map(s => s.key)
+
   const { data: settingsData } = useQuery({
     queryKey: ['tenant', 'settings', currentTenant?.tenant_id],
     queryFn: async () => {
@@ -63,6 +75,7 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
             name: string
             company_name: string | null
             include_cancelled_invoices: boolean
+            revenue_invoice_statuses: string[] | null
           }
         }
       }>(`/api/tenants/${currentTenant.tenant_id}/settings`)
@@ -73,21 +86,42 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
 
   const [orgName, setOrgName] = React.useState('')
   const [companyName, setCompanyName] = React.useState('')
-  const includeCancelled = settingsData?.include_cancelled_invoices ?? false
+
+  // Derive initial statuses from new field, falling back to legacy boolean
+  const initialStatuses = React.useMemo(() => {
+    if (!settingsData) return DEFAULT_STATUSES
+    if (settingsData.revenue_invoice_statuses?.length) return settingsData.revenue_invoice_statuses
+    return settingsData.include_cancelled_invoices
+      ? [...DEFAULT_STATUSES, 'Cancelled']
+      : DEFAULT_STATUSES
+  }, [settingsData])
+
+  const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>(DEFAULT_STATUSES)
+  const [statusesDirty, setStatusesDirty] = React.useState(false)
 
   React.useEffect(() => {
     if (settingsData) {
       setOrgName(settingsData.name ?? '')
       setCompanyName(settingsData.company_name ?? '')
+      setSelectedStatuses(initialStatuses)
+      setStatusesDirty(false)
     }
   }, [settingsData])
 
-  const updateIncludeCancelledMutation = useMutation({
-    mutationFn: async (next: boolean) => {
+  const toggleStatus = (key: string) => {
+    setSelectedStatuses(prev => {
+      const next = prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
+      return next
+    })
+    setStatusesDirty(true)
+  }
+
+  const updateStatusesMutation = useMutation({
+    mutationFn: async (statuses: string[]) => {
       if (!currentTenant) throw new Error('No tenant selected')
       return api.patch<{ success: boolean }>(
         `/api/tenants/${currentTenant.tenant_id}/settings`,
-        { include_cancelled_invoices: next }
+        { revenue_invoice_statuses: statuses }
       )
     },
     onSuccess: () => {
@@ -96,10 +130,11 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
       queryClient.invalidateQueries({ queryKey: ['metrics'] })
       queryClient.invalidateQueries({ queryKey: ['forecasting'] })
       queryClient.invalidateQueries({ queryKey: ['clients'] })
-      toast.success(t('settings.includeCancelledUpdated', 'Revenue accounting updated'))
+      setStatusesDirty(false)
+      toast.success(t('settings.revenueStatusesSaved', 'Revenue statuses updated'))
     },
     onError: () => {
-      toast.error(t('settings.includeCancelledError', 'Failed to update setting'))
+      toast.error(t('settings.revenueStatusesError', 'Failed to update revenue statuses'))
     },
   })
 
@@ -260,60 +295,66 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
         </Section>
       )}
 
-      {/* Revenue accounting - Only visible to tenant admins */}
+      {/* Revenue invoice statuses - Only visible to tenant admins */}
       {isAdmin && currentTenant && (
         <Section
-          title={t('settings.revenueAccounting', 'Revenue accounting')}
-          description={t(
-            'settings.revenueAccountingDesc',
-            'Control how special invoice states are counted in revenue calculations',
-          )}
+          title={t('settings.revenueAccounting', 'Revenue invoice statuses')}
+          description={t('settings.revenueAccountingDesc', 'Choose which invoice statuses count toward revenue, MRR and forecasting calculations. At least one status must be selected.')}
         >
           <Card>
-            <CardContent className="py-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="max-w-xl">
-                  <p className="font-medium">
-                    {t('settings.includeCancelled', 'Include cancelled invoices')}
-                  </p>
-                  <p className="text-sm text-muted">
-                    {t(
-                      'settings.includeCancelledDesc',
-                      'Count invoices with status "Cancelled" in revenue, forecasting and top-clients reports. Useful when cancellation is used as a rectificativa (credit note) workflow.',
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={includeCancelled ? 'outline' : 'default'}
-                    size="sm"
-                    onClick={() => {
-                      if (includeCancelled) updateIncludeCancelledMutation.mutate(false)
-                    }}
-                    disabled={updateIncludeCancelledMutation.isPending}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {!includeCancelled && <Check className="mr-2 h-4 w-4" />}
-                    {t('settings.off', 'Off')}
-                  </Button>
-                  <Button
-                    variant={includeCancelled ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      if (!includeCancelled) updateIncludeCancelledMutation.mutate(true)
-                    }}
-                    disabled={updateIncludeCancelledMutation.isPending}
-                    className="flex-1 sm:flex-none"
-                  >
-                    {updateIncludeCancelledMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : includeCancelled ? (
-                      <Check className="mr-2 h-4 w-4" />
-                    ) : null}
-                    {t('settings.on', 'On')}
-                  </Button>
-                </div>
+            <CardContent className="py-4 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {ALL_STATUSES.map(({ key, localeKey }) => {
+                  const checked = selectedStatuses.includes(key)
+                  const isLast = checked && selectedStatuses.length === 1
+                  return (
+                    <label
+                      key={key}
+                      className={cn(
+                        'flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors',
+                        checked ? 'border-primary-500/50 bg-primary-500/5' : 'border-border hover:bg-surface-elevated',
+                        isLast && 'opacity-60 cursor-not-allowed',
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={isLast}
+                        onChange={() => !isLast && toggleStatus(key)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary-500"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium leading-tight">{key}</p>
+                        <p className="text-xs text-muted mt-0.5">
+                          {t(`settings.invoiceStatusDesc.${localeKey}`, key)}
+                        </p>
+                      </div>
+                    </label>
+                  )
+                })}
               </div>
+
+              {statusesDirty && (
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <p className="text-xs text-muted">
+                    {selectedStatuses.length === 0
+                      ? t('settings.revenueStatusesAtLeastOne', 'Select at least one status')
+                      : t('common.unsavedChanges', 'Unsaved changes')}
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => updateStatusesMutation.mutate(selectedStatuses)}
+                    disabled={updateStatusesMutation.isPending || selectedStatuses.length === 0}
+                  >
+                    {updateStatusesMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {t('settings.saveChanges', 'Save changes')}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </Section>

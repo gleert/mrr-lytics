@@ -116,12 +116,16 @@ export async function GET(request: NextRequest) {
     // Normalize billing cycle names for display
     const normalizeCycleName = (cycle: string): string => {
       switch (cycle) {
-        case 'monthly': return 'Monthly'
+        case 'monthly':
+        case 'months':
+        case 'month': return 'Monthly'
         case 'quarterly': return 'Quarterly'
         case 'semi-annually':
         case 'semiannually': return 'Semi-Annually'
         case 'annually':
-        case 'yearly': return 'Annually'
+        case 'yearly':
+        case 'years':
+        case 'year': return 'Annually'
         case 'biennially': return 'Biennially'
         case 'triennially': return 'Triennially'
         case 'free account':
@@ -187,16 +191,60 @@ export async function GET(request: NextRequest) {
 
     const revenueStatuses = await getRevenueInvoiceStatuses(supabase, auth.tenant_id)
 
-    // Get historical invoice data within the selected period for trend analysis.
-    // Use invoice date (not payment date) — MRR is committed when billed.
-    const { data: periodInvoices, error: invoicesError } = await supabase
-      .from('whmcs_invoices')
-      .select('subtotal, date')
-      .in('instance_id', instanceIds)
-      .in('status', revenueStatuses)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0])
-      .order('date', { ascending: true })
+    const now = new Date()
+    const nowY = now.getFullYear()
+    const nowM = now.getMonth()
+
+    const toMonthStr = (offset: number): string => {
+      const total = nowY * 12 + nowM + offset
+      const y = Math.floor(total / 12)
+      const m = total % 12
+      return `${y}-${String(m + 1).padStart(2, '0')}`
+    }
+
+    // Trend granularity adapts to the selected period filter
+    const trendGranularity: 'month' | 'quarter' | 'year' =
+      period === 'this_year' ? 'year' : period === 'this_quarter' ? 'quarter' : 'month'
+    const monthsPerPeriod = trendGranularity === 'year' ? 12 : trendGranularity === 'quarter' ? 3 : 1
+
+    const toQuarterStr = (offset: number): string => {
+      const currentQ = Math.ceil((nowM + 1) / 3)
+      let q = currentQ + offset
+      let y = nowY
+      while (q <= 0) { q += 4; y-- }
+      while (q > 4) { q -= 4; y++ }
+      return `${y}-Q${q}`
+    }
+
+    const toTrendKey = (dateStr: string): string => {
+      if (trendGranularity === 'year') return dateStr.substring(0, 4)
+      if (trendGranularity === 'quarter') {
+        const m = parseInt(dateStr.substring(5, 7))
+        return `${dateStr.substring(0, 4)}-Q${Math.ceil(m / 3)}`
+      }
+      return dateStr.substring(0, 7)
+    }
+
+    const [
+      { data: periodInvoices, error: invoicesError },
+      { data: mrrTrendInvoices },
+    ] = await Promise.all([
+      supabase
+        .from('whmcs_invoices')
+        .select('subtotal, date')
+        .in('instance_id', instanceIds)
+        .in('status', revenueStatuses)
+        .gte('date', startDate.toISOString().split('T')[0])
+        .lte('date', endDate.toISOString().split('T')[0])
+        .order('date', { ascending: true }),
+      supabase
+        .from('whmcs_invoices')
+        .select('subtotal, date')
+        .in('instance_id', instanceIds)
+        .in('status', revenueStatuses)
+        .gte('date', `${toMonthStr(-(4 * monthsPerPeriod))}-01`)
+        .lte('date', `${toMonthStr(0)}-31`),
+    ])
 
     if (invoicesError) {
       console.error('Invoices query error:', invoicesError)
@@ -249,16 +297,18 @@ export async function GET(request: NextRequest) {
 
     // Need at least 2 data points to calculate growth
     if (revenueValues.length >= 2) {
-      // Calculate average period-over-period growth
-      let totalGrowth = 0
-      let growthCount = 0
+      // Linearly-weighted average: more recent periods get higher weight (index-based)
+      // so recent momentum drives the projection more than older volatile months
+      let weightedGrowth = 0
+      let totalWeight = 0
       for (let i = 1; i < revenueValues.length; i++) {
         if (revenueValues[i - 1] > 0) {
-          totalGrowth += (revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1]
-          growthCount++
+          const weight = i // weight 1 for oldest pair, N-1 for most recent pair
+          weightedGrowth += ((revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1]) * weight
+          totalWeight += weight
         }
       }
-      growthRate = growthCount > 0 ? (totalGrowth / growthCount) * 100 : 0
+      growthRate = totalWeight > 0 ? (weightedGrowth / totalWeight) * 100 : 0
       
       // Adjust confidence based on data availability and period length
       const dataPointBonus = Math.min(30, revenueValues.length * 5)
@@ -309,16 +359,20 @@ export async function GET(request: NextRequest) {
     // Based on standard deviation of growth rates if we have enough data
     let growthStdDev = 0
     if (revenueValues.length >= 3) {
-      const growthRates: number[] = []
+      const weightedGrowthRates: Array<{ rate: number; weight: number }> = []
       for (let i = 1; i < revenueValues.length; i++) {
         if (revenueValues[i - 1] > 0) {
-          growthRates.push((revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1] * 100)
+          weightedGrowthRates.push({
+            rate: (revenueValues[i] - revenueValues[i - 1]) / revenueValues[i - 1] * 100,
+            weight: i,
+          })
         }
       }
-      if (growthRates.length >= 2) {
-        const avgGrowthRate = growthRates.reduce((a, b) => a + b, 0) / growthRates.length
-        const variance = growthRates.reduce((sum, val) => sum + Math.pow(val - avgGrowthRate, 2), 0) / growthRates.length
-        growthStdDev = Math.sqrt(variance)
+      if (weightedGrowthRates.length >= 2) {
+        const wTotal = weightedGrowthRates.reduce((s, g) => s + g.weight, 0)
+        const wMean = weightedGrowthRates.reduce((s, g) => s + g.rate * g.weight, 0) / wTotal
+        const wVariance = weightedGrowthRates.reduce((s, g) => s + g.weight * Math.pow(g.rate - wMean, 2), 0) / wTotal
+        growthStdDev = Math.sqrt(wVariance)
       }
     }
 
@@ -358,6 +412,85 @@ export async function GET(request: NextRequest) {
       },
     }
 
+    // Build MRR trend: 4 historical periods + current period (split) + 1 projection period
+    // Granularity: month (mtd), quarter (this_quarter), year (this_year)
+    const mrrByPeriod = new Map<string, number>()
+    mrrTrendInvoices?.forEach(inv => {
+      if (inv.date) {
+        const key = toTrendKey(inv.date)
+        mrrByPeriod.set(key, (mrrByPeriod.get(key) || 0) + Number(inv.subtotal || 0))
+      }
+    })
+
+    const mrrTrendData: Array<{
+      date: string
+      mrr?: number
+      baseline?: number
+      pessimistic?: number
+      optimistic?: number
+    }> = []
+
+    for (let i = 4; i >= 1; i--) {
+      const key = trendGranularity === 'year' ? `${nowY - i}`
+        : trendGranularity === 'quarter' ? toQuarterStr(-i)
+        : toMonthStr(-i)
+      const periodSum = mrrByPeriod.get(key) || 0
+      mrrTrendData.push({ date: key, mrr: Math.round((periodSum / monthsPerPeriod) * 100) / 100 })
+    }
+
+    const splitKey = trendGranularity === 'year' ? `${nowY}`
+      : trendGranularity === 'quarter' ? toQuarterStr(0)
+      : toMonthStr(0)
+
+    mrrTrendData.push({
+      date: splitKey,
+      mrr: Math.round(currentMRR * 100) / 100,
+      baseline: Math.round(currentMRR * 100) / 100,
+      pessimistic: Math.round(currentMRR * 100) / 100,
+      optimistic: Math.round(currentMRR * 100) / 100,
+    })
+
+    const projKey = trendGranularity === 'year' ? `${nowY + 1}`
+      : trendGranularity === 'quarter' ? toQuarterStr(1)
+      : toMonthStr(1)
+
+    // For quarter/year: derive period-over-period growth from the historical points only
+    // (invoice-based, consistent measurement). Avoids amplifying within-year invoice volatility
+    // (e.g. annual billing creating artificial monthly trends that compound badly over 12 months).
+    let trendProjRate = growthRate
+    let trendProjSpread = Math.max(1, Math.min(5, growthStdDev)) * dataConfidence
+
+    if (trendGranularity !== 'month') {
+      const histMrr = mrrTrendData
+        .filter(p => p.mrr !== undefined && p.baseline === undefined)
+        .map(p => p.mrr!)
+      if (histMrr.length >= 2) {
+        let wg = 0, wt = 0
+        const pRates: number[] = []
+        for (let i = 1; i < histMrr.length; i++) {
+          if (histMrr[i - 1] > 0) {
+            const r = (histMrr[i] - histMrr[i - 1]) / histMrr[i - 1] * 100
+            pRates.push(r)
+            wg += r * i; wt += i
+          }
+        }
+        trendProjRate = wt > 0 ? Math.max(-20, Math.min(20, wg / wt)) : 0
+        if (pRates.length >= 2) {
+          const mean = pRates.reduce((a, b) => a + b, 0) / pRates.length
+          const stdDev = Math.sqrt(pRates.reduce((s, v) => s + (v - mean) ** 2, 0) / pRates.length)
+          trendProjSpread = Math.max(1, Math.min(5, stdDev)) * dataConfidence
+        }
+      }
+    }
+
+    // Projection is exactly 1 period ahead — apply rate directly, no compounding
+    mrrTrendData.push({
+      date: projKey,
+      baseline: Math.round(currentMRR * (1 + trendProjRate / 100) * 100) / 100,
+      pessimistic: Math.round(currentMRR * (1 + (trendProjRate - trendProjSpread) / 100) * 100) / 100,
+      optimistic: Math.round(currentMRR * (1 + (trendProjRate + trendProjSpread) / 100) * 100) / 100,
+    })
+
     // Get active clients count for ARPU calculation
     const { count: activeClients } = await supabase
       .from('whmcs_clients')
@@ -371,19 +504,28 @@ export async function GET(request: NextRequest) {
 
     // Calculate growth acceleration (is growth speeding up or slowing down?)
     let growthAcceleration: 'accelerating' | 'stable' | 'decelerating' = 'stable'
-    if (revenueValues.length >= 4) {
-      const midpoint = Math.floor(revenueValues.length / 2)
-      const firstHalf = revenueValues.slice(0, midpoint)
-      const secondHalf = revenueValues.slice(midpoint)
+    let growthAccelerationPct = 0
 
-      const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
-
+    const checkAcceleration = (values: number[]) => {
+      if (values.length < 4) return
+      const mid = Math.floor(values.length / 2)
+      const avgFirst = values.slice(0, mid).reduce((a, b) => a + b, 0) / mid
+      const avgSecond = values.slice(mid).reduce((a, b) => a + b, 0) / (values.length - mid)
       if (avgFirst > 0) {
         const halfGrowth = ((avgSecond - avgFirst) / avgFirst) * 100
+        growthAccelerationPct = Math.round(halfGrowth * 10) / 10
         if (halfGrowth > 3) growthAcceleration = 'accelerating'
         else if (halfGrowth < -3) growthAcceleration = 'decelerating'
       }
+    }
+
+    if (trendGranularity !== 'month') {
+      const histValues = mrrTrendData
+        .filter(p => p.mrr !== undefined && p.baseline === undefined)
+        .map(p => p.mrr!)
+      checkAcceleration(histValues)
+    } else {
+      checkAcceleration(revenueValues)
     }
 
     // Calculate months to next milestone
@@ -446,6 +588,7 @@ export async function GET(request: NextRequest) {
 
     // Format billing cycle breakdown for charts (sorted by MRR descending, max 6)
     const billingCycleData = Array.from(billingCycleBreakdown.entries())
+      .filter(([name, data]) => name !== 'Free' && name !== 'One Time' && data.mrr > 0)
       .map(([name, data]) => ({
         name,
         count: data.count,
@@ -455,11 +598,34 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.mrr - a.mrr)
       .slice(0, 6)
 
+    // For quarter/year: unify KPI projections with the period-appropriate rate used in the chart
+    const effRate = trendGranularity !== 'month' ? trendProjRate : growthRate
+    const effProjectedMRR = trendGranularity !== 'month' ? currentMRR * (1 + trendProjRate / 100) : projectedMRR
+    const effProjectedARR = effProjectedMRR * 12
+    const effProjectedArpu = activeClientsCount > 0 ? effProjectedMRR / activeClientsCount : 0
+    const effScenarios = trendGranularity !== 'month' ? {
+      pessimistic: {
+        growth: Math.round((trendProjRate - trendProjSpread) * 100) / 100,
+        mrr: Math.round(currentMRR * (1 + (trendProjRate - trendProjSpread) / 100) * 100) / 100,
+        arr: Math.round(currentMRR * (1 + (trendProjRate - trendProjSpread) / 100) * 12 * 100) / 100,
+      },
+      baseline: {
+        growth: Math.round(trendProjRate * 100) / 100,
+        mrr: Math.round(effProjectedMRR * 100) / 100,
+        arr: Math.round(effProjectedARR * 100) / 100,
+      },
+      optimistic: {
+        growth: Math.round((trendProjRate + trendProjSpread) * 100) / 100,
+        mrr: Math.round(currentMRR * (1 + (trendProjRate + trendProjSpread) / 100) * 100) / 100,
+        arr: Math.round(currentMRR * (1 + (trendProjRate + trendProjSpread) / 100) * 12 * 100) / 100,
+      },
+    } : scenarios
+
     return success({
       current_mrr: Math.round(currentMRR * 100) / 100,
-      projected_mrr: Math.round(projectedMRR * 100) / 100,
-      projected_growth: Math.round(growthRate * 100) / 100,
-      projected_arr: Math.round(projectedARR * 100) / 100,
+      projected_mrr: Math.round(effProjectedMRR * 100) / 100,
+      projected_growth: Math.round(effRate * 100) / 100,
+      projected_arr: Math.round(effProjectedARR * 100) / 100,
       confidence_level: Math.round(confidenceLevel),
       data_points: revenueValues.length,
       period_days: days,
@@ -468,19 +634,22 @@ export async function GET(request: NextRequest) {
       // ARPU
       active_clients: activeClientsCount,
       current_arpu: Math.round(currentArpu * 100) / 100,
-      projected_arpu: Math.round(projectedArpu * 100) / 100,
+      projected_arpu: Math.round(effProjectedArpu * 100) / 100,
       // Growth acceleration
       growth_acceleration: growthAcceleration,
+      growth_acceleration_pct: Math.round(growthAccelerationPct * 10) / 10,
       // Milestone
       next_milestone: nextMilestone,
       months_to_milestone: monthsToMilestone,
       // MRR delta
-      mrr_delta: Math.round((projectedMRR - currentMRR) * 100) / 100,
+      mrr_delta: Math.round((effProjectedMRR - currentMRR) * 100) / 100,
       // Breakdown data
       revenue_trend: revenueTrend,
+      mrr_trend: mrrTrendData,
+      mrr_trend_granularity: trendGranularity,
       billing_cycle_breakdown: billingCycleData,
       // Scenario comparison
-      scenarios,
+      scenarios: effScenarios,
     }, { instance_ids: instanceIds })
   } catch (err) {
     console.error('Error in /api/forecasting:', err)

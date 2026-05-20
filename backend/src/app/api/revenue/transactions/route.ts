@@ -8,6 +8,7 @@ import {
   fetchRecurringBillableSet,
   isRecurringItem,
 } from '@/lib/metrics/revenue-classification'
+import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 
 export const dynamic = 'force-dynamic'
@@ -82,15 +83,16 @@ export async function GET(request: NextRequest) {
     const source = searchParams.get('source') || null // 'recurring' or 'onetime'
     const amountMin = searchParams.get('amount_min') ? parseFloat(searchParams.get('amount_min')!) : null
     const amountMax = searchParams.get('amount_max') ? parseFloat(searchParams.get('amount_max')!) : null
+    const periodParam = searchParams.get('period') || '30d'
+    const startDateParam = searchParams.get('start_date') || null
+    const endDateParam = searchParams.get('end_date') || null
     const historyLimit = await getHistoryDaysLimit(auth.tenant_id)
-    const minAllowedDate = historyLimit === -1
-      ? null
-      : new Date(Date.now() - historyLimit * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const rawStartDate = searchParams.get('start_date') || null
-    const startDate = minAllowedDate && (!rawStartDate || rawStartDate < minAllowedDate)
-      ? minAllowedDate
-      : rawStartDate
-    const endDate = searchParams.get('end_date') || null
+    const { startDate: parsedStart, endDate: parsedEnd } = applyHistoryLimit(
+      parseDateRange(periodParam, startDateParam, endDateParam),
+      historyLimit
+    )
+    const startDate = parsedStart.toISOString().split('T')[0]
+    const endDate = parsedEnd.toISOString().split('T')[0]
     const statusFilter = searchParams.get('status') || 'all'
 
     // Parse sorting

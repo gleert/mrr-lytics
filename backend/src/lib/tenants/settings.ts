@@ -1,29 +1,35 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-/**
- * Invoice statuses used across revenue and client endpoints to decide which
- * rows count toward revenue totals. "Paid", "Unpaid" and "Payment Pending"
- * are always included. "Cancelled" is included only when the tenant has
- * explicitly opted in via `settings.include_cancelled_invoices` — some
- * tenants use cancellation as a rectificativa / credit-note workflow and
- * need those rows to contribute to reported revenue.
- */
-const BASE_REVENUE_INVOICE_STATUSES = ['Paid', 'Unpaid', 'Payment Pending'] as const
+export const ALL_INVOICE_STATUSES = [
+  'Paid',
+  'Unpaid',
+  'Payment Pending',
+  'Cancelled',
+  'Refunded',
+  'Collections',
+  'Draft',
+] as const
 
-export type RevenueInvoiceStatus = (typeof BASE_REVENUE_INVOICE_STATUSES)[number] | 'Cancelled'
+export type RevenueInvoiceStatus = (typeof ALL_INVOICE_STATUSES)[number]
+
+const DEFAULT_STATUSES: RevenueInvoiceStatus[] = ['Paid', 'Unpaid', 'Payment Pending']
 
 /**
- * Resolve the list of invoice statuses that should count toward revenue
- * calculations for a given tenant. Falls back to the base list on any
- * lookup error — this is defensive so a broken settings query never turns
- * a dashboard into an empty report.
+ * Resolve the list of invoice statuses that count toward revenue for a tenant.
+ *
+ * Priority:
+ *   1. `settings.revenue_invoice_statuses` array (new explicit config)
+ *   2. Legacy `settings.include_cancelled_invoices` boolean (backward compat)
+ *   3. Hardcoded default: Paid, Unpaid, Payment Pending
+ *
+ * Falls back to the default on any lookup error so a broken settings query
+ * never turns a dashboard into an empty report.
  */
 export async function getRevenueInvoiceStatuses(
   supabase: SupabaseClient,
   tenantId: string,
 ): Promise<RevenueInvoiceStatus[]> {
-  const base = [...BASE_REVENUE_INVOICE_STATUSES] as RevenueInvoiceStatus[]
-  if (!tenantId) return base
+  if (!tenantId) return [...DEFAULT_STATUSES]
 
   const { data, error } = await supabase
     .from('tenants')
@@ -31,11 +37,20 @@ export async function getRevenueInvoiceStatuses(
     .eq('id', tenantId)
     .single()
 
-  if (error || !data) return base
+  if (error || !data) return [...DEFAULT_STATUSES]
 
   const settings = (data.settings as Record<string, unknown>) || {}
-  if (settings.include_cancelled_invoices === true) {
-    return [...base, 'Cancelled']
+
+  // New explicit list takes precedence
+  if (Array.isArray(settings.revenue_invoice_statuses) && settings.revenue_invoice_statuses.length > 0) {
+    return (settings.revenue_invoice_statuses as string[])
+      .filter((s): s is RevenueInvoiceStatus => ALL_INVOICE_STATUSES.includes(s as RevenueInvoiceStatus))
   }
-  return base
+
+  // Legacy boolean fallback
+  if (settings.include_cancelled_invoices === true) {
+    return [...DEFAULT_STATUSES, 'Cancelled']
+  }
+
+  return [...DEFAULT_STATUSES]
 }

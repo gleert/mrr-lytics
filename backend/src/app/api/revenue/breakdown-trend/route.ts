@@ -126,44 +126,33 @@ export async function GET(request: NextRequest) {
       })(),
     ])
 
-    // Build per-item resolver based on groupBy
+    // Build per-item resolver based on groupBy (for the display chart)
     const resolver = buildResolver(groupBy, categoryMaps, recurringBillableSet)
+    // Always use the category resolver for coverage calculation — type/source resolvers
+    // always return hasCategory:false, which would incorrectly report categories as unavailable.
+    const catCoverageResolver = buildResolver('category', categoryMaps, recurringBillableSet)
 
-    // Build a map: invoice_id → Map<groupName, {revenue, hasCategory}>
-    const invoiceGroups = new Map<number, Map<string, { revenue: number; hasCategory: boolean }>>()
+    // Build a map: invoice_id → Map<groupName, revenue>
+    const invoiceGroups = new Map<number, Map<string, number>>()
 
-    for (const item of allItems) {
-      if (item.amount === 0) continue
-      const { name: groupName, hasCategory } =
-        groupBy !== 'type' && isCreditNote(item.type, item.amount)
-          ? { name: 'Credit Notes', hasCategory: false }
-          : resolver(item)
-      const existing = invoiceGroups.get(item.invoice_id) || new Map<string, { revenue: number; hasCategory: boolean }>()
-      const prev = existing.get(groupName) || { revenue: 0, hasCategory }
-      existing.set(groupName, {
-        revenue: prev.revenue + item.amount,
-        hasCategory: prev.hasCategory || hasCategory,
-      })
-      invoiceGroups.set(item.invoice_id, existing)
-    }
-
-    // -----------------------------------------------------------------------
-    // Compute categories_available: ≥50% of total revenue has a real category
-    // This is computed regardless of the current groupBy, using categoryMaps.
-    // -----------------------------------------------------------------------
+    // Track coverage using the category resolver regardless of active groupBy
     let totalRevenue = 0
     let categorizedRevenue = 0
 
-    for (const invoice of invoices) {
-      const groups = invoiceGroups.get(invoice.whmcs_id)
-      if (!groups) {
-        totalRevenue += Number(invoice.subtotal) || 0
-        continue
-      }
-      groups.forEach(({ revenue, hasCategory }) => {
-        totalRevenue += revenue
-        if (hasCategory) categorizedRevenue += revenue
-      })
+    for (const item of allItems) {
+      if (item.amount === 0) continue
+      const { name: groupName } =
+        groupBy !== 'type' && isCreditNote(item.type, item.amount)
+          ? { name: 'Credit Notes' }
+          : resolver(item)
+      const existing = invoiceGroups.get(item.invoice_id) || new Map<string, number>()
+      existing.set(groupName, (existing.get(groupName) || 0) + item.amount)
+      invoiceGroups.set(item.invoice_id, existing)
+
+      // Coverage always via category resolver
+      const { hasCategory } = catCoverageResolver(item)
+      totalRevenue += item.amount
+      if (hasCategory) categorizedRevenue += item.amount
     }
 
     const categoriesAvailable = totalRevenue > 0 && (categorizedRevenue / totalRevenue) >= 0.5
@@ -203,7 +192,7 @@ export async function GET(request: NextRequest) {
       }
 
       const bucket = trendMap.get(key) || new Map<string, number>()
-      groups.forEach(({ revenue }, groupName) => {
+      groups.forEach((revenue, groupName) => {
         allGroupNames.add(groupName)
         bucket.set(groupName, (bucket.get(groupName) || 0) + revenue)
       })

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { api } from '@/shared/lib/api'
 import { useFilters } from '@/app/providers'
 
@@ -151,25 +151,26 @@ export function useRevenueTransactions(
   sortBy: string = 'date',
   sortOrder: 'asc' | 'desc' = 'desc'
 ) {
-  const { currentInstance, getSelectedInstanceIds, allInstances } = useFilters()
-  
+  const { currentInstance, period, customDateRange, getSelectedInstanceIds, getPeriodParams, allInstances } = useFilters()
+
   const instanceKey = currentInstance?.instance_id || 'all'
-  
+
   return useQuery({
-    queryKey: ['revenue', 'transactions', instanceKey, page, limit, filters, sortBy, sortOrder],
+    queryKey: ['revenue', 'transactions', instanceKey, period, customDateRange, page, limit, filters, sortBy, sortOrder],
     queryFn: async () => {
       const params: Record<string, string> = {
+        ...getPeriodParams(),
         page: String(page),
         limit: String(limit),
         sort_by: sortBy,
         sort_order: sortOrder,
       }
-      
+
       const instanceIds = getSelectedInstanceIds()
       if (instanceIds.length > 0) {
         params.instance_ids = instanceIds.join(',')
       }
-      
+
       // Add filters
       if (filters.search) params.search = filters.search
       if (filters.type) params.type = filters.type
@@ -252,6 +253,7 @@ export interface RevenueBreakdownTrendResponse {
   groups: RevenueBreakdownTrendGroup[]
   group_by: string
   categories_available: boolean
+  has_categories: boolean
   aggregation: 'day' | 'week'
   period: {
     type: string
@@ -281,6 +283,7 @@ export function useRevenueBreakdownTrend(groupBy: BreakdownGroupBy = 'category')
       return response.data
     },
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
     enabled: allInstances.length > 0,
   })
 }

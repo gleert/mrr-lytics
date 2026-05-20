@@ -8,11 +8,14 @@ export const dynamic = 'force-dynamic'
 const VALID_CURRENCIES = ['EUR', 'USD', 'GBP'] as const
 type Currency = typeof VALID_CURRENCIES[number]
 
+const VALID_INVOICE_STATUSES = ['Paid', 'Unpaid', 'Payment Pending', 'Cancelled', 'Refunded', 'Collections', 'Draft'] as const
+
 interface UpdateSettingsBody {
   currency?: Currency
   name?: string
   company_name?: string
   include_cancelled_invoices?: boolean
+  revenue_invoice_statuses?: string[]
 }
 
 /**
@@ -83,9 +86,25 @@ export async function PATCH(
     // Store settings that live in the JSONB settings column. Fetch current
     // settings once so we merge instead of overwriting.
     const jsonbFieldsTouched =
-      body.company_name !== undefined || body.include_cancelled_invoices !== undefined
+      body.company_name !== undefined ||
+      body.include_cancelled_invoices !== undefined ||
+      body.revenue_invoice_statuses !== undefined
 
     if (jsonbFieldsTouched) {
+      // Validate revenue_invoice_statuses if provided
+      if (body.revenue_invoice_statuses !== undefined) {
+        if (!Array.isArray(body.revenue_invoice_statuses)) {
+          return error(new Error('revenue_invoice_statuses must be an array'), 400)
+        }
+        if (body.revenue_invoice_statuses.length === 0) {
+          return error(new Error('At least one invoice status must be selected'), 400)
+        }
+        const invalid = body.revenue_invoice_statuses.filter(s => !VALID_INVOICE_STATUSES.includes(s as never))
+        if (invalid.length > 0) {
+          return error(new Error(`Invalid statuses: ${invalid.join(', ')}`), 400)
+        }
+      }
+
       const { data: currentTenant } = await supabase
         .from('tenants')
         .select('settings')
@@ -99,6 +118,9 @@ export async function PATCH(
       }
       if (body.include_cancelled_invoices !== undefined) {
         mergedSettings.include_cancelled_invoices = Boolean(body.include_cancelled_invoices)
+      }
+      if (body.revenue_invoice_statuses !== undefined) {
+        mergedSettings.revenue_invoice_statuses = body.revenue_invoice_statuses
       }
 
       updates.settings = mergedSettings
@@ -127,6 +149,7 @@ export async function PATCH(
         ...updatedTenant,
         company_name: updatedSettings.company_name ?? null,
         include_cancelled_invoices: Boolean(updatedSettings.include_cancelled_invoices),
+        revenue_invoice_statuses: (updatedSettings.revenue_invoice_statuses as string[]) ?? null,
       },
       message: 'Settings updated successfully',
     })
@@ -195,6 +218,7 @@ export async function GET(
         currency: tenant.currency || 'EUR',
         company_name: settings.company_name ?? null,
         include_cancelled_invoices: Boolean(settings.include_cancelled_invoices),
+        revenue_invoice_statuses: (settings.revenue_invoice_statuses as string[]) ?? null,
       },
       user_role: userRecord.role,
     })

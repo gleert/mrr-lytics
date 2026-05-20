@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
@@ -35,18 +35,26 @@ export function RevenuePage() {
   const { formatCurrencyCompact } = useCurrency()
   const { data: stats, isLoading } = useRevenueStats()
 
-  // Default to 'source' — safe default that always has data.
-  // 'category' is only added to the toggle when categories_available === true.
-  const [selectedBreakdown, setSelectedBreakdown] = useState<BreakdownGroupBy>('source')
+  // Default to 'category'. On first load, if no categories are configured, fall back to 'source'.
+  // Once the user explicitly picks a breakdown, auto-switching stops.
+  const [selectedBreakdown, setSelectedBreakdown] = useState<BreakdownGroupBy>('category')
+  const [userHasSelected, setUserHasSelected] = useState(false)
   const { data: trendData, isLoading: trendLoading } = useRevenueBreakdownTrend(selectedBreakdown)
+
+  useEffect(() => {
+    if (userHasSelected || !trendData) return
+    setSelectedBreakdown(trendData.categories_available ? 'category' : 'source')
+  }, [trendData?.categories_available, userHasSelected])
 
   // categories_available is always returned by the backend regardless of group_by
   const categoriesAvailable = trendData?.categories_available ?? false
+  const hasCategories = trendData?.has_categories ?? true
 
-  // Only show the 'By Category' tab when categories cover ≥50% of revenue
+  // Category and source are mutually exclusive: show category when available, source when not.
+  // Type is always shown.
   const breakdownOptions = useMemo(
     () => categoriesAvailable
-      ? ALL_BREAKDOWN_OPTIONS
+      ? ALL_BREAKDOWN_OPTIONS.filter(o => o.value !== 'source')
       : ALL_BREAKDOWN_OPTIONS.filter(o => o.value !== 'category'),
     [categoriesAvailable]
   )
@@ -251,7 +259,7 @@ export function RevenuePage() {
             {breakdownOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => setSelectedBreakdown(option.value)}
+                onClick={() => { setSelectedBreakdown(option.value); setUserHasSelected(true) }}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
                   selectedBreakdown === option.value
@@ -266,8 +274,8 @@ export function RevenuePage() {
           </div>
         </div>
 
-        {/* No-categories nudge — only when categories aren't set up yet */}
-        {trendData && !categoriesAvailable && (
+        {/* No-categories nudge — only when no category mappings exist at all */}
+        {trendData && !hasCategories && (
           <div className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm">
             <span className="text-muted">{t('revenue.noCategoriesHint')}</span>
             <button

@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
 import { z } from 'zod'
 
+const INSTANCE_SELECT = 'id, tenant_id, name, slug, whmcs_url, whmcs_api_identifier, sync_enabled, sync_interval_hours, last_sync_at, status, settings, color, module_version, created_at, updated_at'
+
 export const dynamic = 'force-dynamic'
 
 const updateInstanceSchema = z.object({
@@ -48,7 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { data: instance, error: fetchError } = await supabase
       .from('whmcs_instances')
-      .select('*')
+      .select(INSTANCE_SELECT)
       .eq('id', instanceId)
       .single()
 
@@ -116,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .from('whmcs_instances')
       .update(updates)
       .eq('id', instanceId)
-      .select()
+      .select(INSTANCE_SELECT)
       .single()
 
     if (updateError) {
