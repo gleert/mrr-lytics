@@ -16,7 +16,11 @@ function ItemRow({ item, type }: { item: MRRMovementItem; type: 'new' | 'churned
 
   const amountClass = type === 'new' ? 'text-success' : 'text-error'
   const amountPrefix = type === 'new' ? '+' : '-'
-  const kindColor = item.kind === 'hosting' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'
+  const kindColor = item.kind === 'hosting'
+    ? 'bg-info/10 text-info'
+    : item.kind === 'domain'
+      ? 'bg-primary-500/10 text-primary-400'
+      : 'bg-warning/10 text-warning'
 
   return (
     <div className="flex items-center justify-between gap-4 p-4 border-b border-border last:border-0 hover:bg-surface-hover/50 transition-colors">

@@ -82,9 +82,9 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_domains')
-        .select('recurringamount, registrationperiod')
+        .select('recurringamount, registrationperiod, status, registrationdate, expirydate')
         .in('instance_id', instanceIds)
-        .eq('status', 'Active'),
+        .limit(10000),
     ])
 
     if (hostingError) {
@@ -203,12 +203,37 @@ export async function GET(request: NextRequest) {
       return ['Active', 'Suspended'].includes(service.domainstatus)
     }
 
-    // Pre-compute total domain MRR (constant — all active domains, no historical churn available)
-    const domainTotalMrr = (domainServices ?? []).reduce((sum, domain) => {
+    // Default registrationperiod to 1 to mirror calculateMrrLive (the MRR KPI),
+    // so the chart's ending_mrr reconciles exactly with the MRR card.
+    const domainMonthlyAmount = (domain: { recurringamount: number | string | null; registrationperiod: number | null }): number => {
       const annual = Number(domain.recurringamount) || 0
       const period = Number(domain.registrationperiod) || 1
-      return sum + (annual > 0 && period > 0 ? annual / (period * 12) : 0)
-    }, 0)
+      return annual > 0 && period > 0 ? annual / (period * 12) : 0
+    }
+
+    // Was a domain active at a given date? Mirrors calculate_churn's domain logic:
+    //   - active from registrationdate
+    //   - status 'Active' today → counts (it was registered before this date)
+    //   - otherwise it churned at expirydate (proxy). Cancelled domains without
+    //     an expiry date can't be dated, so they never surface as a month's churn
+    //     (but they're already excluded from the current total either way).
+    //   - strict (current-time observation) only accepts 'Active', so the
+    //     current month's ending total reconciles with the live MRR KPI.
+    const domainActiveAt = (
+      domain: { status: string | null; registrationdate: string | null; expirydate: string | null },
+      date: Date,
+      strict: boolean,
+    ): boolean => {
+      const regDate = domain.registrationdate && domain.registrationdate > '0001-01-01'
+        ? new Date(domain.registrationdate) : null
+      if (!regDate || regDate > date) return false
+      if (domain.status === 'Active') return true
+      if (strict) return false
+      const expDate = domain.expirydate && domain.expirydate > '0001-01-01'
+        ? new Date(domain.expirydate) : null
+      if (!expDate) return false
+      return expDate > date
+    }
 
     // Generate monthly movement data
     const movementData: MovementDataPoint[] = []
@@ -261,9 +286,18 @@ export async function GET(request: NextRequest) {
         if (wasActive  && !isActive) churned_mrr += item.mrr
       })
 
-      // Domains are constant (no monthly snapshots → can't track new/churn per domain)
-      starting_mrr += domainTotalMrr
-      ending_mrr   += domainTotalMrr
+      domainServices?.forEach(domain => {
+        const mrr = domainMonthlyAmount(domain)
+        if (mrr === 0) return
+        const wasActive = domainActiveAt(domain, prevMonthEnd, false)
+        const isActive  = domainActiveAt(domain, monthEnd, isCurrentMonth)
+
+        if (wasActive) starting_mrr += mrr
+        if (isActive)  ending_mrr   += mrr
+
+        if (!wasActive && isActive)  new_mrr     += mrr  // new this month
+        if (wasActive  && !isActive) churned_mrr += mrr  // churned this month
+      })
 
       // Expansion/contraction require historical price data — not available
       const expansion_mrr  = 0

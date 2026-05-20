@@ -8,7 +8,7 @@ import { UnauthorizedError } from '@/utils/errors'
 export const dynamic = 'force-dynamic'
 
 interface MovementItem {
-  kind: 'hosting' | 'billable'
+  kind: 'hosting' | 'billable' | 'domain'
   whmcs_id: number
   client_id: number | null
   client_name: string
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const [hostingRes, billableRes, clientsRes, productsRes] = await Promise.all([
+    const [hostingRes, billableRes, clientsRes, productsRes, domainsRes] = await Promise.all([
       supabase
         .from('whmcs_hosting')
         .select('instance_id, whmcs_id, client_id, packageid, domain, amount, billingcycle, domainstatus, regdate, terminationdate')
@@ -92,10 +92,16 @@ export async function GET(request: NextRequest) {
         .from('whmcs_products')
         .select('instance_id, whmcs_id, name')
         .in('instance_id', instanceIds),
+      supabase
+        .from('whmcs_domains')
+        .select('instance_id, whmcs_id, client_id, domain, recurringamount, registrationperiod, status, registrationdate, expirydate')
+        .in('instance_id', instanceIds)
+        .limit(10000),
     ])
 
     if (hostingRes.error) throw new Error(`Failed to load hosting: ${hostingRes.error.message}`)
     if (billableRes.error) throw new Error(`Failed to load billable items: ${billableRes.error.message}`)
+    if (domainsRes.error) throw new Error(`Failed to load domains: ${domainsRes.error.message}`)
 
     const clientName = new Map<string, string>()
     ;(clientsRes.data ?? []).forEach(c => {
@@ -160,6 +166,30 @@ export async function GET(request: NextRequest) {
       return due >= date
     }
 
+    // Default registrationperiod to 1 to mirror calculateMrrLive (the MRR KPI).
+    const domainMonthlyAmount = (d: { recurringamount: number | string | null; registrationperiod: number | null }): number => {
+      const annual = Number(d.recurringamount) || 0
+      const period = Number(d.registrationperiod) || 1
+      return annual > 0 && period > 0 ? annual / (period * 12) : 0
+    }
+
+    // Mirrors /api/metrics/mrr-movement and calculate_churn: active from
+    // registrationdate; 'Active' today counts; otherwise churned at expirydate
+    // proxy; strict (current month) accepts only 'Active'.
+    const domainActiveAt = (
+      d: { status: string | null; registrationdate: string | null; expirydate: string | null },
+      date: Date,
+      strict: boolean,
+    ): boolean => {
+      const regDate = d.registrationdate && d.registrationdate > '0001-01-01' ? new Date(d.registrationdate) : null
+      if (!regDate || regDate > date) return false
+      if (d.status === 'Active') return true
+      if (strict) return false
+      const expDate = d.expirydate && d.expirydate > '0001-01-01' ? new Date(d.expirydate) : null
+      if (!expDate) return false
+      return expDate > date
+    }
+
     const items: MovementItem[] = []
 
     ;(hostingRes.data ?? []).forEach(s => {
@@ -201,6 +231,26 @@ export async function GET(request: NextRequest) {
         billing_cycle: b.recurcycle || '',
         reference_date: typeParam === 'new' ? b.duedate : (b.cancelled_at || b.duedate),
         instance_id: b.instance_id,
+      })
+    })
+
+    ;(domainsRes.data ?? []).forEach(d => {
+      const mrr = domainMonthlyAmount(d)
+      if (mrr === 0) return
+      const wasActive = domainActiveAt(d, prevMonthEnd, false)
+      const isActive = domainActiveAt(d, monthEnd, isCurrentMonth)
+      const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
+      if (!matches) return
+      items.push({
+        kind: 'domain',
+        whmcs_id: d.whmcs_id,
+        client_id: d.client_id,
+        client_name: clientName.get(`${d.instance_id}:${d.client_id}`) || `#${d.client_id}`,
+        description: d.domain || `Domain #${d.whmcs_id}`,
+        monthly_amount: Math.round(mrr * 100) / 100,
+        billing_cycle: 'annually',
+        reference_date: typeParam === 'new' ? d.registrationdate : d.expirydate,
+        instance_id: d.instance_id,
       })
     })
 

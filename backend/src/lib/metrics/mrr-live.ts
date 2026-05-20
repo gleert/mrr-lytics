@@ -96,7 +96,8 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
       .from('whmcs_hosting')
       .select('instance_id, packageid, amount, billingcycle')
       .in('instance_id', instanceIds)
-      .eq('domainstatus', 'Active'),
+      .eq('domainstatus', 'Active')
+      .limit(10000),
     supabase
       .from('whmcs_billable_items')
       .select('instance_id, whmcs_id, amount, recurcycle, recurfor, invoicecount')
@@ -108,7 +109,8 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
       .from('whmcs_domains')
       .select('instance_id, recurringamount, registrationperiod')
       .in('instance_id', instanceIds)
-      .eq('status', 'Active'),
+      .eq('status', 'Active')
+      .limit(10000),
   ])
 
   if (hostingError) throw new Error(`Failed to fetch hosting data: ${hostingError.message}`)
@@ -173,10 +175,7 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
     mrr: d.mrr,
   }))
 
-  const active_services =
-    hostingRows.filter((r) => r.monthly > 0).length +
-    billableRows.filter((r) => r.monthly > 0).length +
-    domainRows.length
+  const active_services = hostingRows.length
 
   return {
     total,

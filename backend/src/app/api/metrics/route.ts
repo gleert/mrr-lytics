@@ -401,12 +401,14 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
     .from('whmcs_clients')
     .select('whmcs_id, instance_id, status')
     .in('instance_id', instanceIds)
+    .limit(10000)
 
   // Get client IDs that have at least one service (to filter spam)
   const { data: clientServices } = await supabase
     .from('whmcs_hosting')
     .select('client_id, instance_id')
     .in('instance_id', instanceIds)
+    .limit(10000)
 
   const clientsWithService = new Set<string>()
   clientServices?.forEach(s => {
@@ -435,7 +437,8 @@ async function getClientAndInvoiceSummaryMultiInstance(instanceIds: string[], st
       .select('status, subtotal')
       .in('instance_id', instanceIds)
       .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0]),
+      .lte('date', endDate.toISOString().split('T')[0])
+      .limit(10000),
   ])
 
   const invoices = invoicesResult.data

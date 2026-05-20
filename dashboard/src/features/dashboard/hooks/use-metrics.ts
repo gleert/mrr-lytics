@@ -253,7 +253,7 @@ export function useMRRTrend() {
 }
 
 export interface MRRMovementItem {
-  kind: 'hosting' | 'billable'
+  kind: 'hosting' | 'billable' | 'domain'
   whmcs_id: number
   client_id: number | null
   client_name: string
