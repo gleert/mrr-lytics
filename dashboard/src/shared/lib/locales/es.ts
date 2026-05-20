@@ -840,6 +840,12 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2100: {
+          mrrLedger: 'Libro contable del MRR: nuevo botón en el KPI de Ingreso Mensual Recurrente que abre un listado con todos los items que aportan al MRR (hosting, billables y dominios) y un balance que se va acumulando hasta el total',
+          mrrLedgerSorting: 'El libro contable se puede ordenar por fecha de alta, cliente, concepto, tipo, ciclo o MRR/mes',
+          domainsInMovement: 'Los dominios ya cuentan como altas y bajas en el bloque de Crecimiento / Decrecimiento de MRR y en su modal de desglose',
+          queryRowLimit: 'Corregido un límite que podía truncar a 1.000 filas algunos cálculos de MRR en cuentas con muchos servicios o dominios',
+        },
         v290: {
           mrrWeightedChurn: 'La tasa de abandono ahora se pondera por MRR (revenue churn) en vez de contar servicios — una cancelación de 5.000 €/mes mueve el porcentaje miles de veces más que un dominio de 0,83 €/mes. En vistas multi-instancia se suman MRR perdido y MRR activo en lugar de promediar las tasas individuales',
           mrrMovementDrilldown: 'Click en las pastillas Nuevo / Perdido del bloque "Movimiento de MRR" abre un modal con todas las líneas (hosting y billable items) que aportaron a ese importe en el mes, con nombre del cliente, descripción, importe mensual y fecha relevante',

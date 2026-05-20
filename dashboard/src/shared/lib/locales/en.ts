@@ -843,6 +843,12 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2100: {
+          mrrLedger: 'MRR ledger: a new button on the Monthly Recurring Revenue KPI opens a list of every item contributing to MRR (hosting, billable items and domains) with a running balance that climbs to the total',
+          mrrLedgerSorting: 'The MRR ledger can be sorted by start date, client, item, type, cycle or MRR/mo',
+          domainsInMovement: 'Domains now count as new and churned in the MRR Growth / Decline block and its breakdown modal',
+          queryRowLimit: 'Fixed a limit that could truncate some MRR calculations at 1,000 rows on accounts with many services or domains',
+        },
         v290: {
           mrrWeightedChurn: 'Churn rate is now MRR-weighted (revenue churn) instead of service-count based — a 5,000 €/month cancellation now moves the percentage thousands of times more than a 0.83 €/month domain expiring. Multi-instance aggregation properly sums lost MRR over active MRR instead of averaging per-instance rates',
           mrrMovementDrilldown: 'Click the Nuevo / Perdido pills in the MRR Movement block to open a modal listing every hosting and billable item that contributed to that figure for the current month, with client name, description, monthly amount and the relevant date',
