@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@/shared/components/ui/icon'
 import { Button } from '@/shared/components/ui/button'
@@ -152,6 +153,15 @@ export function DashboardPage() {
           loading={metricsLoading}
           icon={<Icon name="paid" size="2xl" />}
           accentColor="primary"
+          details={
+            <Link
+              to="/mrr-ledger"
+              className="inline-flex items-center gap-1 text-primary-400 hover:underline font-medium"
+            >
+              {t('dashboard.mrrLedger.viewLink')}
+              <Icon name="arrow_forward" size="xs" />
+            </Link>
+          }
         />
         <KPICard
           title={t('dashboard.arr')}

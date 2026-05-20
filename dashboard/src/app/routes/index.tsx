@@ -27,6 +27,7 @@ const ConnectorsPage = lazy(() => import('@/features/connectors/pages/connectors
 const ReportsPage = lazy(() => import('@/features/reports/pages/reports-page').then(m => ({ default: m.ReportsPage })))
 const SyncPage = lazy(() => import('@/features/sync/pages/sync-page').then(m => ({ default: m.SyncPage })))
 const SuperAdminPage = lazy(() => import('@/features/superadmin/pages/superadmin-page').then(m => ({ default: m.SuperAdminPage })))
+const MRRLedgerPage = lazy(() => import('@/features/dashboard/pages/mrr-ledger-page').then(m => ({ default: m.MRRLedgerPage })))
 
 function AdminGuard({ children }: { children: ReactNode }) {
   const { userRole } = useFilters()
@@ -67,6 +68,7 @@ export function AppRoutes() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="/mrr-ledger" element={<LazyPage><MRRLedgerPage /></LazyPage>} />
         <Route path="/revenue" element={<LazyPage><RevenuePage /></LazyPage>} />
         <Route path="/clients" element={<LazyPage><ClientsPage /></LazyPage>} />
         <Route path="/products" element={<LazyPage><ProductsPage /></LazyPage>} />

@@ -521,6 +521,28 @@ export const en = {
         count_other: '{{count}} services',
         openHint: 'Click to see the breakdown',
       },
+      mrrLedger: {
+        viewLink: 'View ledger',
+        back: 'Back to dashboard',
+        title: 'MRR ledger',
+        subtitle: 'Every item contributing to the current MRR, in chronological order',
+        totalMrr: 'Total MRR',
+        items_one: '{{count}} item',
+        items_other: '{{count}} items',
+        empty: 'No items contributing to MRR',
+        colDate: 'Start date',
+        colClient: 'Client',
+        colConcept: 'Item',
+        colType: 'Type',
+        colCycle: 'Cycle',
+        colMrr: 'MRR / mo',
+        colBalance: 'Balance',
+        type: {
+          hosting: 'Hosting',
+          billable: 'Billable',
+          domain: 'Domain',
+        },
+      },
       // Top Products Section
       topProductsSection: {
         title: 'Product Performance',

@@ -518,6 +518,28 @@ export const es = {
         count_other: '{{count}} servicios',
         openHint: 'Click para ver el desglose',
       },
+      mrrLedger: {
+        viewLink: 'Ver libro contable',
+        back: 'Volver al panel',
+        title: 'Libro contable del MRR',
+        subtitle: 'Todos los items que aportan al MRR actual, en orden cronológico',
+        totalMrr: 'MRR total',
+        items_one: '{{count}} item',
+        items_other: '{{count}} items',
+        empty: 'No hay items que aporten al MRR',
+        colDate: 'Fecha de alta',
+        colClient: 'Cliente',
+        colConcept: 'Concepto',
+        colType: 'Tipo',
+        colCycle: 'Ciclo',
+        colMrr: 'MRR / mes',
+        colBalance: 'Balance',
+        type: {
+          hosting: 'Hosting',
+          billable: 'Facturable',
+          domain: 'Dominio',
+        },
+      },
       // Top Products Section
       topProductsSection: {
         title: 'Rendimiento de Productos',

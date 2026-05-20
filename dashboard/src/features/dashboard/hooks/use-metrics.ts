@@ -320,6 +320,50 @@ export function useMRRMovement(months: number = 6) {
   })
 }
 
+export interface MRRLedgerEntry {
+  type: 'hosting' | 'billable' | 'domain'
+  whmcs_id: number
+  client_id: number | null
+  client_name: string
+  description: string
+  billing_cycle: string
+  monthly_amount: number
+  start_date: string | null
+  instance_id: string
+}
+
+export interface MRRLedgerResponse {
+  entries: MRRLedgerEntry[]
+  total: number
+  count: number
+  by_category: { hosting: number; billable: number; domains: number }
+}
+
+/**
+ * Hook to fetch the MRR ledger: every item contributing to the current MRR,
+ * chronological by start date. Running balance is derived in the view.
+ */
+export function useMRRLedger() {
+  const { currentInstance, getSelectedInstanceIds, allInstances } = useFilters()
+
+  const instanceKey = currentInstance?.instance_id || 'all'
+
+  return useQuery({
+    queryKey: ['metrics', 'mrr-ledger', instanceKey],
+    queryFn: async () => {
+      const params: Record<string, string> = {}
+      const instanceIds = getSelectedInstanceIds()
+      if (instanceIds.length > 0) {
+        params.instance_ids = instanceIds.join(',')
+      }
+      const response = await api.get<{ success: boolean; data: MRRLedgerResponse }>('/api/metrics/mrr-ledger', params)
+      return response.data
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: allInstances.length > 0,
+  })
+}
+
 export interface TopProduct {
   id: number
   name: string
