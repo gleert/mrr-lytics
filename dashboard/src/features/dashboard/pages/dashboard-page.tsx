@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@/shared/components/ui/icon'
-import { Button } from '@/shared/components/ui/button'
+import { Button, buttonVariants } from '@/shared/components/ui/button'
 import { KPICard } from '../components/kpi-card'
 import { RecentActivity } from '../components/recent-activity'
 import { DailyCommittedMRRChart } from '../components/daily-committed-mrr-chart'
@@ -156,10 +156,10 @@ export function DashboardPage() {
           details={
             <Link
               to="/mrr-ledger"
-              className="inline-flex items-center gap-1 text-primary-400 hover:underline font-medium"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
             >
+              <Icon name="receipt_long" size="xs" />
               {t('dashboard.mrrLedger.viewLink')}
-              <Icon name="arrow_forward" size="xs" />
             </Link>
           }
         />
