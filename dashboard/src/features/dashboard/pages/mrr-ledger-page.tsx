@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
@@ -16,24 +16,84 @@ const TYPE_BADGE: Record<MRRLedgerEntry['type'], string> = {
   domain: 'bg-primary-500/10 text-primary-400',
 }
 
+type SortKey = 'date' | 'client' | 'concept' | 'type' | 'cycle' | 'mrr'
+
 export function MRRLedgerPage() {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
   const { data, isLoading, error } = useMRRLedger()
 
-  // Running balance accumulates over the date-sorted entries up to the MRR total.
+  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const typeLabel = (type: MRRLedgerEntry['type']) =>
+    t(`dashboard.mrrLedger.type.${type}`)
+
+  // Sort by the chosen column, then accumulate the running balance over the
+  // displayed order so the last row always reaches the MRR total.
   const rows = useMemo(() => {
+    const sorted = [...(data?.entries ?? [])]
+    const dir = sortDir === 'asc' ? 1 : -1
+    sorted.sort((a, b) => {
+      switch (sortKey) {
+        case 'mrr':
+          return (a.monthly_amount - b.monthly_amount) * dir
+        case 'date': {
+          // Unknown dates always sort last, regardless of direction.
+          if (!a.start_date && !b.start_date) return 0
+          if (!a.start_date) return 1
+          if (!b.start_date) return -1
+          return (a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0) * dir
+        }
+        case 'client':
+          return a.client_name.localeCompare(b.client_name) * dir
+        case 'concept':
+          return a.description.localeCompare(b.description) * dir
+        case 'cycle':
+          return a.billing_cycle.localeCompare(b.billing_cycle) * dir
+        case 'type':
+          return a.type.localeCompare(b.type) * dir
+        default:
+          return 0
+      }
+    })
     const result: { entry: MRRLedgerEntry; balance: number }[] = []
-    ;(data?.entries ?? []).reduce((sum, entry) => {
+    sorted.reduce((sum, entry) => {
       const next = sum + entry.monthly_amount
       result.push({ entry, balance: Math.round(next * 100) / 100 })
       return next
     }, 0)
     return result
-  }, [data])
+  }, [data, sortKey, sortDir])
 
-  const typeLabel = (type: MRRLedgerEntry['type']) =>
-    t(`dashboard.mrrLedger.type.${type}`)
+  const sortHeader = (label: string, key: SortKey, align: 'left' | 'right' = 'left') => (
+    <th
+      className={cn(
+        'px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider cursor-pointer select-none hover:bg-surface-elevated transition-colors',
+        align === 'right' ? 'text-right' : 'text-left'
+      )}
+      onClick={() => handleSort(key)}
+      aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <span className={cn('inline-flex items-center gap-1', align === 'right' && 'flex-row-reverse')}>
+        {label}
+        <Icon
+          name={sortKey === key ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+          size="xs"
+          className={sortKey === key ? 'text-primary-400' : 'text-muted-foreground/40'}
+        />
+      </span>
+    </th>
+  )
 
   return (
     <NoInstancesGuard>
@@ -107,12 +167,12 @@ export function MRRLedgerPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border bg-surface-elevated/50">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colDate')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colClient')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colConcept')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colType')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colCycle')}</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colMrr')}</th>
+                      {sortHeader(t('dashboard.mrrLedger.colDate'), 'date')}
+                      {sortHeader(t('dashboard.mrrLedger.colClient'), 'client')}
+                      {sortHeader(t('dashboard.mrrLedger.colConcept'), 'concept')}
+                      {sortHeader(t('dashboard.mrrLedger.colType'), 'type')}
+                      {sortHeader(t('dashboard.mrrLedger.colCycle'), 'cycle')}
+                      {sortHeader(t('dashboard.mrrLedger.colMrr'), 'mrr', 'right')}
                       <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">{t('dashboard.mrrLedger.colBalance')}</th>
                     </tr>
                   </thead>
