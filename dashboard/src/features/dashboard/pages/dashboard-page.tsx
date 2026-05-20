@@ -156,7 +156,7 @@ export function DashboardPage() {
           details={
             <Link
               to="/mrr-ledger"
-              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              className={buttonVariants({ variant: 'outline', size: 'sm', className: 'mt-2' })}
             >
               <Icon name="receipt_long" size="xs" />
               {t('dashboard.mrrLedger.viewLink')}
