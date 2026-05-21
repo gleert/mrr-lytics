@@ -527,6 +527,8 @@ export const es = {
         items_one: '{{count}} item',
         items_other: '{{count}} items',
         empty: 'No hay items que aporten al MRR',
+        downloadCsv: 'Descargar CSV',
+        downloadExcel: 'Descargar Excel',
         colDate: 'Fecha de alta',
         colClient: 'Cliente',
         colConcept: 'Concepto',

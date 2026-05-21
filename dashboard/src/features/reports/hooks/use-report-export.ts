@@ -89,6 +89,33 @@ export interface LedgerReportRow {
   monthly_mrr: number
 }
 
+/** Shape of an /api/metrics/mrr-ledger entry needed to build a report row. */
+export interface LedgerEntryInput {
+  type: 'hosting' | 'billable' | 'domain'
+  client_name: string
+  description: string
+  billing_cycle: string
+  monthly_amount: number
+  start_date: string | null
+  instance_id: string
+}
+
+/** Map raw ledger entries to report rows. Shared by the reports hook and the ledger page. */
+export function ledgerEntriesToRows(
+  entries: LedgerEntryInput[],
+  instanceName: Map<string, string>
+): LedgerReportRow[] {
+  return entries.map(e => ({
+    instance: instanceName.get(e.instance_id) || e.instance_id,
+    start_date: e.start_date || '',
+    client: e.client_name || '',
+    concept: e.description || '',
+    type: i18n.t(`dashboard.mrrLedger.type.${e.type}`),
+    cycle: e.billing_cycle || '',
+    monthly_mrr: e.monthly_amount,
+  }))
+}
+
 export type ReportRow = MrrRow | RevenueRow | ClientRow | DomainRow | ChurnRow | ProductRow | BillableItemReportRow | LedgerReportRow
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -313,19 +340,10 @@ function useReportData(type: ReportType, statusFilter?: ClientStatusFilter | Dom
       }
 
       if (type === 'ledger') {
-        const res = await api.get<{ success: boolean; data: { entries: Array<{
-          type: 'hosting' | 'billable' | 'domain'; client_name: string; description: string
-          billing_cycle: string; monthly_amount: number; start_date: string | null; instance_id: string
-        }> } }>('/api/metrics/mrr-ledger', base)
-        return res.data.entries.map(e => ({
-          instance: instanceName.get(e.instance_id) || e.instance_id,
-          start_date: e.start_date || '',
-          client: e.client_name || '',
-          concept: e.description || '',
-          type: i18n.t(`dashboard.mrrLedger.type.${e.type}`),
-          cycle: e.billing_cycle || '',
-          monthly_mrr: e.monthly_amount,
-        })) as LedgerReportRow[]
+        const res = await api.get<{ success: boolean; data: { entries: LedgerEntryInput[] } }>(
+          '/api/metrics/mrr-ledger', base
+        )
+        return ledgerEntriesToRows(res.data.entries, instanceName)
       }
 
       return []
@@ -348,14 +366,14 @@ function rowToValues(row: ReportRow, columns: ReportColumn[]): string[] {
   })
 }
 
-function generateCsv(rows: ReportRow[], columns: ReportColumn[], headers: string[]): string {
+export function generateCsv(rows: ReportRow[], columns: ReportColumn[], headers: string[]): string {
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`
   const headerLine = headers.map(escape).join(',')
   const dataLines = rows.map(row => rowToValues(row, columns).map(escape).join(','))
   return [headerLine, ...dataLines].join('\n')
 }
 
-function downloadCsv(content: string, filename: string) {
+export function downloadCsv(content: string, filename: string) {
   const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -379,7 +397,7 @@ function rowToXlsxRow(row: ReportRow, columns: ReportColumn[]): (string | number
   })
 }
 
-function generateXlsx(
+export function generateXlsx(
   rows: ReportRow[],
   columns: ReportColumn[],
   headers: string[],
@@ -434,7 +452,7 @@ function generateXlsx(
   return wb
 }
 
-function downloadXlsxFile(wb: XLSX.WorkBook, filename: string) {
+export function downloadXlsxFile(wb: XLSX.WorkBook, filename: string) {
   XLSX.writeFile(wb, filename)
 }
 

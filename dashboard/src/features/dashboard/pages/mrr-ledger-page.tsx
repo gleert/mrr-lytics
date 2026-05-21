@@ -2,10 +2,20 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/shared/components/ui/icon'
+import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { TableSkeleton } from '@/shared/components/ui/chart-skeleton'
 import { NoInstancesGuard } from '@/shared/components/no-instances-guard'
 import { DashboardFilters } from '@/features/dashboard/components/dashboard-filters'
+import {
+  REPORT_COLUMNS,
+  ledgerEntriesToRows,
+  generateCsv,
+  downloadCsv,
+  generateXlsx,
+  downloadXlsxFile,
+} from '@/features/reports/hooks/use-report-export'
+import { useFilters } from '@/app/providers'
 import { useCurrency } from '@/shared/hooks/use-currency'
 import { cn } from '@/shared/lib/utils'
 import { useMRRLedger, type MRRLedgerEntry } from '../hooks/use-metrics'
@@ -21,10 +31,33 @@ type SortKey = 'date' | 'client' | 'concept' | 'type' | 'cycle' | 'mrr'
 export function MRRLedgerPage() {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
+  const { allInstances } = useFilters()
   const { data, isLoading, error } = useMRRLedger()
 
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  // Build CSV/Excel exports from the already-loaded ledger entries (no extra fetch),
+  // reusing the shared report export pipeline so columns and formatting stay consistent.
+  const hasData = (data?.entries?.length ?? 0) > 0
+  const buildExport = () => {
+    const instanceName = new Map(allInstances.map(i => [i.instance_id, i.instance_name]))
+    const columns = REPORT_COLUMNS.ledger
+    const exportRows = ledgerEntriesToRows(data?.entries ?? [], instanceName)
+    const headers = columns.map(c => t(c.labelKey))
+    const filename = `mrrlytics-ledger-${new Date().toISOString().split('T')[0]}`
+    return { columns, exportRows, headers, filename }
+  }
+  const handleDownloadCsv = () => {
+    if (!hasData) return
+    const { columns, exportRows, headers, filename } = buildExport()
+    downloadCsv(generateCsv(exportRows, columns, headers), `${filename}.csv`)
+  }
+  const handleDownloadExcel = () => {
+    if (!hasData) return
+    const { columns, exportRows, headers, filename } = buildExport()
+    downloadXlsxFile(generateXlsx(exportRows, columns, headers, 'Ledger'), `${filename}.xlsx`)
+  }
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -144,6 +177,20 @@ export function MRRLedgerPage() {
                 <p className="mt-1 text-xl font-semibold tabular-nums text-primary-400">{formatCurrency(data.by_category.domains)}</p>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Download buttons */}
+        {hasData && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="default" size="sm" onClick={handleDownloadCsv}>
+              <Icon name="download" size="sm" />
+              {t('dashboard.mrrLedger.downloadCsv')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
+              <Icon name="grid_on" size="sm" />
+              {t('dashboard.mrrLedger.downloadExcel')}
+            </Button>
           </div>
         )}
 
