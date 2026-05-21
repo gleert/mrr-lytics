@@ -1683,6 +1683,8 @@ export const es = {
         productsDesc: 'Top productos por MRR con número de servicios activos',
         billable_items: 'Ítems Facturables Recurrentes',
         billable_itemsDesc: 'Servicios recurrentes que contribuyen al MRR con categoría y ciclo',
+        ledger: 'Libro Contable del MRR',
+        ledgerDesc: 'Todos los ítems que aportan al MRR actual (hosting, facturables y dominios) con instancia y MRR mensual',
       },
       columns: {
         month: 'Mes',

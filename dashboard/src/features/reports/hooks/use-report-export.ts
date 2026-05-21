@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
 import { api } from '@/shared/lib/api'
+import i18n from '@/shared/lib/i18n'
 import { useFilters } from '@/app/providers'
 
-export type ReportType = 'mrr' | 'revenue' | 'clients' | 'domains' | 'churn' | 'products' | 'billable_items'
+export type ReportType = 'mrr' | 'revenue' | 'clients' | 'domains' | 'churn' | 'products' | 'billable_items' | 'ledger'
 
 // ─── Row types ────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,17 @@ export interface BillableItemReportRow {
   due_date: string
 }
 
-export type ReportRow = MrrRow | RevenueRow | ClientRow | DomainRow | ChurnRow | ProductRow | BillableItemReportRow
+export interface LedgerReportRow {
+  instance: string
+  start_date: string
+  client: string
+  concept: string
+  type: string
+  cycle: string
+  monthly_mrr: number
+}
+
+export type ReportRow = MrrRow | RevenueRow | ClientRow | DomainRow | ChurnRow | ProductRow | BillableItemReportRow | LedgerReportRow
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -151,6 +162,15 @@ export const REPORT_COLUMNS: Record<ReportType, ReportColumn[]> = {
     { key: 'category',    labelKey: 'billableItems.table.category' },
     { key: 'due_date',    labelKey: 'reports.columns.expiryDate' },
   ],
+  ledger: [
+    { key: 'instance',    labelKey: 'products.instance' },
+    { key: 'start_date',  labelKey: 'dashboard.mrrLedger.colDate' },
+    { key: 'client',      labelKey: 'dashboard.mrrLedger.colClient' },
+    { key: 'concept',     labelKey: 'dashboard.mrrLedger.colConcept' },
+    { key: 'type',        labelKey: 'dashboard.mrrLedger.colType' },
+    { key: 'cycle',       labelKey: 'dashboard.mrrLedger.colCycle' },
+    { key: 'monthly_mrr', labelKey: 'dashboard.mrrLedger.colMrr',   format: 'currency' },
+  ],
 }
 
 // ─── Status filter types ──────────────────────────────────────────────────────
@@ -163,6 +183,7 @@ export type DomainStatusFilter = 'Active' | 'Expired' | 'all'
 function useReportData(type: ReportType, statusFilter?: ClientStatusFilter | DomainStatusFilter) {
   const { period, getSelectedInstanceIds, allInstances } = useFilters()
   const instanceIds = getSelectedInstanceIds()
+  const instanceName = new Map(allInstances.map(i => [i.instance_id, i.instance_name]))
 
   return useQuery({
     queryKey: ['reports', type, instanceIds.join(','), period, statusFilter ?? 'default'],
@@ -289,6 +310,22 @@ function useReportData(type: ReportType, statusFilter?: ClientStatusFilter | Dom
             category: i.category?.name || '',
             due_date: i.duedate || '',
           })) as BillableItemReportRow[]
+      }
+
+      if (type === 'ledger') {
+        const res = await api.get<{ success: boolean; data: { entries: Array<{
+          type: 'hosting' | 'billable' | 'domain'; client_name: string; description: string
+          billing_cycle: string; monthly_amount: number; start_date: string | null; instance_id: string
+        }> } }>('/api/metrics/mrr-ledger', base)
+        return res.data.entries.map(e => ({
+          instance: instanceName.get(e.instance_id) || e.instance_id,
+          start_date: e.start_date || '',
+          client: e.client_name || '',
+          concept: e.description || '',
+          type: i18n.t(`dashboard.mrrLedger.type.${e.type}`),
+          cycle: e.billing_cycle || '',
+          monthly_mrr: e.monthly_amount,
+        })) as LedgerReportRow[]
       }
 
       return []
@@ -435,7 +472,8 @@ export function useReportExport(type: ReportType, statusFilter?: ClientStatusFil
   }
 
   const totalRows = rows.length
-  const isAtLimit = totalRows >= 5000
+  // The ledger endpoint returns every contributing item (no 5000-row API cap), so the limit notice doesn't apply.
+  const isAtLimit = type !== 'ledger' && totalRows >= 5000
 
   return {
     rows,

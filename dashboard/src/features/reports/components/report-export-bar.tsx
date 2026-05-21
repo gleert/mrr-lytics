@@ -21,6 +21,7 @@ const REPORT_ICONS: Record<ReportType, string> = {
   churn:          'trending_down',
   products:       'inventory_2',
   billable_items: 'receipt_long',
+  ledger:         'menu_book',
 }
 
 const REPORT_COLORS: Record<ReportType, string> = {
@@ -31,6 +32,7 @@ const REPORT_COLORS: Record<ReportType, string> = {
   churn:          'text-red-400',
   products:       'text-amber-400',
   billable_items: 'text-violet-400',
+  ledger:         'text-primary-400',
 }
 
 export function ReportExportBar({ type, totalRows, isLoading, isDownloading, onDownloadCsv, onDownloadXlsx }: ReportExportBarProps) {

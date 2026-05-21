@@ -22,6 +22,7 @@ const REPORTS: ReportDefinition[] = [
   { type: 'churn',    icon: 'trending_down',  cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
   { type: 'products',       icon: 'inventory_2',    cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
   { type: 'billable_items', icon: 'receipt_long',   cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
+  { type: 'ledger',         icon: 'menu_book',      cardBg: 'bg-primary-600',  cardBorder: 'border-primary-400',  iconBg: 'bg-primary-700',  badgeBg: 'bg-primary-500/40',  badgeText: 'text-white' },
 ]
 
 interface ReportSelectorProps {

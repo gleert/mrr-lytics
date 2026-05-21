@@ -1687,6 +1687,8 @@ export const en = {
         productsDesc: 'Top products by MRR with active services count',
         billable_items: 'Recurring Billable Items',
         billable_itemsDesc: 'Recurring services contributing to MRR with category and cycle',
+        ledger: 'MRR Ledger',
+        ledgerDesc: 'Every item contributing to current MRR (hosting, billables and domains) with instance and monthly MRR',
       },
       columns: {
         month: 'Month',
