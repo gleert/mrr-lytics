@@ -69,8 +69,12 @@ const navLinks = [
       </div>
     </nav>
   </div>
+</header>
 
-  <!-- Mobile menu (fullscreen overlay) -->
+<!-- Mobile menu (fullscreen overlay) — kept OUTSIDE <header> on purpose:
+     .glass uses backdrop-filter, which makes the header the containing block
+     for position:fixed descendants on Safari/iOS, breaking the full-screen
+     overlay (background looked transparent). As a sibling it resolves to the viewport. -->
   <div
     id="mobile-menu"
     class="md:hidden fixed inset-0 top-16 z-40 flex flex-col transition-all duration-300 ease-in-out"
@@ -102,7 +106,6 @@ const navLinks = [
       </div>
     </div>
   </div>
-</header>
 
 <script>
   document.addEventListener('astro:page-load', () => {
