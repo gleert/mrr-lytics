@@ -842,6 +842,10 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2110: {
+          ledgerReport: 'Nuevo informe "Libro Contable del MRR" en Informes: exporta a CSV y Excel todos los ítems que aportan al MRR actual (hosting, facturables y dominios), incluyendo la instancia de cada uno',
+          ledgerDownloadButtons: 'Botones de descarga en CSV y Excel directamente en la página del Libro Contable, bajo los KPIs',
+        },
         v2100: {
           mrrLedger: 'Libro contable del MRR: nuevo botón en el KPI de Ingreso Mensual Recurrente que abre un listado con todos los items que aportan al MRR (hosting, billables y dominios) y un balance que se va acumulando hasta el total',
           mrrLedgerSorting: 'El libro contable se puede ordenar por fecha de alta, cliente, concepto, tipo, ciclo o MRR/mes',

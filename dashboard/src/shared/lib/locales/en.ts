@@ -845,6 +845,10 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2110: {
+          ledgerReport: 'New "MRR Ledger" report in Reports: export to CSV and Excel every item contributing to current MRR (hosting, billable items and domains), including each one\'s instance',
+          ledgerDownloadButtons: 'CSV and Excel download buttons right on the MRR Ledger page, below the KPIs',
+        },
         v2100: {
           mrrLedger: 'MRR ledger: a new button on the Monthly Recurring Revenue KPI opens a list of every item contributing to MRR (hosting, billable items and domains) with a running balance that climbs to the total',
           mrrLedgerSorting: 'The MRR ledger can be sorted by start date, client, item, type, cycle or MRR/mo',

@@ -24,6 +24,14 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.11.0',
+    date: '2026-05-21',
+    changes: [
+      { type: 'feature', text: 'changelog.entries.v2110.ledgerReport' },
+      { type: 'feature', text: 'changelog.entries.v2110.ledgerDownloadButtons' },
+    ],
+  },
+  {
     version: '2.10.0',
     date: '2026-05-20',
     changes: [
