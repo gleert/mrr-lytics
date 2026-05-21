@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
+import { committedMrrForMonth, buildBillableWithStart } from '@/lib/metrics/committed-mrr'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +66,8 @@ export async function GET(request: NextRequest) {
       { data: hostingServices, error: hostingError },
       { data: billableItems },
       { data: activeDomains },
+      { data: hostingAll },
+      { data: billableAll },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -80,9 +83,23 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_domains')
-        .select('recurringamount, registrationperiod')
+        .select('recurringamount, registrationperiod, registrationdate, expirydate')
         .in('instance_id', instanceIds)
         .eq('status', 'Active'),
+      // Full hosting + billable history (incl. terminated/cancelled) for the
+      // committed-MRR trend reconstruction — mirrors /api/metrics/mrr-trend so
+      // the forecasting historical line matches the dashboard's MRR trend.
+      supabase
+        .from('whmcs_hosting')
+        .select('amount, billingcycle, domainstatus, regdate, terminationdate')
+        .in('instance_id', instanceIds)
+        .limit(10000),
+      supabase
+        .from('whmcs_billable_items')
+        .select('amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
+        .in('instance_id', instanceIds)
+        .gt('invoicecount', 0)
+        .limit(10000),
     ])
 
     if (hostingError) {
@@ -223,6 +240,30 @@ export async function GET(request: NextRequest) {
         return `${dateStr.substring(0, 4)}-Q${Math.ceil(m / 3)}`
       }
       return dateStr.substring(0, 7)
+    }
+
+    // [monthStart, monthEnd] of the FINAL month of a historical period (offset < 0).
+    // Used to snapshot committed MRR at period-end: month → that month;
+    // quarter → its last month; year → December.
+    const periodFinalMonthRange = (offset: number): { monthStart: Date; monthEnd: Date } => {
+      let y: number
+      let m: number // 0-based month index of the period's final month
+      if (trendGranularity === 'year') {
+        y = nowY + offset
+        m = 11
+      } else if (trendGranularity === 'quarter') {
+        const currentQ = Math.ceil((nowM + 1) / 3)
+        let q = currentQ + offset
+        y = nowY
+        while (q <= 0) { q += 4; y-- }
+        while (q > 4) { q -= 4; y++ }
+        m = q * 3 - 1
+      } else {
+        const total = nowY * 12 + nowM + offset
+        y = Math.floor(total / 12)
+        m = total % 12
+      }
+      return { monthStart: new Date(y, m, 1), monthEnd: new Date(y, m + 1, 0) }
     }
 
     const [
@@ -430,12 +471,31 @@ export async function GET(request: NextRequest) {
       optimistic?: number
     }> = []
 
+    // Reconstruct committed MRR (recurring run-rate) per historical period — the
+    // same calculation as /api/metrics/mrr-trend, so this line matches the
+    // dashboard's "MRR Comprometido" trend. The projection below still derives
+    // from invoiced revenue (see invoiceHist), unchanged.
+    const reconData = {
+      hosting: hostingAll ?? [],
+      billable: buildBillableWithStart(billableAll ?? []),
+      domains: activeDomains ?? [],
+    }
+    const reconNowTs = Date.now()
+
+    // Invoice-based per-period series, kept only to drive the projection rate /
+    // growth acceleration for quarter/year granularity (preserves prior behavior).
+    const invoiceHist: number[] = []
+
     for (let i = 4; i >= 1; i--) {
       const key = trendGranularity === 'year' ? `${nowY - i}`
         : trendGranularity === 'quarter' ? toQuarterStr(-i)
         : toMonthStr(-i)
       const periodSum = mrrByPeriod.get(key) || 0
-      mrrTrendData.push({ date: key, mrr: Math.round((periodSum / monthsPerPeriod) * 100) / 100 })
+      invoiceHist.push(Math.round((periodSum / monthsPerPeriod) * 100) / 100)
+
+      const { monthStart, monthEnd } = periodFinalMonthRange(-i)
+      const committed = committedMrrForMonth(reconData, monthStart, monthEnd, reconNowTs)
+      mrrTrendData.push({ date: key, mrr: Math.round(committed * 100) / 100 })
     }
 
     const splitKey = trendGranularity === 'year' ? `${nowY}`
@@ -461,9 +521,7 @@ export async function GET(request: NextRequest) {
     let trendProjSpread = Math.max(1, Math.min(5, growthStdDev)) * dataConfidence
 
     if (trendGranularity !== 'month') {
-      const histMrr = mrrTrendData
-        .filter(p => p.mrr !== undefined && p.baseline === undefined)
-        .map(p => p.mrr!)
+      const histMrr = invoiceHist
       if (histMrr.length >= 2) {
         let wg = 0, wt = 0
         const pRates: number[] = []
@@ -520,10 +578,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (trendGranularity !== 'month') {
-      const histValues = mrrTrendData
-        .filter(p => p.mrr !== undefined && p.baseline === undefined)
-        .map(p => p.mrr!)
-      checkAcceleration(histValues)
+      checkAcceleration(invoiceHist)
     } else {
       checkAcceleration(revenueValues)
     }

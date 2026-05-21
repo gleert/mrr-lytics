@@ -4,6 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
+import {
+  toMonthlyAmount,
+  getCycleMonths,
+  billableActiveAt,
+  hostingActiveInMonth,
+  domainActiveInMonth,
+  domainMonthlyMrr,
+} from '@/lib/metrics/committed-mrr'
 
 export const dynamic = 'force-dynamic'
 
@@ -163,26 +171,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Helper to convert billing cycle to monthly amount
-    const toMonthlyAmount = (amount: number, cycle: string): number => {
-      const map: Record<string, number> = {
-        monthly: 1, months: 1, month: 1,
-        quarterly: 3,
-        'semi-annually': 6, semiannually: 6,
-        annually: 12, yearly: 12, years: 12, year: 12,
-        biennially: 24, triennially: 36,
-      }
-      const divisor = map[cycle?.toLowerCase()]
-      if (!divisor) return 0
-      return amount / divisor
-    }
-
-    // Estimate billing cycle duration in months
-    const getCycleMonths = (recurcycle: string, recur: number): number => {
-      const base = (recurcycle || '').toLowerCase().startsWith('year') ? 12 : 1
-      return base * (recur || 1)
-    }
-
     type BillableItemWithStart = {
       startDate: Date
       cycleMonths: number
@@ -217,25 +205,7 @@ export async function GET(request: NextRequest) {
       }]
     })
 
-    // Was the billable item active at a given date?
-    // Asymmetric like calculate_churn / mrr-movement: strict at "now" so a
-    // currently-cancelled item drops off the trend line on the relevant month;
-    // permissive in the past so historical months still show its MRR.
     const nowTs = Date.now()
-    const billableActiveAt = (item: BillableItemWithStart, date: Date): boolean => {
-      if (item.startDate > date) return false
-      if (item.recurfor > 0) {
-        const monthsDiff =
-          (date.getFullYear() - item.startDate.getFullYear()) * 12 +
-          (date.getMonth() - item.startDate.getMonth())
-        if (Math.floor(monthsDiff / item.cycleMonths) >= item.recurfor) return false
-      }
-      if (item.invoiceAction === 4) return true
-      // Strict near present
-      if (date.getTime() >= nowTs - 1000) return false
-      if (item.cancelledAt) return item.cancelledAt > date
-      return item.dueDate >= date
-    }
 
     // Generate 12 months of data
     const monthlyData: MonthlyDataPoint[] = []
@@ -258,22 +228,8 @@ export async function GET(request: NextRequest) {
       let categorizedMRR = 0
 
       hostingServices?.forEach(service => {
-        // Check if service was active during this month
-        const regDate = service.regdate ? new Date(service.regdate) : null
-        const termDate = service.terminationdate ? new Date(service.terminationdate) : null
-
-        // Service must have been registered before end of this month
-        if (regDate && regDate > monthEnd) {
-          return
-        }
-
-        // If terminated before start of this month, skip
-        if (termDate && termDate < monthDate) {
-          return
-        }
-
-        // Only count active services (Suspended excluded to match mv_mrr_current)
-        if (service.domainstatus !== 'Active') {
+        // Active during this month? (Suspended excluded to match mv_mrr_current)
+        if (!hostingActiveInMonth(service, monthDate, monthEnd)) {
           return
         }
 
@@ -314,7 +270,7 @@ export async function GET(request: NextRequest) {
 
       // Add recurring billable items active during this month
       billableWithStart.forEach(item => {
-        if (!billableActiveAt(item, monthEnd)) return
+        if (!billableActiveAt(item, monthEnd, nowTs)) return
 
         groupMRR[item.categoryName] = (groupMRR[item.categoryName] || 0) + item.monthlyMrr
         totalMRR += item.monthlyMrr
@@ -330,14 +286,9 @@ export async function GET(request: NextRequest) {
 
       // Add domain recurring revenue active during this month
       domainServices?.forEach(domain => {
-        const regDate = domain.registrationdate ? new Date(domain.registrationdate) : null
-        const expDate = domain.expirydate ? new Date(domain.expirydate) : null
-        if (!regDate || regDate > monthEnd) return
-        if (expDate && expDate < monthDate) return
+        if (!domainActiveInMonth(domain, monthDate, monthEnd)) return
 
-        const annual = Number(domain.recurringamount) || 0
-        const period = Number(domain.registrationperiod) || 1
-        const monthlyMrr = annual > 0 && period > 0 ? annual / (period * 12) : 0
+        const monthlyMrr = domainMonthlyMrr(domain)
         if (monthlyMrr === 0) return
 
         const groupName = 'Domains'
