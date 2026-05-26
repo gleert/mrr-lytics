@@ -542,6 +542,14 @@ export const es = {
           domain: 'Dominio',
         },
       },
+      mrrByVintage: {
+        title: 'MRR por año de alta',
+        desc: 'MRR actual agrupado por el año en que se dio de alta cada ítem',
+        barLabel: 'MRR del año',
+        lineLabel: '% del MRR total (acumulado)',
+        unknownYear: 'Sin fecha',
+        aria: 'Gráfico de barras y línea de MRR por año de alta con el porcentaje acumulado del MRR total',
+      },
       // Top Products Section
       topProductsSection: {
         title: 'Rendimiento de Productos',
@@ -842,6 +850,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2120: {
+          mrrByVintage: 'Nuevo gráfico "MRR por año de alta" en el panel: las barras muestran cuánto de tu MRR actual se consiguió cada año (según la fecha de alta de cada ítem) y una línea traza el porcentaje acumulado del MRR total para ver cómo se ha ido construyendo con el tiempo',
+        },
         v2110: {
           ledgerReport: 'Nuevo informe "Libro Contable del MRR" en Informes: exporta a CSV y Excel todos los ítems que aportan al MRR actual (hosting, facturables y dominios), incluyendo la instancia de cada uno',
           ledgerDownloadButtons: 'Botones de descarga en CSV y Excel directamente en la página del Libro Contable, bajo los KPIs',

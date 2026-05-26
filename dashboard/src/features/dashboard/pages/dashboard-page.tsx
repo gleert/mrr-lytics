@@ -9,6 +9,7 @@ import { DailyCommittedMRRChart } from '../components/daily-committed-mrr-chart'
 import { RevenueBreakdownBar } from '../components/revenue-breakdown-bar'
 import { MRRTrendChart } from '../components/mrr-trend-chart'
 import { MRRMovementChart } from '../components/mrr-movement-chart'
+import { MRRByVintageChart } from '../components/mrr-by-vintage-chart'
 import { TopProductsTable } from '../components/top-products-table'
 import { PendingCancellationsTable } from '../components/pending-cancellations-table'
 import { DashboardFilters } from '../components/dashboard-filters'
@@ -259,6 +260,9 @@ export function DashboardPage() {
 
         {/* MRR Movement */}
         <MRRMovementChart />
+
+        {/* MRR by signup year (cohort/vintage) */}
+        <MRRByVintageChart />
       </div>
 
       {/* Top Products Section */}

@@ -545,6 +545,14 @@ export const en = {
           domain: 'Domain',
         },
       },
+      mrrByVintage: {
+        title: 'MRR by signup year',
+        desc: 'Current MRR grouped by the year each item was acquired',
+        barLabel: 'MRR by year',
+        lineLabel: '% of total MRR (cumulative)',
+        unknownYear: 'No date',
+        aria: 'Bar and line chart of MRR by acquisition year with the cumulative share of total MRR',
+      },
       // Top Products Section
       topProductsSection: {
         title: 'Product Performance',
@@ -845,6 +853,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2120: {
+          mrrByVintage: 'New "MRR by signup year" chart on the dashboard: bars show how much of your current MRR was acquired each year (by item start date), and a line tracks the cumulative share of total MRR so you can see how today\'s MRR built up over time',
+        },
         v2110: {
           ledgerReport: 'New "MRR Ledger" report in Reports: export to CSV and Excel every item contributing to current MRR (hosting, billable items and domains), including each one\'s instance',
           ledgerDownloadButtons: 'CSV and Excel download buttons right on the MRR Ledger page, below the KPIs',
