@@ -35,38 +35,60 @@ export async function GET() {
       return success({ message: 'No active instances to sync', results: [] })
     }
 
-    // Filter instances that are due for sync based on their interval
+    // Determine which instances to sync and what type each needs.
+    //
+    // A full sync is forced for any instance whose last successful full sync is
+    // more than 24h old. Incremental syncs miss newly-registered domains
+    // (tbldomains.registrationdate is date-only, so a same-day registration is
+    // always < the incremental `since` timestamp, and updated_at is unreliable),
+    // so a guaranteed daily full sync is what backfills them. The previous rule
+    // (full only when the cron fired in the 00:00 UTC hour AND the instance was
+    // "due") silently skipped the full sync for days whenever an instance
+    // happened to sync within its interval before midnight.
     const now = new Date()
-    const instances = allInstances.filter((inst) => {
-      if (!inst.last_sync_at) return true // Never synced, always due
-      const lastSync = new Date(inst.last_sync_at)
-      const intervalMs = (inst.sync_interval_hours ?? 6) * 60 * 60 * 1000
-      return now.getTime() - lastSync.getTime() >= intervalMs
-    })
+    const FULL_SYNC_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
-    if (instances.length === 0) {
+    const fullSyncCutoff = new Date(now.getTime() - FULL_SYNC_MAX_AGE_MS).toISOString()
+    const { data: recentFulls } = await supabase
+      .from('sync_logs')
+      .select('instance_id')
+      .eq('status', 'completed')
+      .eq('sync_type', 'full')
+      .gte('completed_at', fullSyncCutoff)
+    const hasRecentFull = new Set((recentFulls ?? []).map((r) => r.instance_id))
+
+    const dueInstances = allInstances
+      .map((inst) => {
+        const intervalMs = (inst.sync_interval_hours ?? 6) * 60 * 60 * 1000
+        const isDue =
+          !inst.last_sync_at ||
+          now.getTime() - new Date(inst.last_sync_at).getTime() >= intervalMs
+        const needsFull = !hasRecentFull.has(inst.id)
+        return { instance: inst, isDue, needsFull }
+      })
+      // Sync if due by interval, or if a full sync is overdue — so the daily
+      // full runs even when the instance isn't otherwise due for an increment.
+      .filter(({ isDue, needsFull }) => isDue || needsFull)
+
+    if (dueInstances.length === 0) {
       return success({
         message: `No instances due for sync (${allInstances.length} active, none overdue)`,
         results: [],
       })
     }
 
-    // Determine sync type based on time
-    // Full sync at midnight (00:00), incremental otherwise
-    const hour = now.getUTCHours()
-    const isFullSync = hour === 0
-
-    // Sync each instance
+    // Sync each instance (full when its last full sync is >24h old)
     const results = await Promise.allSettled(
-      instances.map(async (instance) => {
+      dueInstances.map(async ({ instance, needsFull }) => {
         const result = await syncInstance(instance as WhmcsInstance, {
-          type: isFullSync ? 'full' : 'incremental',
+          type: needsFull ? 'full' : 'incremental',
           triggered_by: 'cron',
         })
         return {
           instance_id: instance.id,
           instance_name: instance.name,
           tenant_id: instance.tenant_id,
+          sync_type: needsFull ? 'full' : 'incremental',
           ...result,
         }
       })
@@ -77,10 +99,12 @@ export async function GET() {
       if (result.status === 'fulfilled') {
         return result.value
       }
+      const { instance, needsFull } = dueInstances[index]
       return {
-        instance_id: instances[index].id,
-        instance_name: instances[index].name,
-        tenant_id: instances[index].tenant_id,
+        instance_id: instance.id,
+        instance_name: instance.name,
+        tenant_id: instance.tenant_id,
+        sync_type: needsFull ? 'full' : 'incremental',
         success: false,
         sync_log_id: '',
         records_synced: {},
@@ -91,10 +115,12 @@ export async function GET() {
 
     const successCount = syncResults.filter((r) => r.success).length
     const failureCount = syncResults.filter((r) => !r.success).length
+    const fullCount = dueInstances.filter((d) => d.needsFull).length
 
     return success({
       message: `Cron sync completed: ${successCount} succeeded, ${failureCount} failed`,
-      sync_type: isFullSync ? 'full' : 'incremental',
+      full_syncs: fullCount,
+      incremental_syncs: dueInstances.length - fullCount,
       total: syncResults.length,
       succeeded: successCount,
       failed: failureCount,

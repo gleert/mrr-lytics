@@ -853,6 +853,10 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2121: {
+          domainSyncReliability: 'Newly-registered domains now appear reliably in MRR and domain totals — the scheduled sync runs a full refresh at least once a day, so new domains are no longer missed between incremental syncs',
+          ledgerDefaultSort: 'The accounting ledger (MRR Ledger) now shows the newest entries first by default',
+        },
         v2120: {
           mrrByVintage: 'New "MRR by signup year" chart on the dashboard: bars show how much of your current MRR was acquired each year (by item start date), and a line tracks the cumulative share of total MRR so you can see how today\'s MRR built up over time',
         },

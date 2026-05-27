@@ -850,6 +850,10 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2121: {
+          domainSyncReliability: 'Los dominios recién registrados ahora aparecen de forma fiable en el MRR y en el total de dominios: la sincronización programada hace un refresco completo al menos una vez al día, así que los nuevos dominios ya no se quedan fuera entre sincronizaciones incrementales',
+          ledgerDefaultSort: 'El libro contable (Libro Mayor de MRR) ahora muestra por defecto las entradas más nuevas primero',
+        },
         v2120: {
           mrrByVintage: 'Nuevo gráfico "MRR por año de alta" en el panel: las barras muestran cuánto de tu MRR actual se consiguió cada año (según la fecha de alta de cada ítem) y una línea traza el porcentaje acumulado del MRR total para ver cómo se ha ido construyendo con el tiempo',
         },

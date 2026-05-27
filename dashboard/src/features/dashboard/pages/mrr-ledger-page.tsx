@@ -35,7 +35,7 @@ export function MRRLedgerPage() {
   const { data, isLoading, error } = useMRRLedger()
 
   const [sortKey, setSortKey] = useState<SortKey>('date')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   // Build CSV/Excel exports from the already-loaded ledger entries (no extra fetch),
   // reusing the shared report export pipeline so columns and formatting stay consistent.

@@ -24,6 +24,14 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.12.1',
+    date: '2026-05-27',
+    changes: [
+      { type: 'fix',         text: 'changelog.entries.v2121.domainSyncReliability' },
+      { type: 'improvement', text: 'changelog.entries.v2121.ledgerDefaultSort' },
+    ],
+  },
+  {
     version: '2.12.0',
     date: '2026-05-26',
     changes: [
