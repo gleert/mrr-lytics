@@ -850,6 +850,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2122: {
+          ledgerTotalReconcile: 'El total del libro contable (Libro Mayor de MRR) ahora coincide exactamente con el KPI de Ingreso Mensual Recurrente. Los importes de cada línea se suman con precisión completa y se redondean una sola vez, en lugar de sumar importes ya redondeados, lo que antes desviaba el total en un par de euros',
+        },
         v2121: {
           domainSyncReliability: 'Los dominios recién registrados ahora aparecen de forma fiable en el MRR y en el total de dominios: la sincronización programada hace un refresco completo al menos una vez al día, así que los nuevos dominios ya no se quedan fuera entre sincronizaciones incrementales',
           ledgerDefaultSort: 'El libro contable (Libro Mayor de MRR) ahora muestra por defecto las entradas más nuevas primero',

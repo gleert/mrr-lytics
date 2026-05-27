@@ -18,10 +18,14 @@ export const dynamic = 'force-dynamic'
  *
  * The item set and per-item monthly amounts mirror calculateMrrLive exactly
  * (hosting domainstatus=Active; billable invoice_action=4 + invoicecount>0 +
- * still recurring; domain status=Active with a positive recurring amount), so
- * `total` always reconciles with the MRR KPI. Entries are returned sorted by
- * start date ascending (unknown dates last); the running balance is the
- * caller's concern (cumulative sum reaches `total`).
+ * still recurring; domain status=Active with a positive recurring amount).
+ * `monthly_amount` is kept at FULL precision (display layers round to cents);
+ * `total`/`by_category` are summed from those raw values and rounded ONCE at
+ * the end, so the total reconciles to the cent with the MRR KPI — which also
+ * sums raw and rounds once. Rounding each line first inflated the total by the
+ * accumulated per-line bias. Entries are returned sorted by start date
+ * ascending (unknown dates last); the running balance is the caller's concern
+ * (cumulative sum reaches `total`).
  */
 interface LedgerEntry {
   type: 'hosting' | 'billable' | 'domain'
@@ -121,7 +125,7 @@ export async function GET(request: NextRequest) {
         client_name: nameFor(h.instance_id, h.client_id),
         description,
         billing_cycle: h.billingcycle || '',
-        monthly_amount: Math.round(mrr * 100) / 100,
+        monthly_amount: mrr,
         start_date: validDate(h.regdate),
         instance_id: h.instance_id,
       })
@@ -150,7 +154,7 @@ export async function GET(request: NextRequest) {
         client_name: nameFor(b.instance_id, b.client_id),
         description: b.description || `Billable #${b.whmcs_id}`,
         billing_cycle: b.recurcycle || '',
-        monthly_amount: Math.round(mrr * 100) / 100,
+        monthly_amount: mrr,
         start_date: startDate,
         instance_id: b.instance_id,
       })
@@ -168,7 +172,7 @@ export async function GET(request: NextRequest) {
         client_name: nameFor(d.instance_id, d.client_id),
         description: d.domain || `Domain #${d.whmcs_id}`,
         billing_cycle: 'annually',
-        monthly_amount: Math.round(mrr * 100) / 100,
+        monthly_amount: mrr,
         start_date: validDate(d.registrationdate),
         instance_id: d.instance_id,
       })

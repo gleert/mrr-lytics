@@ -24,6 +24,13 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.12.2',
+    date: '2026-05-27',
+    changes: [
+      { type: 'fix', text: 'changelog.entries.v2122.ledgerTotalReconcile' },
+    ],
+  },
+  {
     version: '2.12.1',
     date: '2026-05-27',
     changes: [

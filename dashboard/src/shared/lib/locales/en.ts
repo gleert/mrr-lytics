@@ -853,6 +853,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2122: {
+          ledgerTotalReconcile: 'The accounting ledger (MRR Ledger) total now matches the Monthly Recurring Revenue KPI exactly. Line amounts are summed at full precision and rounded once, instead of summing already-rounded per-line amounts, which used to drift the total by a couple of euros',
+        },
         v2121: {
           domainSyncReliability: 'Newly-registered domains now appear reliably in MRR and domain totals — the scheduled sync runs a full refresh at least once a day, so new domains are no longer missed between incremental syncs',
           ledgerDefaultSort: 'The accounting ledger (MRR Ledger) now shows the newest entries first by default',
