@@ -14,31 +14,16 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toMonthlyAmount, domainMonthly, isBillableLifecycleActive } from './active-set'
 
-const CYCLE_TO_MONTHS: Record<string, number> = {
-  monthly: 1,
-  months: 1,
-  month: 1,
-  quarterly: 3,
-  'semi-annually': 6,
-  semiannually: 6,
-  annually: 12,
-  yearly: 12,
-  years: 12,
-  year: 12,
-  biennially: 24,
-  triennially: 36,
-}
-
-export function toMonthlyAmount(amount: number, cycle: string | null | undefined): number {
-  if (!cycle) return 0
-  const divisor = CYCLE_TO_MONTHS[cycle.toLowerCase()]
-  if (!divisor) return 0
-  return amount / divisor
-}
+// Re-exported so existing importers (e.g. mrr-ledger) keep `@/lib/metrics/mrr-live`
+// as their import path. The canonical definition lives in ./active-set, shared
+// with the daily movement snapshot.
+export { toMonthlyAmount } from './active-set'
 
 export interface HostingRow {
   instance_id: string
+  whmcs_id: number
   packageid: number | null
   amount: number
   billingcycle: string | null
@@ -55,6 +40,7 @@ export interface BillableRow {
 
 export interface DomainRow {
   instance_id: string
+  whmcs_id: number
   monthly: number
 }
 
@@ -94,7 +80,7 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
   ] = await Promise.all([
     supabase
       .from('whmcs_hosting')
-      .select('instance_id, packageid, amount, billingcycle')
+      .select('instance_id, whmcs_id, packageid, amount, billingcycle')
       .in('instance_id', instanceIds)
       .eq('domainstatus', 'Active')
       .limit(10000),
@@ -107,7 +93,7 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
       .limit(10000),
     supabase
       .from('whmcs_domains')
-      .select('instance_id, recurringamount, registrationperiod')
+      .select('instance_id, whmcs_id, recurringamount, registrationperiod')
       .in('instance_id', instanceIds)
       .eq('status', 'Active')
       .limit(10000),
@@ -121,6 +107,7 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
     const amount = Number(h.amount) || 0
     return {
       instance_id: h.instance_id,
+      whmcs_id: h.whmcs_id,
       packageid: h.packageid,
       amount,
       billingcycle: h.billingcycle,
@@ -128,8 +115,8 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
     }
   })
 
-  const activeBillable = (billableItemsRaw ?? []).filter(
-    (item) => (item.recurfor ?? 0) === 0 || (item.invoicecount ?? 0) < (item.recurfor ?? 0)
+  const activeBillable = (billableItemsRaw ?? []).filter((item) =>
+    isBillableLifecycleActive(item.recurfor, item.invoicecount)
   )
   const billableRows: BillableRow[] = activeBillable.map((b) => {
     const amount = Number(b.amount) || 0
@@ -143,12 +130,11 @@ export async function calculateMrrLive(instanceIds: string[]): Promise<MrrLiveRe
   })
 
   const domainRows: DomainRow[] = (activeDomains ?? [])
-    .map((d) => {
-      const annual = Number(d.recurringamount) || 0
-      const period = Number(d.registrationperiod) || 1
-      const monthly = annual > 0 && period > 0 ? annual / (period * 12) : 0
-      return { instance_id: d.instance_id, monthly }
-    })
+    .map((d) => ({
+      instance_id: d.instance_id,
+      whmcs_id: d.whmcs_id,
+      monthly: domainMonthly(d.recurringamount, d.registrationperiod),
+    }))
     .filter((d) => d.monthly > 0)
 
   const hostingMrr = hostingRows.reduce((s, r) => s + r.monthly, 0)

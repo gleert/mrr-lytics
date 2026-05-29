@@ -13,6 +13,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { runMovementSnapshot } from '@/lib/metrics/movement-snapshot'
 import { createWhmcsClient } from './client'
 import {
   dispatchSyncCompleted,
@@ -271,6 +272,25 @@ export async function syncInstance(
         snapshotId = snapshotResult
       } catch (snapshotError) {
         console.error('Failed to create snapshot after sync:', snapshotError)
+      }
+    }
+
+    // Per-entity MRR movement snapshot/diff (observed new/churn/expansion/
+    // contraction). Gated to full syncs: the daily full has refreshed every row
+    // first, so the active set is complete, and it runs ~once/instance/day giving
+    // clean daily granularity. Non-fatal during rollout — a failure here must not
+    // fail the sync.
+    if (type === 'full') {
+      try {
+        const snap = await runMovementSnapshot(instance.id)
+        console.log(
+          `[Movement] instance ${instance.id} seeded=${snap.seeded} ` +
+          `new=${snap.events.new} churn=${snap.events.churn} ` +
+          `expansion=${snap.events.expansion} contraction=${snap.events.contraction} ` +
+          `reactivation=${snap.events.reactivation}`
+        )
+      } catch (movementError) {
+        console.error(`[Movement] snapshot FAILED for instance ${instance.id}:`, movementError)
       }
     }
 
