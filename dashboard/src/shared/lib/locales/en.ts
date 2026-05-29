@@ -853,6 +853,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2123: {
+          cancelledHostingChurn: 'Cancelled hosting services that WHMCS left without a termination date now show up in the lost-MRR breakdown and in the MRR Movement churn figures, dated to their next due date. Previously this churn was invisible — the service dropped out of MRR with no movement line to explain it',
+        },
         v2122: {
           ledgerTotalReconcile: 'The accounting ledger (MRR Ledger) total now matches the Monthly Recurring Revenue KPI exactly. Line amounts are summed at full precision and rounded once, instead of summing already-rounded per-line amounts, which used to drift the total by a couple of euros',
         },

@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     const [hostingRes, billableRes, clientsRes, productsRes, domainsRes] = await Promise.all([
       supabase
         .from('whmcs_hosting')
-        .select('instance_id, whmcs_id, client_id, packageid, domain, amount, billingcycle, domainstatus, regdate, terminationdate')
+        .select('instance_id, whmcs_id, client_id, packageid, domain, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
         .in('instance_id', instanceIds),
       supabase
         .from('whmcs_billable_items')
@@ -129,13 +129,25 @@ export async function GET(request: NextRequest) {
       return amount / divisor
     }
 
-    const hostingActiveAt = (s: { regdate: string | null; terminationdate: string | null; domainstatus: string }, date: Date): boolean => {
+    // Mirrors wasActiveAt in /api/metrics/mrr-movement: a Cancelled service with
+    // no terminationdate is dated to its nextduedate (cancellation proxy) at past
+    // observation points, but never counts under `strict` (the current-time
+    // point) so the breakdown total reconciles with the live MRR KPI.
+    const hostingActiveAt = (
+      s: { regdate: string | null; nextduedate: string | null; terminationdate: string | null; domainstatus: string },
+      date: Date,
+      strict: boolean,
+    ): boolean => {
       const reg = s.regdate && s.regdate !== '0000-00-00' ? new Date(s.regdate) : null
       const term = s.terminationdate && s.terminationdate !== '0000-00-00' ? new Date(s.terminationdate) : null
       if (!reg || reg > date) return false
       if (term && term <= date) return false
       if (term && term > date) return true
-      return ['Active', 'Suspended'].includes(s.domainstatus)
+      if (['Active', 'Suspended'].includes(s.domainstatus)) return true
+      if (strict) return false
+      const nextDue = s.nextduedate && s.nextduedate !== '0000-00-00' ? new Date(s.nextduedate) : null
+      if (!nextDue) return false
+      return nextDue > date
     }
 
     // Mirrors the asymmetric logic from /api/metrics/mrr-movement and
@@ -195,8 +207,8 @@ export async function GET(request: NextRequest) {
     ;(hostingRes.data ?? []).forEach(s => {
       const mrr = toMonthlyAmount(Number(s.amount) || 0, s.billingcycle || '')
       if (mrr === 0) return
-      const wasActive = hostingActiveAt(s, prevMonthEnd)
-      const isActive = hostingActiveAt(s, monthEnd)
+      const wasActive = hostingActiveAt(s, prevMonthEnd, false)
+      const isActive = hostingActiveAt(s, monthEnd, isCurrentMonth)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
       const product = productName.get(`${s.instance_id}:${s.packageid}`)
@@ -209,7 +221,9 @@ export async function GET(request: NextRequest) {
         description,
         monthly_amount: Math.round(mrr * 100) / 100,
         billing_cycle: s.billingcycle || '',
-        reference_date: typeParam === 'new' ? s.regdate : s.terminationdate,
+        // Cancelled services often have no terminationdate; fall back to
+        // nextduedate so the churn row still shows a date.
+        reference_date: typeParam === 'new' ? s.regdate : (s.terminationdate || s.nextduedate),
         instance_id: s.instance_id,
       })
     })

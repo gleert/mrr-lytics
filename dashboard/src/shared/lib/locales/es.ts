@@ -850,6 +850,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2123: {
+          cancelledHostingChurn: 'Los servicios de hosting cancelados que WHMCS dejó sin fecha de terminación ahora aparecen en el desglose de MRR perdido y en las cifras de abandono de Movimiento de MRR, datados por su próxima fecha de vencimiento. Antes ese churn era invisible: el servicio desaparecía del MRR sin ninguna línea de movimiento que lo explicara',
+        },
         v2122: {
           ledgerTotalReconcile: 'El total del libro contable (Libro Mayor de MRR) ahora coincide exactamente con el KPI de Ingreso Mensual Recurrente. Los importes de cada línea se suman con precisión completa y se redondean una sola vez, en lugar de sumar importes ya redondeados, lo que antes desviaba el total en un par de euros',
         },

@@ -186,8 +186,19 @@ export async function GET(request: NextRequest) {
     // Rules (date-driven, NOT relying on current domainstatus for historical dates):
     //   1. regdate must exist and be <= date
     //   2. terminationdate, if set, must be > date (not yet terminated)
-    //   3. If no terminationdate: active only if current status is Active/Suspended
-    const wasActiveAt = (service: typeof hostingServices[0], date: Date): boolean => {
+    //   3. No terminationdate + Active/Suspended → active
+    //   4. No terminationdate + Cancelled: dated to nextduedate (cancellation
+    //      proxy) at past observation points; never active under `strict`.
+    //
+    // `strict` = the "right now" observation point (current month's monthEnd).
+    // A Cancelled service without a terminationdate counts as inactive there so
+    // ending_mrr reconciles with the live MRR KPI (which only sums Active).
+    // Non-strict = a past observation point: such a service was active until its
+    // nextduedate, mirroring how billable items use duedate and domains use
+    // expirydate. WHMCS leaves terminationdate NULL for cancellation requests
+    // that never ran an actual termination, so without this proxy that churn is
+    // invisible (the service evaluates as never-active and silently drops out).
+    const wasActiveAt = (service: typeof hostingServices[0], date: Date, strict: boolean): boolean => {
       const regDate = service.regdate && service.regdate !== '0000-00-00'
         ? new Date(service.regdate) : null
       const termDate = service.terminationdate && service.terminationdate !== '0000-00-00'
@@ -199,8 +210,18 @@ export async function GET(request: NextRequest) {
       // Service has a termination date in the future → was active at this date
       if (termDate && termDate > date) return true
 
-      // No termination date: use current status as proxy
-      return ['Active', 'Suspended'].includes(service.domainstatus)
+      // No termination date: current Active/Suspended services were active.
+      if (['Active', 'Suspended'].includes(service.domainstatus)) return true
+
+      // Cancelled (or otherwise inactive) without a terminationdate.
+      // At "now" it never counts (matches the live MRR KPI's Active-only rule).
+      if (strict) return false
+
+      // Past observation: active until nextduedate (cancellation date proxy).
+      const nextDue = service.nextduedate && service.nextduedate !== '0000-00-00'
+        ? new Date(service.nextduedate) : null
+      if (!nextDue) return false
+      return nextDue > date
     }
 
     // Default registrationperiod to 1 to mirror calculateMrrLive (the MRR KPI),
@@ -264,8 +285,8 @@ export async function GET(request: NextRequest) {
       let ending_mrr = 0
 
       hostingServices?.forEach(service => {
-        const wasActive = wasActiveAt(service, prevMonthEnd)
-        const isActive  = wasActiveAt(service, monthEnd)
+        const wasActive = wasActiveAt(service, prevMonthEnd, false)
+        const isActive  = wasActiveAt(service, monthEnd, isCurrentMonth)
         const mrr = getMonthlyAmount(service)
 
         if (wasActive) starting_mrr += mrr
