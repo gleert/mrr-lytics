@@ -277,6 +277,16 @@ export async function GET(request: NextRequest) {
       if (b.invoiceAction === 4) return true
       // Strict at "today" so currently-cancelled items don't get credit for today
       if (date >= todayStart) return false
+      // Non-committed item (won't auto-renew): count it in the historical line only
+      // up to a REAL past lapse date — cancelled_at if known, else the duedate
+      // paid-through proxy. If that lapse date is today-or-future, the item never
+      // actually lapsed within the window, so the permissive proxy would draw it
+      // active on every past day and only the strict rule above would drop it →
+      // an artificial cliff on the last day (e.g. a cancelled Magento retainer with
+      // invoice_action=0 and a future duedate). Exclude it so the historical line
+      // stays consistent with today's committed value.
+      const lapse = b.cancelledAt ?? b.dueDate
+      if (lapse >= todayStart) return false
       if (b.cancelledAt) return b.cancelledAt > date
       return b.dueDate >= date
     }
