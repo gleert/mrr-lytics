@@ -90,18 +90,28 @@ start >= firstObservedDate(instance) + 30 days
   `now − periodDays ≥ firstObserved + 30d`. With the default 30-day period that is ≈ **2026-07-29**
   (first instant a full 30-day window lies entirely past the maturity threshold).
 
-### Conservation guard (€0.01, full precision)
+### Conservation guard (cent equality)
 
 Per instance and window `[start, end)`:
 
 ```
 netEvents = Σ mrr_delta of ALL events in [start, end)   (new + reactivation + expansion + contraction + churn)
 netDaily  = metrics_daily.mrr@(end-1)  −  metrics_daily.mrr@(start-1)
-guard_ok  = |netEvents − netDaily| < 0.01               // NUMERIC(14,6) precision, no pre-rounding
+guard_ok  = round2(netEvents) === round2(netDaily)      // cent equality
 ```
 
+**Precision note (important):** event deltas are `NUMERIC(14,6)` (full precision), but
+`metrics_daily.mrr` is `DECIMAL(12,2)` — already cent-rounded (it *is* the cent-rounded MRR KPI; the
+active-set reconciles to it at `0.00`). Comparing the raw 6-decimal `netEvents` against the 2-decimal
+`netDaily` with a raw `< 0.01` threshold could false-trip on sub-cent rounding alone. So the guard
+**rounds `netEvents` to cents first** and requires the two cents to be **equal**. This is exactly
+"cuadra al céntimo" and is robust to the precision mismatch. Implemented as
+`Math.abs(round2(netEvents) − round2(netDaily)) < 0.005` (i.e. they round to the same cent), where
+`round2(x) = Math.round(x * 100) / 100`.
+
 - `metrics_daily.mrr@(start-1)` = MRR at close of the day before the window start (= `starting_mrr` /
-  `active_mrr_start`). Aligns with the existing waterfall convention (`prevMonthEnd`).
+  `active_mrr_start`). Aligns with the existing waterfall convention (`prevMonthEnd`). Already cent
+  precision, so it is the display value directly.
 - Missing `metrics_daily` row at either boundary (snapshot gap) ⇒ `guard_ok = false` ⇒ proxy.
 - In events mode, `active_mrr_start` is taken directly from `metrics_daily.mrr@(start-1)` (source of
   truth) — **not** reconstructed from events.
