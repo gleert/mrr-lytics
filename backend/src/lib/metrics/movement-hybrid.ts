@@ -26,8 +26,6 @@ export type EntityType = 'hosting' | 'billable' | 'domain'
 export type MovementEventType = 'new' | 'churn' | 'expansion' | 'contraction' | 'reactivation'
 export type SourceMode = 'events' | 'proxy'
 
-/** Days the snapshot must have run before a window's start for events to be trusted. */
-export const MATURITY_DAYS = 30
 
 const DAY_MS = 86_400_000
 export const round2 = (n: number): number => Math.round(n * 100) / 100
@@ -88,9 +86,16 @@ export interface ChurnDecision {
 
 // --- Pure helpers (no IO) ---
 
-export function isMature(firstObserved: string | null, windowStart: string): boolean {
+/**
+ * Is the window fully covered by observation? The window must start strictly AFTER
+ * the cold-start seed day, so every movement inside it was captured as an event
+ * (the seed day itself emits zero events and bakes pre-existing state into the
+ * baseline). No long "maturity" wait — a month/window is trusted as soon as it is
+ * entirely within the observed period; the reconciliation guard is the safety net.
+ */
+export function isFullyObserved(firstObserved: string | null, windowStart: string): boolean {
   if (!firstObserved) return false
-  return parseDay(windowStart) >= parseDay(firstObserved) + MATURITY_DAYS * DAY_MS
+  return parseDay(windowStart) > parseDay(firstObserved)
 }
 
 /** Sum event deltas per type at full precision. churn/contraction deltas are negative. */
@@ -247,7 +252,7 @@ async function resolveOneMonth(
   const proxy = (reason: string): MonthlyDecision => ({ instance_id: instanceId, mode: 'proxy', reason })
 
   const firstObserved = await firstObservedDate(supabase, instanceId)
-  if (!isMature(firstObserved, monthStart)) return proxy(firstObserved ? 'immature' : 'no_events')
+  if (!isFullyObserved(firstObserved, monthStart)) return proxy(firstObserved ? 'pre_observation' : 'no_events')
 
   const anchors = await fetchAnchors(supabase, instanceId, monthStart, windowEnd)
   if (!anchors) return proxy('missing_metrics_daily')
@@ -309,7 +314,7 @@ export async function resolveChurnWindow(
       const proxy = (reason: string): ChurnDecision => ({ instance_id: instanceId, mode: 'proxy', reason })
 
       const firstObserved = await firstObservedDate(supabase, instanceId)
-      if (!isMature(firstObserved, periodStart)) return proxy(firstObserved ? 'immature' : 'no_events')
+      if (!isFullyObserved(firstObserved, periodStart)) return proxy(firstObserved ? 'pre_observation' : 'no_events')
 
       const anchors = await fetchAnchors(supabase, instanceId, periodStart, periodEnd)
       if (!anchors) return proxy('missing_metrics_daily')

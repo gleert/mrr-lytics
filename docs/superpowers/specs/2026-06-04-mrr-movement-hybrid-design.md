@@ -75,20 +75,28 @@ with total live MRR.
 
 ## Gate & Guard semantics
 
-### Maturity gate (30 days)
+### Fully-observed gate (no maturity wait — revised 2026-06-04)
+
+The original design used a 30-day maturity wait. **Revised per user direction:** activate events as soon
+as a window is *entirely within the observed period* — they want the new captured data live now and
+don't care about pre-capture history. The reconciliation guard is the real safety net.
 
 Per instance, a window `[start, end)` is **eligible** for events mode iff:
 
 ```
-start >= firstObservedDate(instance) + 30 days
+windowStart > firstObservedDate(instance)
 ```
 
-- Real instances (seed ≈ 2026-05-30) → threshold ≈ **2026-06-29**. First events-servable **calendar
-  month** = **July 2026** (`monthStart = 2026-07-01 ≥ 2026-06-29`). June and earlier → proxy. Clean
-  month-level boundary, no intra-month mixing.
-- **Churn** (rolling window): `[now − periodDays, now)` eligible only when
-  `now − periodDays ≥ firstObserved + 30d`. With the default 30-day period that is ≈ **2026-07-29**
-  (first instant a full 30-day window lies entirely past the maturity threshold).
+i.e. the window starts strictly after the cold-start seed day, so every movement inside it was captured
+as an event (the seed day emits zero events and bakes pre-existing state into the baseline `dS`).
+
+- Real instances (seed `2026-05-29`) → **June 2026 is the first events month** (`monthStart 06-01 >
+  05-29`), live immediately. May (`05-01`) and earlier stay proxy (partially/never observed). Validated
+  against prod: June reconciles (net_events `+15.05` vs metrics_daily `+15.05`, within €0.02).
+- **Churn** (rolling window): `[now − periodDays, now)` eligible only once the whole window is observed,
+  i.e. `now − periodDays > firstObserved`. With the default 30-day period and seed `05-29` that is
+  ≈ **2026-06-29** (until then a 30-day lookback reaches before capture, so churn stays proxy — its
+  definition is unchanged at 30 days).
 
 ### Conservation guard (full-precision, €0.02 tolerance)
 

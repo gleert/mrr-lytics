@@ -394,7 +394,7 @@ export async function GET(request: NextRequest) {
       )
       const source: MonthSource = {
         mode,
-        reason: mode === 'events' ? 'ok' : (proxyReasons.join(',') || 'immature'),
+        reason: mode === 'events' ? 'ok' : (proxyReasons.join(',') || 'pre_observation'),
       }
       if (mode === 'mixed') {
         source.per_instance = {}
