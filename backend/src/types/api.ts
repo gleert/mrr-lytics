@@ -111,6 +111,12 @@ export interface ChurnMetrics {
   period_days: number
   period_start: string
   period_end: string
+  /**
+   * Count of churned services. Not tracked in events mode (the KPI is
+   * MRR-weighted), so when `source.mode` is 'events' or 'mixed' this only
+   * reflects proxy-mode instances and undercounts — use `churned_mrr` /
+   * `churn_rate` as the source of truth.
+   */
   churned_services: number
   churned_mrr: number
   churn_rate: number
@@ -118,6 +124,11 @@ export interface ChurnMetrics {
     hosting: ChurnCategoryBreakdown
     billable: ChurnCategoryBreakdown
     domains: ChurnCategoryBreakdown
+  }
+  /** Provenance of the figures: observed events vs legacy date proxies, per instance. */
+  source?: {
+    mode: 'events' | 'proxy' | 'mixed'
+    per_instance?: Record<string, 'events' | 'proxy'>
   }
 }
 
