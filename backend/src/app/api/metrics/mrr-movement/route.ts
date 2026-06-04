@@ -273,20 +273,40 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const asOf = now.toISOString().slice(0, 10)
 
+    // Resolve every month's per-instance events-vs-proxy decision up front and in
+    // parallel (each call already fans out per instance internally), instead of
+    // awaiting one month at a time inside the loop.
+    const monthKeys: string[] = []
+    for (let i = 0; i < months; i++) {
+      const d = new Date(startDate)
+      d.setMonth(startDate.getMonth() + i)
+      monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    }
+    const decisionsByMonth = new Map(
+      (await Promise.all(monthKeys.map((k) => resolveMonthlyMovement(instanceIds, k, asOf))))
+        .map((decisions, idx) => [monthKeys[idx], decisions] as const)
+    )
+
     for (let i = 0; i < months; i++) {
       const monthDate = new Date(startDate)
       monthDate.setMonth(startDate.getMonth() + i)
 
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
       const naturalMonthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
+      // Cap at "now" for the current month so future-dated terminationdates
+      // (pending cancellations scheduled later this month) aren't counted as
+      // already churned and pull net_change negative mid-month.
       const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
       const prevMonthEnd = new Date(monthStart.getTime() - 1)
+      // strict invoice_action / cancelled-status check only at the most recent
+      // observation point (current month). Past months have no historical
+      // invoice_action snapshot, so they use the cancelled_at + duedate proxy.
       const isCurrentMonth = naturalMonthEnd > now
 
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
 
-      // Per-instance events-vs-proxy decision for this month.
-      const decisions = await resolveMonthlyMovement(instanceIds, monthKey, asOf)
+      // Per-instance events-vs-proxy decision for this month (resolved above).
+      const decisions = decisionsByMonth.get(monthKey) ?? []
       const eventsDecisions = decisions.filter((d) => d.mode === 'events')
       const eventsSet = new Set(eventsDecisions.map((d) => d.instance_id))
       const proxySet = new Set(instanceIds.filter((id) => !eventsSet.has(id)))
@@ -311,7 +331,10 @@ export async function GET(request: NextRequest) {
         ending_mrr += b.ending_mrr
       }
 
-      // 2. Proxy-mode instances: existing date-proxy accumulation, filtered to proxySet.
+      // 2. Proxy-mode instances: existing date-proxy accumulation, filtered to
+      // proxySet. wasActiveAt/billableActiveAt/domainActiveAt use the asymmetric
+      // strict (current-month "now") vs non-strict (past observation) rule — see
+      // their definitions and isCurrentMonth above.
       if (proxySet.size > 0) {
         hostingServices?.forEach(service => {
           if (!proxySet.has(service.instance_id)) return
@@ -364,7 +387,14 @@ export async function GET(request: NextRequest) {
       // Source diagnostics for this month.
       const mode: MonthMode =
         eventsSet.size === 0 ? 'proxy' : proxySet.size === 0 ? 'events' : 'mixed'
-      const source: MonthSource = { mode, reason: mode === 'proxy' ? (decisions[0]?.reason ?? 'immature') : 'ok' }
+      // Distinct proxy reasons across instances (e.g. 'immature', 'guard_failed').
+      const proxyReasons = Array.from(
+        new Set(decisions.filter((d) => d.mode === 'proxy').map((d) => d.reason))
+      )
+      const source: MonthSource = {
+        mode,
+        reason: mode === 'events' ? 'ok' : (proxyReasons.join(',') || 'immature'),
+      }
       if (mode === 'mixed') {
         source.per_instance = {}
         for (const id of instanceIds) source.per_instance[id] = eventsSet.has(id) ? 'events' : 'proxy'
