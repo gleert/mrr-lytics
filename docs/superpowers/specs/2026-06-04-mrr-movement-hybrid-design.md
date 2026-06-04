@@ -27,6 +27,9 @@ path is preserved verbatim as a safety net.
 
 ## Goals
 
+- **Exact reconciliation is the top priority.** Events-mode figures anchor to `metrics_daily` so the
+  waterfall matches the live MRR KPI to the cent, drill-down list totals match their pills, and any
+  month that does not reconcile within €0.01 falls back to proxy rather than show approximate numbers.
 - Serve movement/churn from observed events where the data is trustworthy; keep proxies elsewhere.
 - **Zero regression on deploy**: with the gate active, everything falls to proxy today (first
   events-eligible month ≈ July 2026), so prod behavior is byte-identical until maturity.
@@ -103,6 +106,31 @@ guard_ok  = |netEvents − netDaily| < 0.01               // NUMERIC(14,6) preci
 - In events mode, `active_mrr_start` is taken directly from `metrics_daily.mrr@(start-1)` (source of
   truth) — **not** reconstructed from events.
 
+### Anchoring for exact KPI reconciliation (primary goal: data must reconcile as closely as possible)
+
+In events mode, **both** endpoints of the waterfall are anchored to `metrics_daily` (the same source
+as the live MRR KPI), never reconstructed by summing events:
+
+```
+starting_mrr = metrics_daily.mrr@(start-1)
+ending_mrr   = metrics_daily.mrr@(end-1)
+```
+
+The event components (`new`, `reactivation`, `expansion`, `contraction`, `churn`) only **bridge**
+between these two anchored endpoints. The €0.01 guard guarantees the bridge closes:
+`starting + new + reactivation + expansion + contraction − churn == ending` to the cent. If it does
+not close, `guard_ok = false` and the instance falls to proxy — so a non-reconciling events month is
+never shown.
+
+Two reconciliation guarantees follow:
+
+1. **Exact KPI match**: an events-mode month's `ending_mrr` equals the live MRR card exactly (same
+   `metrics_daily` value), not "within €0.01".
+2. **Month-to-month continuity**: month M's `ending_mrr` (`metrics_daily@(monthEnd-1)`, i.e. last day
+   of M) is the *same* `metrics_daily` row as month M+1's `starting_mrr` (`metrics_daily@(nextStart-1)`),
+   so consecutive bars line up with no gap — including across a proxy→events boundary, since the proxy
+   path already reconciles its `ending_mrr` to the same KPI.
+
 ### Per-window decision (per instance)
 
 ```
@@ -164,6 +192,11 @@ summary for the queried month.
   (date logic can't distinguish); in **events** months it is separated. Minor, month-bounded semantic
   shift; events is the more correct view.
 - Scope: items still serves only `new` / `churned`.
+- **Pill ↔ list reconciliation**: items derives its per-instance mode from the *same*
+  `resolveMonthlyMovement` decision as the waterfall, so the drill-down list total matches the pill
+  exactly — events-mode `new` list sum == `new_mrr`, `churned` list sum == `churned_mrr`. The only way
+  they can disagree is a sync flipping the guard between the two separate HTTP requests; that window is
+  transient and self-corrects on the next refresh (documented, not engineered around).
 
 ### `churn.ts` (`calculateChurn`, `calculateChurnMultiInstance`)
 
@@ -190,8 +223,10 @@ only the source of each per-instance summand changes. `ChurnMetrics` gains an op
 - **Unit (helper)** with injectable fixtures (no network): gate (before/after threshold); guard
   (reconciles / €0.02 drift → proxy / missing boundary row → proxy); `aggregateEvents` (full precision,
   correct signs); per-instance selection (mixed).
-- **Reconciliation**: for a synthetic events-month,
-  `starting + new + reactivation + expansion + contraction − churn == ending == metrics_daily`.
+- **Reconciliation** (primary): for a synthetic events-month, `starting_mrr` and `ending_mrr` equal the
+  anchored `metrics_daily` values **exactly** (not just within the guard tolerance), and
+  `starting + new + reactivation + expansion + contraction − churn == ending` to the cent. Also assert
+  the items `new`/`churned` list totals equal the corresponding waterfall pills exactly.
 - **Shape backward-compat**: all three endpoints return current fields intact; `source` /
   `reactivation_mrr` are additive.
 - `npm run lint` + `tsc --noEmit` clean.
