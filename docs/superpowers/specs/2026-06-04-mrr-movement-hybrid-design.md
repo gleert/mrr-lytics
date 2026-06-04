@@ -90,24 +90,34 @@ start >= firstObservedDate(instance) + 30 days
   `now − periodDays ≥ firstObserved + 30d`. With the default 30-day period that is ≈ **2026-07-29**
   (first instant a full 30-day window lies entirely past the maturity threshold).
 
-### Conservation guard (cent equality)
+### Conservation guard (full-precision, €0.02 tolerance)
 
 Per instance and window `[start, end)`:
 
 ```
-netEvents = Σ mrr_delta of ALL events in [start, end)   (new + reactivation + expansion + contraction + churn)
-netDaily  = metrics_daily.mrr@(end-1)  −  metrics_daily.mrr@(start-1)
-guard_ok  = round2(netEvents) === round2(netDaily)      // cent equality
+netEvents = Σ mrr_delta of ALL events in (dS, dE]   (new + reactivation + expansion + contraction + churn)
+netDaily  = metrics_daily.mrr@dE  −  metrics_daily.mrr@dS
+guard_ok  = |netEvents − netDaily| < 0.02            // GUARD_TOLERANCE, full precision
 ```
 
-**Precision note (important):** event deltas are `NUMERIC(14,6)` (full precision), but
-`metrics_daily.mrr` is `DECIMAL(12,2)` — already cent-rounded (it *is* the cent-rounded MRR KPI; the
-active-set reconciles to it at `0.00`). Comparing the raw 6-decimal `netEvents` against the 2-decimal
-`netDaily` with a raw `< 0.01` threshold could false-trip on sub-cent rounding alone. So the guard
-**rounds `netEvents` to cents first** and requires the two cents to be **equal**. This is exactly
-"cuadra al céntimo" and is robust to the precision mismatch. Implemented as
-`Math.abs(round2(netEvents) − round2(netDaily)) < 0.005` (i.e. they round to the same cent), where
-`round2(x) = Math.round(x * 100) / 100`.
+**Precision note (important, validated against prod 2026-06-04):** event deltas are `NUMERIC(14,6)`
+(full precision), but `metrics_daily.mrr` is `DECIMAL(12,2)` — cent-rounded per day (it *is* the
+cent-rounded MRR KPI). Each of the two snapshot endpoints (`@dS`, `@dE`) carries up to ±0.005 of
+rounding, so `netDaily` (a difference of two rounded endpoints) can differ from the full-precision
+`netEvents` by up to ~1 cent **even when the data is perfectly correct**. Prod confirms this: over the
+first accrued window the events net was −74.904166 (more precise) while metrics_daily showed −74.91 —
+a ~0.6-cent gap of pure accumulated rounding, no real divergence.
+
+Therefore the guard:
+- compares at **FULL precision** — `netEvents` is NOT pre-rounded (rounding it to cents would inflate a
+  sub-cent gap of 0.006 into a full 0.01 and spuriously fail);
+- uses a **€0.02 tolerance** (`GUARD_TOLERANCE`), which absorbs the inherent ±0.01 endpoint rounding
+  with margin while staying far below any real movement (the smallest realistic ≈ €0.40/mo for a cheap
+  domain), so any genuinely missed movement still trips it.
+
+This satisfies the user's "cuadra al céntimo" intent: events reconcile with metrics_daily to within the
+precision metrics_daily can even express. A strict same-cent guard was tried first and proven infeasible
+(it would keep the events path dormant forever on benign rounding).
 
 - `metrics_daily.mrr@(start-1)` = MRR at close of the day before the window start (= `starting_mrr` /
   `active_mrr_start`). Aligns with the existing waterfall convention (`prevMonthEnd`). Already cent

@@ -122,9 +122,25 @@ export function summarizeEvents(events: EventRow[]): {
   }
 }
 
-/** Cent-equality guard. metrics_daily.mrr is DECIMAL(12,2); round events to cents first. */
+/**
+ * Reconciliation tolerance. metrics_daily.mrr is DECIMAL(12,2): each snapshot
+ * endpoint carries up to ±0.005 of cent-rounding, so netDaily (a difference of
+ * two rounded endpoints) can differ from the full-precision event net by up to
+ * ~1 cent even when the data is perfectly correct. 0.02 absorbs that with margin
+ * while staying far below any real movement (smallest realistic ≈ €0.40/mo for a
+ * cheap domain) — verified against prod 2026-06-04: events reconcile with
+ * metrics_daily to within ~0.6 cents (pure accumulated rounding, no real drift).
+ */
+export const GUARD_TOLERANCE = 0.02
+
+/**
+ * Conservation guard: does the events' net match the metrics_daily delta within
+ * GUARD_TOLERANCE? Compares at FULL precision — do NOT pre-round netEvents, as
+ * rounding it to cents would inflate a sub-cent rounding gap into a full cent and
+ * spuriously fail (e.g. true diff 0.006 → 0.01 after rounding both sides).
+ */
 export function guardOk(netEvents: number, netDaily: number): boolean {
-  return Math.abs(round2(netEvents) - round2(netDaily)) < 0.005
+  return Math.abs(netEvents - netDaily) < GUARD_TOLERANCE
 }
 
 // --- IO ---
