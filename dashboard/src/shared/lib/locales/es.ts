@@ -456,14 +456,14 @@ export const es = {
       neverSynced: 'Nunca sincronizado',
       // Daily Committed MRR
       dailyMrrTitle: 'MRR Comprometido Diario',
-      dailyMrrDesc: 'Composición de ingresos por categoría con visibilidad de bajas pendientes',
+      dailyMrrDesc: 'MRR comprometido real registrado cada día',
       days: 'días',
       pendingChurn: 'Bajas Pendientes',
       noData: 'No hay datos disponibles',
       noDataSync: 'Ejecuta una sincronización para ver datos en tu dashboard',
       noDataProducts: 'No se encontraron productos. Los datos aparecerán tras la primera sincronización',
       noDataChart: 'Aún no hay suficientes datos para mostrar el gráfico',
-      dailyMrrLegend: 'Las áreas apiladas muestran el MRR por categoría. La línea punteada indica ingresos de servicios programados para cancelación.',
+      dailyMrrLegend: 'MRR comprometido (run-rate) tal como se registró cada día, con cada movimiento en su fecha real.',
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Analíticas de Ingresos',
       revenueAnalyticsDesc: 'Composición y tendencias del MRR',
@@ -850,6 +850,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2130: {
+          dailyMrrReal: 'El gráfico "MRR Comprometido Diario" ahora muestra el MRR comprometido real registrado cada día, con cada movimiento en su fecha exacta. Antes reconstruía la base de clientes actual hacia atrás, lo que no podía datar bien las cancelaciones: inflaba el histórico y concentraba la caída en el último día (un retainer cancelado seguía contando hasta hoy en vez de en su fecha real). Ahora la línea es fiel al run-rate verdadero',
+        },
         v2123: {
           cancelledHostingChurn: 'Los servicios de hosting cancelados que WHMCS dejó sin fecha de terminación ahora aparecen en el desglose de MRR perdido y en las cifras de abandono de Movimiento de MRR, datados por su próxima fecha de vencimiento. Antes ese churn era invisible: el servicio desaparecía del MRR sin ninguna línea de movimiento que lo explicara',
         },

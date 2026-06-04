@@ -24,6 +24,13 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.13.0',
+    date: '2026-06-04',
+    changes: [
+      { type: 'improvement', text: 'changelog.entries.v2130.dailyMrrReal' },
+    ],
+  },
+  {
     version: '2.12.3',
     date: '2026-05-29',
     changes: [

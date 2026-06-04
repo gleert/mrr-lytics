@@ -459,14 +459,14 @@ export const en = {
       neverSynced: 'Never synced',
       // Daily Committed MRR
       dailyMrrTitle: 'Daily Committed MRR',
-      dailyMrrDesc: 'Revenue composition by category with pending churn visibility',
+      dailyMrrDesc: 'The real committed MRR recorded each day',
       days: 'days',
       pendingChurn: 'Pending Churn',
       noData: 'No data available',
       noDataSync: 'Run a sync to populate your dashboard with data',
       noDataProducts: 'No products found. Data will appear after your first sync',
       noDataChart: 'Not enough data to display the chart yet',
-      dailyMrrLegend: 'The stacked areas show MRR by category. The dashed line indicates revenue from services scheduled for cancellation.',
+      dailyMrrLegend: 'Committed MRR (run-rate) as recorded each day, with every movement on its real date.',
       // Revenue Analytics Section
       revenueAnalyticsTitle: 'Revenue Analytics',
       revenueAnalyticsDesc: 'MRR composition and trends',
@@ -853,6 +853,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2130: {
+          dailyMrrReal: 'The "Daily Committed MRR" chart now shows the real committed MRR recorded each day, with every movement on its exact date. It previously reconstructed today\'s customer base backward, which could not date cancellations correctly — it inflated the history and dumped the drop on the last day (a cancelled retainer kept counting until today instead of on its real date). The line is now faithful to the true run-rate',
+        },
         v2123: {
           cancelledHostingChurn: 'Cancelled hosting services that WHMCS left without a termination date now show up in the lost-MRR breakdown and in the MRR Movement churn figures, dated to their next due date. Previously this churn was invisible — the service dropped out of MRR with no movement line to explain it',
         },

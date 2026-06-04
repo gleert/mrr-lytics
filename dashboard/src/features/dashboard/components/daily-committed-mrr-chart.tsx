@@ -73,6 +73,12 @@ export function DailyCommittedMRRChart() {
     return data?.categories?.map(c => c.name) || []
   }, [data?.categories])
 
+  // Only render the pending-churn band when there is actually some.
+  const hasPendingChurn = useMemo(
+    () => (data?.daily_data ?? []).some(p => (p.pending_churn ?? 0) > 0),
+    [data?.daily_data]
+  )
+
   const formatDateLabel = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
@@ -175,7 +181,11 @@ export function DailyCommittedMRRChart() {
                   height={36}
                   formatter={(value) => (
                     <span className="text-sm">
-                      {value === 'pending_churn' ? t('dashboard.pendingChurn') : value}
+                      {value === 'pending_churn'
+                        ? t('dashboard.pendingChurn')
+                        : value === 'committed_mrr'
+                          ? t('dashboard.committedMrr')
+                          : value}
                     </span>
                   )}
                 />
@@ -193,16 +203,18 @@ export function DailyCommittedMRRChart() {
                   />
                 ))}
 
-                {/* Pending churn as separate line (not stacked) */}
-                <Area
-                  type="monotone"
-                  dataKey="pending_churn"
-                  stackId="2"
-                  stroke={CHURN_COLOR}
-                  fill="url(#gradient-pending-churn)"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                />
+                {/* Pending churn as separate line (not stacked) — only when present */}
+                {hasPendingChurn && (
+                  <Area
+                    type="monotone"
+                    dataKey="pending_churn"
+                    stackId="2"
+                    stroke={CHURN_COLOR}
+                    fill="url(#gradient-pending-churn)"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                  />
+                )}
               </AreaChart>
             </ResponsiveContainer>
           </div>
