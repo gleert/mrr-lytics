@@ -84,7 +84,8 @@ export async function GET(request: NextRequest) {
       supabase
         .from('whmcs_hosting')
         .select('instance_id, whmcs_id, client_id, packageid, domain, amount, billingcycle, domainstatus, regdate, nextduedate, terminationdate')
-        .in('instance_id', instanceIds),
+        .in('instance_id', instanceIds)
+        .limit(10000),
       supabase
         .from('whmcs_billable_items')
         .select('instance_id, whmcs_id, client_id, description, amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
@@ -94,11 +95,13 @@ export async function GET(request: NextRequest) {
       supabase
         .from('whmcs_clients')
         .select('instance_id, whmcs_id, firstname, lastname, companyname')
-        .in('instance_id', instanceIds),
+        .in('instance_id', instanceIds)
+        .limit(10000),
       supabase
         .from('whmcs_products')
         .select('instance_id, whmcs_id, name')
-        .in('instance_id', instanceIds),
+        .in('instance_id', instanceIds)
+        .limit(10000),
       supabase
         .from('whmcs_domains')
         .select('instance_id, whmcs_id, client_id, domain, recurringamount, registrationperiod, status, registrationdate, expirydate')
