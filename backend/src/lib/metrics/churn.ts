@@ -29,35 +29,41 @@ export async function calculateChurnMultiInstance(instanceIds: string[], periodD
   const decisions = await resolveChurnWindow(instanceIds, periodStartStr, periodEndStr)
   const eventsById = new Map(decisions.filter(d => d.mode === 'events').map(d => [d.instance_id, d]))
 
-  const perInstance: Record<string, 'events' | 'proxy'> = {}
-
   const results = await Promise.all(
     instanceIds.map(async (instanceId) => {
       const ev = eventsById.get(instanceId)
       if (ev) {
-        perInstance[instanceId] = 'events'
         return {
+          instanceId,
+          mode: 'events' as const,
           churned_services: 0, // service count not tracked in events mode (MRR-weighted KPI only)
           churned_mrr: ev.churned_mrr ?? 0,
           active_mrr_start: ev.active_mrr_start ?? 0,
         }
       }
-      perInstance[instanceId] = 'proxy'
       const { data, error } = await supabase.rpc('calculate_churn', {
         p_instance_id: instanceId,
         p_period_days: periodDays,
       })
       if (error) {
         console.error(`Churn calculation error for instance ${instanceId}:`, error)
-        return { churned_services: 0, churned_mrr: 0, active_mrr_start: 0 }
+        return { instanceId, mode: 'proxy' as const, churned_services: 0, churned_mrr: 0, active_mrr_start: 0 }
       }
       const result = data?.[0]
       return {
+        instanceId,
+        mode: 'proxy' as const,
         churned_services: Number(result?.churned_services) || 0,
         churned_mrr: Number(result?.churned_mrr) || 0,
         active_mrr_start: Number(result?.active_mrr_start) || 0,
       }
     })
+  )
+
+  // Build the per-instance source map from results (no shared-state mutation in
+  // the concurrent map callbacks above).
+  const perInstance: Record<string, 'events' | 'proxy'> = Object.fromEntries(
+    results.map((r) => [r.instanceId, r.mode])
   )
 
   const totals = results.reduce(
@@ -73,7 +79,7 @@ export async function calculateChurnMultiInstance(instanceIds: string[], periodD
     ? Math.round((totals.churned_mrr / totals.active_mrr_start) * 10000) / 100
     : 0
 
-  const eventsCount = Object.values(perInstance).filter(v => v === 'events').length
+  const eventsCount = results.filter((r) => r.mode === 'events').length
   const mode: 'events' | 'proxy' | 'mixed' =
     eventsCount === 0 ? 'proxy' : eventsCount === instanceIds.length ? 'events' : 'mixed'
 
