@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
+import { resolveMonthlyMovement } from '@/lib/metrics/movement-hybrid'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,6 +67,12 @@ export async function GET(request: NextRequest) {
     const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
     const prevMonthEnd = new Date(monthStart.getTime() - 1)
     const isCurrentMonth = naturalMonthEnd > now
+
+    const asOf = now.toISOString().slice(0, 10)
+    const monthKeyStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
+    const decisions = await resolveMonthlyMovement(instanceIds, monthKeyStr, asOf)
+    const eventsById = new Map(decisions.filter(d => d.mode === 'events').map(d => [d.instance_id, d]))
+    const proxySet = new Set(instanceIds.filter(id => !eventsById.has(id)))
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -205,6 +212,7 @@ export async function GET(request: NextRequest) {
     const items: MovementItem[] = []
 
     ;(hostingRes.data ?? []).forEach(s => {
+      if (!proxySet.has(s.instance_id)) return
       const mrr = toMonthlyAmount(Number(s.amount) || 0, s.billingcycle || '')
       if (mrr === 0) return
       const wasActive = hostingActiveAt(s, prevMonthEnd, false)
@@ -229,6 +237,7 @@ export async function GET(request: NextRequest) {
     })
 
     ;(billableRes.data ?? []).forEach(b => {
+      if (!proxySet.has(b.instance_id)) return
       const mrr = toMonthlyAmount(Number(b.amount) || 0, b.recurcycle || '')
       if (mrr === 0) return
       const wasActive = billableActiveAt(b, prevMonthEnd, false)
@@ -249,6 +258,7 @@ export async function GET(request: NextRequest) {
     })
 
     ;(domainsRes.data ?? []).forEach(d => {
+      if (!proxySet.has(d.instance_id)) return
       const mrr = domainMonthlyAmount(d)
       if (mrr === 0) return
       const wasActive = domainActiveAt(d, prevMonthEnd, false)
@@ -268,15 +278,63 @@ export async function GET(request: NextRequest) {
       })
     })
 
+    // Events-mode instances: source items from the observed events.
+    // ?type=new  -> event_type 'new' ONLY (reactivation excluded by design)
+    // ?type=churned -> event_type 'churn'
+    const wantTypes = typeParam === 'new' ? ['new'] : ['churn']
+    for (const decision of eventsById.values()) {
+      for (const ev of decision.events ?? []) {
+        if (!wantTypes.includes(ev.event_type)) continue
+        const instId = decision.instance_id
+        const kind = ev.entity_type
+        let description: string
+        let billing_cycle = ''
+        let client_id: number | null = null
+
+        if (kind === 'hosting') {
+          const s = (hostingRes.data ?? []).find(h => h.instance_id === instId && h.whmcs_id === ev.entity_id)
+          client_id = s?.client_id ?? null
+          const product = s ? productName.get(`${instId}:${s.packageid}`) : undefined
+          description = [product, s?.domain].filter(Boolean).join(' — ') || `Service #${ev.entity_id}`
+          billing_cycle = s?.billingcycle || ''
+        } else if (kind === 'billable') {
+          const b = (billableRes.data ?? []).find(x => x.instance_id === instId && x.whmcs_id === ev.entity_id)
+          client_id = b?.client_id ?? null
+          description = b?.description || `Billable #${ev.entity_id}`
+          billing_cycle = b?.recurcycle || ''
+        } else {
+          const d = (domainsRes.data ?? []).find(x => x.instance_id === instId && x.whmcs_id === ev.entity_id)
+          client_id = d?.client_id ?? null
+          description = d?.domain || `Domain #${ev.entity_id}`
+          billing_cycle = 'annually'
+        }
+
+        const monthly = typeParam === 'new' ? ev.mrr_after : ev.mrr_before
+        items.push({
+          kind,
+          whmcs_id: ev.entity_id,
+          client_id,
+          client_name: clientName.get(`${instId}:${client_id}`) || `#${client_id}`,
+          description,
+          monthly_amount: Math.round(monthly * 100) / 100,
+          billing_cycle,
+          reference_date: ev.effective_date ?? ev.observed_date,
+          instance_id: instId,
+        })
+      }
+    }
+
     items.sort((a, b) => b.monthly_amount - a.monthly_amount)
     const total = items.reduce((sum, it) => sum + it.monthly_amount, 0)
 
+    const sourceMode = eventsById.size === 0 ? 'proxy' : proxySet.size === 0 ? 'events' : 'mixed'
     return success({
       items,
       total: Math.round(total * 100) / 100,
       count: items.length,
       type: typeParam,
-      month: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`,
+      month: monthKeyStr,
+      source: { mode: sourceMode },
     }, { instance_ids: instanceIds })
   } catch (err) {
     console.error('Error in /api/metrics/mrr-movement/items:', err)
