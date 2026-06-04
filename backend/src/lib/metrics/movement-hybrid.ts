@@ -52,6 +52,13 @@ export interface EventRow {
   effective_date: string | null
 }
 
+/**
+ * All amounts are FULL precision (not pre-rounded) — like active-set.ts. Consumers
+ * sum these across instances/entities and round ONCE at the edge, so the totals
+ * reconcile with the live KPI to the cent (round-then-sum here would inject
+ * per-instance drift and make a drill-down list total disagree with its pill).
+ * starting_mrr / ending_mrr come from metrics_daily, which is already cents.
+ */
 export interface EventsBreakdown {
   starting_mrr: number
   new_mrr: number
@@ -228,23 +235,17 @@ async function resolveOneMonth(
   const netDaily = anchors.mrrEnd - anchors.mrrStart
   if (!guardOk(s.net_events, netDaily)) return proxy('guard_failed')
 
-  // Round each component to cents first, then derive net_change FROM the rounded
-  // components so the stored net_change reconciles exactly with what a consumer
-  // gets by summing the displayed component fields (no sub-cent drift).
-  const new_mrr = round2(s.new_mrr)
-  const reactivation_mrr = round2(s.reactivation_mrr)
-  const churned_mrr = round2(s.churned_mrr)
-  const expansion_mrr = round2(s.expansion_mrr)
-  const contraction_mrr = round2(s.contraction_mrr)
+  // Full precision throughout (see EventsBreakdown docs). Consumers round at the
+  // edge; starting/ending are the metrics_daily anchors (already cents).
   const breakdown: EventsBreakdown = {
-    starting_mrr: round2(anchors.mrrStart),
-    new_mrr,
-    reactivation_mrr,
-    churned_mrr,
-    expansion_mrr,
-    contraction_mrr,
-    ending_mrr: round2(anchors.mrrEnd),
-    net_change: round2(new_mrr + reactivation_mrr + expansion_mrr + contraction_mrr - churned_mrr),
+    starting_mrr: anchors.mrrStart,
+    new_mrr: s.new_mrr,
+    reactivation_mrr: s.reactivation_mrr,
+    churned_mrr: s.churned_mrr,
+    expansion_mrr: s.expansion_mrr,
+    contraction_mrr: s.contraction_mrr,
+    ending_mrr: anchors.mrrEnd,
+    net_change: s.new_mrr + s.reactivation_mrr + s.expansion_mrr + s.contraction_mrr - s.churned_mrr,
   }
   return { instance_id: instanceId, mode: 'events', reason: 'ok', breakdown, events }
 }
@@ -296,12 +297,13 @@ export async function resolveChurnWindow(
       const netDaily = anchors.mrrEnd - anchors.mrrStart
       if (!guardOk(s.net_events, netDaily)) return proxy('guard_failed')
 
+      // Full precision; churn.ts sums across instances and rounds at the edge.
       return {
         instance_id: instanceId,
         mode: 'events',
         reason: 'ok',
-        churned_mrr: round2(s.churned_mrr),
-        active_mrr_start: round2(anchors.mrrStart),
+        churned_mrr: s.churned_mrr,
+        active_mrr_start: anchors.mrrStart,
       }
     }),
   )

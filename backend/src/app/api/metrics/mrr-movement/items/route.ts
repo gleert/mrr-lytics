@@ -213,6 +213,10 @@ export async function GET(request: NextRequest) {
     }
 
     const items: MovementItem[] = []
+    // Accumulate the FULL-precision amount so the headline `total` is
+    // sum-then-round (matching the waterfall pill exactly). Per-item
+    // monthly_amount stays rounded for display only.
+    let rawTotal = 0
 
     ;(hostingRes.data ?? []).forEach(s => {
       if (!proxySet.has(s.instance_id)) return
@@ -222,6 +226,7 @@ export async function GET(request: NextRequest) {
       const isActive = hostingActiveAt(s, monthEnd, isCurrentMonth)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
+      rawTotal += mrr
       const product = productName.get(`${s.instance_id}:${s.packageid}`)
       const description = [product, s.domain].filter(Boolean).join(' — ') || `Service #${s.whmcs_id}`
       items.push({
@@ -247,6 +252,7 @@ export async function GET(request: NextRequest) {
       const isActive = billableActiveAt(b, monthEnd, isCurrentMonth)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
+      rawTotal += mrr
       items.push({
         kind: 'billable',
         whmcs_id: b.whmcs_id,
@@ -268,6 +274,7 @@ export async function GET(request: NextRequest) {
       const isActive = domainActiveAt(d, monthEnd, isCurrentMonth)
       const matches = typeParam === 'new' ? (!wasActive && isActive) : (wasActive && !isActive)
       if (!matches) return
+      rawTotal += mrr
       items.push({
         kind: 'domain',
         whmcs_id: d.whmcs_id,
@@ -313,6 +320,7 @@ export async function GET(request: NextRequest) {
         }
 
         const monthly = typeParam === 'new' ? ev.mrr_after : ev.mrr_before
+        rawTotal += monthly
         items.push({
           kind,
           whmcs_id: ev.entity_id,
@@ -328,12 +336,11 @@ export async function GET(request: NextRequest) {
     }
 
     items.sort((a, b) => b.monthly_amount - a.monthly_amount)
-    const total = items.reduce((sum, it) => sum + it.monthly_amount, 0)
 
     const sourceMode = eventsById.size === 0 ? 'proxy' : proxySet.size === 0 ? 'events' : 'mixed'
     return success({
       items,
-      total: Math.round(total * 100) / 100,
+      total: Math.round(rawTotal * 100) / 100,
       count: items.length,
       type: typeParam,
       month: monthKeyStr,
