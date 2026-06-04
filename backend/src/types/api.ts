@@ -119,6 +119,10 @@ export interface ChurnMetrics {
     billable: ChurnCategoryBreakdown
     domains: ChurnCategoryBreakdown
   }
+  source?: {
+    mode: 'events' | 'proxy' | 'mixed'
+    per_instance?: Record<string, 'events' | 'proxy'>
+  }
 }
 
 export interface RevenueByProduct {
