@@ -5,6 +5,7 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
+import { resolveMonthlyMovement, round2 } from '@/lib/metrics/movement-hybrid'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ interface MovementDataPoint {
   month: string
   starting_mrr: number
   new_mrr: number
+  reactivation_mrr: number
   churned_mrr: number
   expansion_mrr: number
   contraction_mrr: number
@@ -19,9 +21,16 @@ interface MovementDataPoint {
   net_change: number
 }
 
+type MonthMode = 'events' | 'proxy' | 'mixed'
+interface MonthSource {
+  mode: MonthMode
+  reason: string
+  per_instance?: Record<string, 'events' | 'proxy'>
+}
+
 /**
  * GET /api/metrics/mrr-movement - Get monthly MRR movement breakdown
- * 
+ *
  * Returns Starting MRR, New, Expansion, Contraction, Churn, Ending MRR for each month
  */
 export async function GET(request: NextRequest) {
@@ -82,7 +91,7 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_domains')
-        .select('recurringamount, registrationperiod, status, registrationdate, expirydate')
+        .select('instance_id, recurringamount, registrationperiod, status, registrationdate, expirydate')
         .in('instance_id', instanceIds)
         .limit(10000),
     ])
@@ -152,6 +161,7 @@ export async function GET(request: NextRequest) {
     }
 
     type BillableItemMovement = {
+      instance_id: string
       startDate: Date
       cycleMonths: number
       recurfor: number
@@ -169,6 +179,7 @@ export async function GET(request: NextRequest) {
       const startDate = new Date(dueDate)
       startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
       return [{
+        instance_id: item.instance_id,
         startDate,
         cycleMonths,
         recurfor: item.recurfor ?? 0,
@@ -258,7 +269,9 @@ export async function GET(request: NextRequest) {
 
     // Generate monthly movement data
     const movementData: MovementDataPoint[] = []
+    const monthSources: Record<string, MonthSource> = {}
     const now = new Date()
+    const asOf = now.toISOString().slice(0, 10)
 
     for (let i = 0; i < months; i++) {
       const monthDate = new Date(startDate)
@@ -266,99 +279,124 @@ export async function GET(request: NextRequest) {
 
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
       const naturalMonthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
-      // Cap at "now" for the current month so future-dated terminationdates
-      // (pending cancellations scheduled later this month) don't get counted
-      // as already churned and pull net_change negative mid-month.
       const monthEnd = naturalMonthEnd > now ? now : naturalMonthEnd
       const prevMonthEnd = new Date(monthStart.getTime() - 1)
-      // Strict invoice_action check only at the most recent observation point
-      // (current month). For older months we have no historical invoice_action
-      // snapshot, so the cancelled_at + duedate proxy is the best we can do —
-      // and applying strict there would back-date cancellations into past months.
       const isCurrentMonth = naturalMonthEnd > now
 
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
 
+      // Per-instance events-vs-proxy decision for this month.
+      const decisions = await resolveMonthlyMovement(instanceIds, monthKey, asOf)
+      const eventsDecisions = decisions.filter((d) => d.mode === 'events')
+      const eventsSet = new Set(eventsDecisions.map((d) => d.instance_id))
+      const proxySet = new Set(instanceIds.filter((id) => !eventsSet.has(id)))
+
       let starting_mrr = 0
       let new_mrr = 0
+      let reactivation_mrr = 0
       let churned_mrr = 0
+      let expansion_mrr = 0
+      let contraction_mrr = 0
       let ending_mrr = 0
 
-      hostingServices?.forEach(service => {
-        const wasActive = wasActiveAt(service, prevMonthEnd, false)
-        const isActive  = wasActiveAt(service, monthEnd, isCurrentMonth)
-        const mrr = getMonthlyAmount(service)
+      // 1. Events-mode instances: anchored figures from the resolver.
+      for (const d of eventsDecisions) {
+        const b = d.breakdown!
+        starting_mrr += b.starting_mrr
+        new_mrr += b.new_mrr
+        reactivation_mrr += b.reactivation_mrr
+        churned_mrr += b.churned_mrr
+        expansion_mrr += b.expansion_mrr
+        contraction_mrr += b.contraction_mrr
+        ending_mrr += b.ending_mrr
+      }
 
-        if (wasActive) starting_mrr += mrr
-        if (isActive)  ending_mrr   += mrr
+      // 2. Proxy-mode instances: existing date-proxy accumulation, filtered to proxySet.
+      if (proxySet.size > 0) {
+        hostingServices?.forEach(service => {
+          if (!proxySet.has(service.instance_id)) return
+          const wasActive = wasActiveAt(service, prevMonthEnd, false)
+          const isActive = wasActiveAt(service, monthEnd, isCurrentMonth)
+          const mrr = getMonthlyAmount(service)
+          if (wasActive) starting_mrr += mrr
+          if (isActive) ending_mrr += mrr
+          if (!wasActive && isActive) new_mrr += mrr
+          if (wasActive && !isActive) churned_mrr += mrr
+        })
 
-        if (!wasActive && isActive)   new_mrr     += mrr  // new this month
-        if (wasActive  && !isActive)  churned_mrr += mrr  // churned this month
-      })
+        billableWithStart.forEach(item => {
+          if (!proxySet.has(item.instance_id)) return
+          const wasActive = billableActiveAt(item, prevMonthEnd, false)
+          const isActive = billableActiveAt(item, monthEnd, isCurrentMonth)
+          if (wasActive) starting_mrr += item.mrr
+          if (isActive) ending_mrr += item.mrr
+          if (!wasActive && isActive) new_mrr += item.mrr
+          if (wasActive && !isActive) churned_mrr += item.mrr
+        })
 
-      billableWithStart.forEach(item => {
-        const wasActive = billableActiveAt(item, prevMonthEnd, false)
-        const isActive  = billableActiveAt(item, monthEnd, isCurrentMonth)
+        domainServices?.forEach(domain => {
+          if (!proxySet.has(domain.instance_id)) return
+          const mrr = domainMonthlyAmount(domain)
+          if (mrr === 0) return
+          const wasActive = domainActiveAt(domain, prevMonthEnd, false)
+          const isActive = domainActiveAt(domain, monthEnd, isCurrentMonth)
+          if (wasActive) starting_mrr += mrr
+          if (isActive) ending_mrr += mrr
+          if (!wasActive && isActive) new_mrr += mrr
+          if (wasActive && !isActive) churned_mrr += mrr
+        })
+      }
 
-        if (wasActive) starting_mrr += item.mrr
-        if (isActive)  ending_mrr   += item.mrr
-
-        if (!wasActive && isActive)  new_mrr     += item.mrr
-        if (wasActive  && !isActive) churned_mrr += item.mrr
-      })
-
-      domainServices?.forEach(domain => {
-        const mrr = domainMonthlyAmount(domain)
-        if (mrr === 0) return
-        const wasActive = domainActiveAt(domain, prevMonthEnd, false)
-        const isActive  = domainActiveAt(domain, monthEnd, isCurrentMonth)
-
-        if (wasActive) starting_mrr += mrr
-        if (isActive)  ending_mrr   += mrr
-
-        if (!wasActive && isActive)  new_mrr     += mrr  // new this month
-        if (wasActive  && !isActive) churned_mrr += mrr  // churned this month
-      })
-
-      // Expansion/contraction require historical price data — not available
-      const expansion_mrr  = 0
-      const contraction_mrr = 0
-      const net_change = new_mrr - churned_mrr
+      const net_change = new_mrr + reactivation_mrr + expansion_mrr + contraction_mrr - churned_mrr
 
       movementData.push({
         month: monthKey,
-        starting_mrr: Math.round(starting_mrr * 100) / 100,
-        new_mrr: Math.round(new_mrr * 100) / 100,
-        churned_mrr: Math.round(churned_mrr * 100) / 100,
-        expansion_mrr: Math.round(expansion_mrr * 100) / 100,
-        contraction_mrr: Math.round(contraction_mrr * 100) / 100,
-        ending_mrr: Math.round(ending_mrr * 100) / 100,
-        net_change: Math.round(net_change * 100) / 100,
+        starting_mrr: round2(starting_mrr),
+        new_mrr: round2(new_mrr),
+        reactivation_mrr: round2(reactivation_mrr),
+        churned_mrr: round2(churned_mrr),
+        expansion_mrr: round2(expansion_mrr),
+        contraction_mrr: round2(contraction_mrr),
+        ending_mrr: round2(ending_mrr),
+        net_change: round2(net_change),
       })
+
+      // Source diagnostics for this month.
+      const mode: MonthMode =
+        eventsSet.size === 0 ? 'proxy' : proxySet.size === 0 ? 'events' : 'mixed'
+      const source: MonthSource = { mode, reason: mode === 'proxy' ? (decisions[0]?.reason ?? 'immature') : 'ok' }
+      if (mode === 'mixed') {
+        source.per_instance = {}
+        for (const id of instanceIds) source.per_instance[id] = eventsSet.has(id) ? 'events' : 'proxy'
+      }
+      monthSources[monthKey] = source
     }
 
     // Calculate totals
     const totals = movementData.reduce(
       (acc, m) => ({
         new_mrr: acc.new_mrr + m.new_mrr,
+        reactivation_mrr: acc.reactivation_mrr + m.reactivation_mrr,
         churned_mrr: acc.churned_mrr + m.churned_mrr,
         expansion_mrr: acc.expansion_mrr + m.expansion_mrr,
         contraction_mrr: acc.contraction_mrr + m.contraction_mrr,
         net_change: acc.net_change + m.net_change,
       }),
-      { new_mrr: 0, churned_mrr: 0, expansion_mrr: 0, contraction_mrr: 0, net_change: 0 }
+      { new_mrr: 0, reactivation_mrr: 0, churned_mrr: 0, expansion_mrr: 0, contraction_mrr: 0, net_change: 0 }
     )
 
     return success({
       movement_data: movementData,
       totals: {
-        new_mrr: Math.round(totals.new_mrr * 100) / 100,
-        churned_mrr: Math.round(totals.churned_mrr * 100) / 100,
-        expansion_mrr: Math.round(totals.expansion_mrr * 100) / 100,
-        contraction_mrr: Math.round(totals.contraction_mrr * 100) / 100,
-        net_change: Math.round(totals.net_change * 100) / 100,
+        new_mrr: round2(totals.new_mrr),
+        reactivation_mrr: round2(totals.reactivation_mrr),
+        churned_mrr: round2(totals.churned_mrr),
+        expansion_mrr: round2(totals.expansion_mrr),
+        contraction_mrr: round2(totals.contraction_mrr),
+        net_change: round2(totals.net_change),
       },
       months,
+      source: { per_month: monthSources },
     }, { instance_ids: instanceIds })
   } catch (err) {
     console.error('Error in /api/metrics/mrr-movement:', err)
