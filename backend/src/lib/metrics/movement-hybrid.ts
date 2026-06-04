@@ -91,9 +91,9 @@ export function summarizeEvents(events: EventRow[]): {
   new_mrr: number
   reactivation_mrr: number
   expansion_mrr: number
-  contraction_mrr: number
-  churned_mrr: number
-  net_events: number
+  contraction_mrr: number  // negative (sum of negative contraction deltas)
+  churned_mrr: number      // positive magnitude
+  net_events: number       // signed sum of ALL deltas (churn/contraction stay negative)
 } {
   let neu = 0, rea = 0, exp = 0, con = 0, chu = 0
   for (const e of events) {
@@ -228,15 +228,23 @@ async function resolveOneMonth(
   const netDaily = anchors.mrrEnd - anchors.mrrStart
   if (!guardOk(s.net_events, netDaily)) return proxy('guard_failed')
 
+  // Round each component to cents first, then derive net_change FROM the rounded
+  // components so the stored net_change reconciles exactly with what a consumer
+  // gets by summing the displayed component fields (no sub-cent drift).
+  const new_mrr = round2(s.new_mrr)
+  const reactivation_mrr = round2(s.reactivation_mrr)
+  const churned_mrr = round2(s.churned_mrr)
+  const expansion_mrr = round2(s.expansion_mrr)
+  const contraction_mrr = round2(s.contraction_mrr)
   const breakdown: EventsBreakdown = {
     starting_mrr: round2(anchors.mrrStart),
-    new_mrr: round2(s.new_mrr),
-    reactivation_mrr: round2(s.reactivation_mrr),
-    churned_mrr: round2(s.churned_mrr),
-    expansion_mrr: round2(s.expansion_mrr),
-    contraction_mrr: round2(s.contraction_mrr),
+    new_mrr,
+    reactivation_mrr,
+    churned_mrr,
+    expansion_mrr,
+    contraction_mrr,
     ending_mrr: round2(anchors.mrrEnd),
-    net_change: round2(s.new_mrr + s.reactivation_mrr + s.expansion_mrr + s.contraction_mrr - s.churned_mrr),
+    net_change: round2(new_mrr + reactivation_mrr + expansion_mrr + contraction_mrr - churned_mrr),
   }
   return { instance_id: instanceId, mode: 'events', reason: 'ok', breakdown, events }
 }
