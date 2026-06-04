@@ -114,6 +114,15 @@ export function billableActiveAt(item: BillableWithStart, date: Date, nowTs: num
   if (item.invoiceAction === 4) return true
   // Strict near present
   if (date.getTime() >= nowTs - 1000) return false
+  // Non-committed item (won't auto-renew): count it historically only up to a REAL
+  // past lapse date — cancelled_at if known, else the duedate paid-through proxy.
+  // A lapse date at/after "now" means it never lapsed within the window, so the
+  // permissive proxy would draw it active in every past month and the strict rule
+  // above would drop it only in the current one → an artificial cliff (e.g. a
+  // cancelled Magento retainer with invoice_action=0 and a future duedate inflating
+  // every prior month). Exclude it, consistent with today's committed value.
+  const lapseTs = (item.cancelledAt ?? item.dueDate).getTime()
+  if (lapseTs >= nowTs) return false
   if (item.cancelledAt) return item.cancelledAt > date
   return item.dueDate >= date
 }
