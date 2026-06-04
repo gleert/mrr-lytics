@@ -155,6 +155,12 @@ async function firstObservedDate(supabase: Admin, instanceId: string): Promise<s
  *   dS = latest snapshot strictly before windowStart
  *   dE = latest snapshot in [windowStart, windowEnd]
  * Returns null if either is missing (snapshot gap => caller falls to proxy).
+ *
+ * Adjacent months are contiguous with no overlap: month M's dE equals month M+1's
+ * dS (since the next window starts the day after monthEnd), so no event is dropped
+ * or double-counted. If the last days of a month have no snapshot, events observed
+ * in that gap are attributed to the NEXT month's bar — a harmless cosmetic shift;
+ * each month's guard still reconciles against its own anchors.
  */
 async function fetchAnchors(
   supabase: Admin,
