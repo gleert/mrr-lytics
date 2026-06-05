@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
     startDate.setDate(1) // Start of month
 
     // --- Fetch all needed data in parallel ---
+    const mdSinceStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`
     const [
       { data: hostingServices, error: hostingError },
       { data: products },
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
       { data: mappings },
       { data: billableItems },
       { data: domainServices },
+      { data: metricsDaily },
     ] = await Promise.all([
       supabase
         .from('whmcs_hosting')
@@ -130,6 +132,16 @@ export async function GET(request: NextRequest) {
         .select('recurringamount, registrationperiod, registrationdate, expirydate')
         .in('instance_id', instanceIds)
         .eq('status', 'Active'),
+      // Ground-truth committed MRR per day (same source as the daily-MRR chart and
+      // the live KPI). Used to anchor each month's TOTAL so the by-category line
+      // reconciles exactly with the daily chart; categories are scaled to it.
+      supabase
+        .from('metrics_daily')
+        .select('instance_id, date, mrr')
+        .in('instance_id', instanceIds)
+        .gte('date', mdSinceStr)
+        .order('date', { ascending: true })
+        .limit(100000),
     ])
 
     if (hostingError) {
@@ -219,9 +231,36 @@ export async function GET(request: NextRequest) {
     // past month via the coarse future-lapse guard.
     await applyDerivedTerminations(supabase, billableWithStart, now)
 
+    // Per-instance metrics_daily series (sorted asc) for total anchoring.
+    const mdByInstance = new Map<string, { date: string; mrr: number }[]>()
+    for (const r of metricsDaily ?? []) {
+      const list = mdByInstance.get(r.instance_id)
+      const row = { date: r.date as string, mrr: Number(r.mrr) || 0 }
+      if (list) list.push(row)
+      else mdByInstance.set(r.instance_id, [row])
+    }
+    // Ground-truth committed MRR as of a month-end: sum across instances of each
+    // instance's latest snapshot on/before that date. Returns null when NO
+    // instance has a snapshot in range (then we keep the raw reconstruction).
+    const trueTotalAsOf = (monthEndStr: string): number | null => {
+      let sum = 0
+      let any = false
+      for (const list of mdByInstance.values()) {
+        let val: number | null = null
+        for (const row of list) {
+          if (row.date <= monthEndStr) val = row.mrr
+          else break
+        }
+        if (val !== null) { sum += val; any = true }
+      }
+      return any ? sum : null
+    }
+
     // Generate 12 months of data
     const monthlyData: MonthlyDataPoint[] = []
     const groupTotals = new Map<string, { total: number; color: string }>()
+    // Category → color, resolved as we go; folded into groupTotals after scaling.
+    const groupColor = new Map<string, string>()
 
     // Track category coverage across all months (use last month as representative)
     let lastMonthCategorizedMRR = 0
@@ -272,12 +311,7 @@ export async function GET(request: NextRequest) {
         totalMRR += monthlyAmount
 
         // Track color for this group (use category color when available)
-        if (!groupTotals.has(resolvedName)) {
-          groupTotals.set(resolvedName, { total: 0, color: resolvedColor })
-        } else if (resolvedColor && !groupTotals.get(resolvedName)!.color) {
-          groupTotals.get(resolvedName)!.color = resolvedColor
-        }
-        groupTotals.get(resolvedName)!.total += monthlyAmount
+        if (resolvedColor && !groupColor.get(resolvedName)) groupColor.set(resolvedName, resolvedColor)
       })
 
       // Add recurring billable items active during this month
@@ -288,12 +322,7 @@ export async function GET(request: NextRequest) {
         totalMRR += item.monthlyMrr
         categorizedMRR += item.categoryName !== 'Uncategorized' ? item.monthlyMrr : 0
 
-        if (!groupTotals.has(item.categoryName)) {
-          groupTotals.set(item.categoryName, { total: 0, color: item.categoryColor })
-        } else if (item.categoryColor && !groupTotals.get(item.categoryName)!.color) {
-          groupTotals.get(item.categoryName)!.color = item.categoryColor
-        }
-        groupTotals.get(item.categoryName)!.total += item.monthlyMrr
+        if (item.categoryColor && !groupColor.get(item.categoryName)) groupColor.set(item.categoryName, item.categoryColor)
       })
 
       // Add domain recurring revenue active during this month
@@ -306,22 +335,41 @@ export async function GET(request: NextRequest) {
         const groupName = 'Domains'
         groupMRR[groupName] = (groupMRR[groupName] || 0) + monthlyMrr
         totalMRR += monthlyMrr
-
-        if (!groupTotals.has(groupName)) {
-          groupTotals.set(groupName, { total: 0, color: '#06B6D4' })
-        }
-        groupTotals.get(groupName)!.total += monthlyMrr
+        if (!groupColor.get(groupName)) groupColor.set(groupName, '#06B6D4')
       })
 
-      // Use last month for category coverage calculation
+      // Use last month for category coverage calculation. Computed pre-scaling —
+      // scaling is uniform so the categorized/total ratio is unchanged.
       if (i === 11) {
         lastMonthCategorizedMRR = categorizedMRR
         lastMonthTotalMRR = totalMRR
       }
 
+      // Anchor the month TOTAL to metrics_daily (ground truth) and scale every
+      // category proportionally, so the line reconciles exactly with the daily-MRR
+      // chart and the live KPI. Cancelled hosting/domains and other reconstruction
+      // gaps are absorbed into the total instead of silently missing. When no
+      // snapshot exists for the month, keep the raw reconstruction.
+      const meY = monthEnd.getFullYear()
+      const meM = String(monthEnd.getMonth() + 1).padStart(2, '0')
+      const meD = String(monthEnd.getDate()).padStart(2, '0')
+      const trueTotal = trueTotalAsOf(`${meY}-${meM}-${meD}`)
+      const factor = (trueTotal !== null && totalMRR > 0) ? trueTotal / totalMRR : 1
+      const finalTotal = (trueTotal !== null && totalMRR > 0) ? trueTotal : totalMRR
+      for (const name of Object.keys(groupMRR)) {
+        const scaled = groupMRR[name] * factor
+        groupMRR[name] = scaled
+        const existing = groupTotals.get(name)
+        if (!existing) groupTotals.set(name, { total: scaled, color: groupColor.get(name) || '' })
+        else {
+          existing.total += scaled
+          if (!existing.color && groupColor.get(name)) existing.color = groupColor.get(name)!
+        }
+      }
+
       monthlyData.push({
         month: monthKey,
-        total: Math.round(totalMRR * 100) / 100,
+        total: Math.round(finalTotal * 100) / 100,
         groups: Object.fromEntries(
           Object.entries(groupMRR).map(([k, v]) => [k, Math.round(v * 100) / 100])
         ),
