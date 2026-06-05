@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       status: string
       registrationdate: string | null
       expirydate: string | null
+      nextduedate: string | null
       recurringamount: number | null
       donotrenew: number | boolean | null
     }> = []
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       while (true) {
         const { data: page, error: pageError } = await supabase
           .from('whmcs_domains')
-          .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, recurringamount, donotrenew')
+          .select('whmcs_id, client_id, domain, status, registrationdate, expirydate, nextduedate, recurringamount, donotrenew')
           .in('instance_id', instanceIds)
           .range(offset, offset + 999)
         if (pageError) {
@@ -163,6 +164,17 @@ export async function GET(request: NextRequest) {
     // status is restricted to the selected period using expirydate as the
     // "left the base" timestamp — so cancelled/expired counts answer
     // "how many in this period" rather than "all history".
+    // Departure date for a non-Active domain: expirydate when set, else
+    // nextduedate (the renewal-due proxy). ~50% of Cancelled domains here have a
+    // NULL expirydate; without the fallback they'd be invisible in this period
+    // breakdown and the lost-by-year chart below. Mirrors the cancelled-hosting
+    // nextduedate proxy used elsewhere.
+    const departureDate = (d: { expirydate: string | null; nextduedate: string | null }): string | null => {
+      if (d.expirydate && d.expirydate > '0001-01-01') return d.expirydate
+      if (d.nextduedate && d.nextduedate > '0001-01-01') return d.nextduedate
+      return null
+    }
+
     const periodStartStr = startDate.toISOString().split('T')[0]
     const periodEndStr = endDate.toISOString().split('T')[0]
     const statusCounts = new Map<string, number>()
@@ -172,8 +184,9 @@ export async function GET(request: NextRequest) {
         statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
         return
       }
-      if (!d.expirydate) return
-      if (d.expirydate < periodStartStr || d.expirydate > periodEndStr) return
+      const ref = departureDate(d)
+      if (!ref) return
+      if (ref < periodStartStr || ref > periodEndStr) return
       statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
     })
 
@@ -225,10 +238,11 @@ export async function GET(request: NextRequest) {
         if (!d.registrationdate) return false
         const regDate = new Date(d.registrationdate)
         if (regDate > endOfYear) return false // not yet registered
-        // For past years: count if expiry is after end of year
+        // For past years: count if expiry (or nextduedate proxy) is after end of year
         if (year < currentYear) {
-          if (!d.expirydate) return false
-          const expDate = new Date(d.expirydate)
+          const ref = departureDate(d)
+          if (!ref) return false
+          const expDate = new Date(ref)
           return expDate > endOfYear
         }
         // For current year: count if currently active
@@ -237,8 +251,9 @@ export async function GET(request: NextRequest) {
 
       const lost = allDomains.filter(d => {
         if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
-        if (!d.expirydate) return false
-        const expDate = new Date(d.expirydate)
+        const ref = departureDate(d)
+        if (!ref) return false
+        const expDate = new Date(ref)
         return expDate >= startOfYear && expDate <= endOfYear
       }).length
 
@@ -264,7 +279,7 @@ export async function GET(request: NextRequest) {
 
     // Enrich expiring domains with client names
     const expiringClientIds = [...new Set(expiringRaw.map(d => d.client_id).filter(Boolean))]
-    let expiringClientsMap: Record<number, string> = {}
+    const expiringClientsMap: Record<number, string> = {}
     if (expiringClientIds.length > 0) {
       const { data: expiringClients } = await supabase
         .from('whmcs_clients')
