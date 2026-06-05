@@ -24,6 +24,13 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.15.0',
+    date: '2026-06-05',
+    changes: [
+      { type: 'improvement', text: 'changelog.entries.v2150.healthScoreProportional' },
+    ],
+  },
+  {
     version: '2.14.0',
     date: '2026-06-05',
     changes: [

@@ -11,37 +11,67 @@ export function HealthScore({ metrics }: HealthScoreProps) {
   const { t } = useTranslation()
 
   const { score, label, color, bgColor, factors } = useMemo(() => {
-    let score = 70 // Base — a stable business starts at "good"
-
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
     const factors: { label: string; impact: number; good: boolean }[] = []
 
-    // MRR growth (±15)
+    // Proportional "what remains" model: each factor moves the score in
+    // proportion to how much was lost vs retained — no flat cliff buckets — so a
+    // small dip costs little and a large loss costs more, but bounded. The worst
+    // realistic case floors near ~22 instead of collapsing toward zero.
+    let score = 100
+
+    // MRR momentum — decline penalised in proportion (full weight at -25%),
+    // growth rewarded (full at +25%).
     const mrrChange = metrics.mrr.mrr_change ?? 0
-    if (mrrChange > 10) { score += 15; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 15, good: true }) }
-    else if (mrrChange > 0) { score += 8; factors.push({ label: t('dashboard.health.mrrGrowth'), impact: 8, good: true }) }
-    else if (mrrChange < -10) { score -= 20; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -20, good: false }) }
-    else if (mrrChange < 0) { score -= 8; factors.push({ label: t('dashboard.health.mrrDecline'), impact: -8, good: false }) }
+    const fMrr = mrrChange >= 0
+      ? clamp(mrrChange / 25, 0, 1) * 10
+      : -clamp(-mrrChange / 25, 0, 1) * 25
+    score += fMrr
+    factors.push({
+      label: t(mrrChange >= 0 ? 'dashboard.health.mrrGrowth' : 'dashboard.health.mrrDecline'),
+      impact: Math.round(fMrr), good: fMrr >= 0,
+    })
 
-    // Churn rate (±15)
+    // Churn — penalty proportional to the rate (full weight at 30%); a small
+    // bonus when retention is strong (≤2%).
     const churnRate = metrics.churn.churn_rate ?? 0
-    if (churnRate <= 2) { score += 10; factors.push({ label: t('dashboard.health.lowChurn'), impact: 10, good: true }) }
-    else if (churnRate <= 5) { score += 0; factors.push({ label: t('dashboard.health.moderateChurn'), impact: 0, good: true }) }
-    else if (churnRate > 10) { score -= 20; factors.push({ label: t('dashboard.health.highChurn'), impact: -20, good: false }) }
-    else { score -= 10; factors.push({ label: t('dashboard.health.elevatedChurn'), impact: -10, good: false }) }
+    const fChurn = churnRate <= 2 ? 5 : -clamp(churnRate / 30, 0, 1) * 22
+    score += fChurn
+    factors.push({
+      label: t(
+        churnRate <= 2 ? 'dashboard.health.lowChurn'
+        : churnRate <= 5 ? 'dashboard.health.moderateChurn'
+        : churnRate <= 10 ? 'dashboard.health.elevatedChurn'
+        : 'dashboard.health.highChurn'
+      ),
+      impact: Math.round(fChurn), good: fChurn >= 0,
+    })
 
-    // Client growth (±10)
+    // Client base — loss penalised in proportion (full weight at -40%), growth
+    // rewarded (full at +20%).
     const clientChange = metrics.clients.active_change ?? 0
-    if (clientChange > 5) { score += 10; factors.push({ label: t('dashboard.health.clientGrowth'), impact: 10, good: true }) }
-    else if (clientChange > 0) { score += 5; factors.push({ label: t('dashboard.health.clientGrowth'), impact: 5, good: true }) }
-    else if (clientChange < -5) { score -= 15; factors.push({ label: t('dashboard.health.clientLoss'), impact: -15, good: false }) }
+    const fClients = clientChange >= 0
+      ? clamp(clientChange / 20, 0, 1) * 8
+      : -clamp(-clientChange / 40, 0, 1) * 16
+    score += fClients
+    factors.push({
+      label: t(clientChange >= 0 ? 'dashboard.health.clientGrowth' : 'dashboard.health.clientLoss'),
+      impact: Math.round(fClients), good: fClients >= 0,
+    })
 
-    // Overdue invoices (±5)
-    const overdue = metrics.invoices.overdue_count ?? 0
-    if (overdue > 10) { score -= 10; factors.push({ label: t('dashboard.health.manyOverdue'), impact: -10, good: false }) }
-    else if (overdue > 0) { score -= 3; factors.push({ label: t('dashboard.health.manyOverdue'), impact: -3, good: false }) }
-    else { score += 5; factors.push({ label: t('dashboard.health.noOverdue'), impact: 5, good: true }) }
+    // Overdue invoices — amount-aware: scaled by the overdue amount relative to
+    // MRR (full weight at 2 months of MRR), not by invoice count.
+    const overdueAmount = metrics.invoices.amount_overdue ?? 0
+    const mrrValue = metrics.mrr.mrr || 0
+    const overdueRatio = mrrValue > 0 ? overdueAmount / mrrValue : 0
+    const fOverdue = overdueAmount <= 0 ? 3 : -clamp(overdueRatio / 2, 0, 1) * 15
+    score += fOverdue
+    factors.push({
+      label: t(overdueAmount <= 0 ? 'dashboard.health.noOverdue' : 'dashboard.health.manyOverdue'),
+      impact: Math.round(fOverdue), good: fOverdue >= 0,
+    })
 
-    score = Math.max(0, Math.min(100, score))
+    score = Math.max(0, Math.min(100, Math.round(score)))
 
     const label = score >= 80 ? t('dashboard.health.excellent') :
                   score >= 60 ? t('dashboard.health.good') :

@@ -852,6 +852,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2150: {
+          healthScoreProportional: 'El score de Salud del Negocio ahora es proporcional: cada factor (evolución del MRR, churn, base de clientes, facturas vencidas) mueve la puntuación en proporción a lo que realmente se ha perdido frente a lo que queda, en lugar de umbrales planos de todo-o-nada que se apilaban hacia cero. Las facturas vencidas ahora pesan por importe (relativo al MRR), no solo por número. El resultado es una cifra más justa y menos alarmista que sigue reflejando la gravedad real',
+        },
         v2140: {
           expansionContractionDrilldown: 'Las píldoras de Expansión y Contracción en Movimiento de MRR ahora son clicables: ábrelas para ver los servicios exactos que crecieron o se redujeron, cada uno con su precio mensual anterior → nuevo. La Contracción también se muestra ahora correctamente en la tarjeta',
         },

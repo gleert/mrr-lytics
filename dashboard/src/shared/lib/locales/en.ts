@@ -855,6 +855,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2150: {
+          healthScoreProportional: 'The Business Health score is now proportional: each factor (MRR momentum, churn, client base, overdue invoices) moves the score in proportion to how much was actually lost vs retained, instead of flat all-or-nothing thresholds that stacked toward zero. Overdue invoices are now weighted by amount (relative to MRR), not just the invoice count. The result is a fairer, less alarmist number that still reflects real severity',
+        },
         v2140: {
           expansionContractionDrilldown: 'The Expansion and Contraction pills in MRR Movement are now clickable: open them to see the exact services that grew or shrank, each with its old → new monthly price. Contraction is also now correctly surfaced on the card',
         },
