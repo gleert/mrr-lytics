@@ -164,9 +164,12 @@ export async function GET(request: Request) {
 
       // Compute status.
       // invoice_action = 4 → Recurring in WHMCS. recur is the interval (not a flag).
-      const isRecurring = (item.invoice_action ?? 0) === 4
+      // Require invoicecount > 0 to match the live MRR KPI (mrr-live/active-set,
+      // which gate on .gt('invoicecount', 0)) so total_mrr reconciles with it: a
+      // recurring item set up but never yet invoiced contributes 0 MRR.
       const recurfor = item.recurfor ?? 0
       const invoicecount = item.invoicecount ?? 0
+      const isRecurring = (item.invoice_action ?? 0) === 4 && invoicecount > 0
       let status: 'active' | 'completed' | 'one_time'
       if (isRecurring && (recurfor === 0 || invoicecount < recurfor)) {
         status = 'active'

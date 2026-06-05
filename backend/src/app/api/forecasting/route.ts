@@ -7,7 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { parseDateRange, applyHistoryLimit } from '@/utils/date-helpers'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { getRevenueInvoiceStatuses } from '@/lib/tenants/settings'
-import { committedMrrForMonth, buildBillableWithStart } from '@/lib/metrics/committed-mrr'
+import { committedMrrForMonth, buildBillableWithStart, applyDerivedTerminations } from '@/lib/metrics/committed-mrr'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_billable_items')
-        .select('amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
+        .select('instance_id, whmcs_id, amount, recurcycle, recur, invoicecount, recurfor, duedate, invoice_action, cancelled_at')
         .in('instance_id', instanceIds)
         .gt('invoicecount', 0)
         .limit(10000),
@@ -480,7 +480,12 @@ export async function GET(request: NextRequest) {
       billable: buildBillableWithStart(billableAll ?? []),
       domains: activeDomains ?? [],
     }
-    const reconNowTs = Date.now()
+    const reconNow = new Date()
+    const reconNowTs = reconNow.getTime()
+    // Recover real churn dates for undated cancellations so the historical line
+    // matches the daily-MRR chart (and the dashboard MRR-trend) instead of
+    // dropping those items from every past month. Same mechanism as mrr-trend.
+    await applyDerivedTerminations(supabase, reconData.billable, reconNow)
 
     // Invoice-based per-period series, kept only to drive the projection rate /
     // growth acceleration for quarter/year granularity (preserves prior behavior).

@@ -11,6 +11,7 @@ import {
   hostingActiveInMonth,
   domainActiveInMonth,
   domainMonthlyMrr,
+  applyDerivedTerminations,
 } from '@/lib/metrics/committed-mrr'
 
 export const dynamic = 'force-dynamic'
@@ -179,6 +180,9 @@ export async function GET(request: NextRequest) {
       cancelledAt: Date | null
       dueDate: Date
       monthlyMrr: number
+      instance_id?: string
+      whmcs_id?: number
+      derivedTerm?: Date | null
       categoryName: string
       categoryColor: string
     }
@@ -200,12 +204,20 @@ export async function GET(request: NextRequest) {
         cancelledAt: item.cancelled_at ? new Date(item.cancelled_at) : null,
         dueDate,
         monthlyMrr,
+        instance_id: item.instance_id,
+        whmcs_id: item.whmcs_id,
         categoryName: cat?.name ?? 'Uncategorized',
         categoryColor: cat?.color ?? '',
       }]
     })
 
-    const nowTs = Date.now()
+    const now = new Date()
+    const nowTs = now.getTime()
+    // Recover real churn dates for undated cancellations (e.g. the €5125 Magento
+    // retainer) so the by-category line keeps them active up to their true churn
+    // day and matches the daily-MRR chart, instead of dropping them from every
+    // past month via the coarse future-lapse guard.
+    await applyDerivedTerminations(supabase, billableWithStart, now)
 
     // Generate 12 months of data
     const monthlyData: MonthlyDataPoint[] = []
