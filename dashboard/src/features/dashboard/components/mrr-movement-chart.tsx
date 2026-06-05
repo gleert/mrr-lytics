@@ -11,7 +11,7 @@ export function MRRMovementChart() {
   const { t } = useTranslation()
   const { data, isLoading } = useMRRMovement(6)
   const { formatCurrency, formatCurrencyWithSign } = useCurrency()
-  const [drilldown, setDrilldown] = React.useState<'new' | 'churned' | null>(null)
+  const [drilldown, setDrilldown] = React.useState<'new' | 'churned' | 'expansion' | 'contraction' | null>(null)
 
   const latestMonth = data?.movement_data?.[data.movement_data.length - 1]
 
@@ -65,10 +65,9 @@ export function MRRMovementChart() {
         </div>
 
         {/* Right side - Movement pills (50%).
-            Expansion/contraction are hidden when 0 — they're hardcoded to 0
-            for now because we don't snapshot per-service prices, so the
-            empty pills would just confuse. When historical price tracking
-            lands they'll appear automatically. */}
+            Expansion/contraction are hidden when 0. They only carry a value in
+            events mode (the observed-snapshot system tracks per-service price
+            changes); proxy-mode windows report 0 and the pills stay hidden. */}
         <div className="lg:w-1/2 flex items-center">
           <div className="flex flex-wrap justify-end gap-2 sm:gap-3 w-full">
             {/* New MRR — hidden when 0 */}
@@ -109,26 +108,44 @@ export function MRRMovementChart() {
               </button>
             )}
 
-            {/* Expansion — only shown when populated */}
+            {/* Expansion — only shown when populated (events mode) */}
             {latestMonth.expansion_mrr > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg w-full sm:w-auto sm:min-w-[14rem]">
+              <button
+                type="button"
+                onClick={() => setDrilldown('expansion')}
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left w-full sm:w-auto sm:min-w-[14rem]"
+                title={t('dashboard.mrrMovementItems.openHint')}
+              >
                 <div className="flex items-center gap-2">
                   <Icon name="trending_up" size="sm" />
                   <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.expansion')}</span>
                 </div>
-                <span className="font-bold text-sm sm:text-base">+{formatAmount(latestMonth.expansion_mrr)}</span>
-              </div>
+                <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                  +{formatAmount(latestMonth.expansion_mrr)}
+                  <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+                </span>
+              </button>
             )}
 
-            {/* Contraction — only shown when populated */}
-            {latestMonth.contraction_mrr > 0 && (
-              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg w-full sm:w-auto sm:min-w-[14rem]">
+            {/* Contraction — only shown when populated (events mode).
+                contraction_mrr is a NEGATIVE magnitude (sum of negative deltas),
+                so the pill shows when it's < 0. */}
+            {latestMonth.contraction_mrr < 0 && (
+              <button
+                type="button"
+                onClick={() => setDrilldown('contraction')}
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/20 text-white font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left w-full sm:w-auto sm:min-w-[14rem]"
+                title={t('dashboard.mrrMovementItems.openHint')}
+              >
                 <div className="flex items-center gap-2">
                   <Icon name="trending_down" size="sm" />
                   <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.contraction')}</span>
                 </div>
-                <span className="font-bold text-sm sm:text-base">-{formatAmount(latestMonth.contraction_mrr)}</span>
-              </div>
+                <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                  -{formatAmount(latestMonth.contraction_mrr)}
+                  <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+                </span>
+              </button>
             )}
           </div>
         </div>

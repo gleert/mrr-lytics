@@ -2,20 +2,26 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/shared/components/ui/button'
 import { Icon } from '@/shared/components/ui/icon'
 import { useCurrency } from '@/shared/hooks/use-currency'
-import { useMRRMovementItems, type MRRMovementItem } from '../hooks/use-metrics'
+import { useMRRMovementItems, type MRRMovementItem, type MRRMovementItemType } from '../hooks/use-metrics'
 
 interface MRRMovementItemsModalProps {
   isOpen: boolean
   onClose: () => void
-  type: 'new' | 'churned' | null
+  type: MRRMovementItemType | null
   month: string | null
 }
 
-function ItemRow({ item, type }: { item: MRRMovementItem; type: 'new' | 'churned' }) {
+// new/expansion are positive (green, +); churned/contraction are negative (red, -).
+const isPositiveType = (type: MRRMovementItemType) => type === 'new' || type === 'expansion'
+
+function ItemRow({ item, type }: { item: MRRMovementItem; type: MRRMovementItemType }) {
   const { formatCurrency } = useCurrency()
 
-  const amountClass = type === 'new' ? 'text-success' : 'text-error'
-  const amountPrefix = type === 'new' ? '+' : '-'
+  const positive = isPositiveType(type)
+  const amountClass = positive ? 'text-success' : 'text-error'
+  const amountPrefix = positive ? '+' : '-'
+  const showResize = (type === 'expansion' || type === 'contraction')
+    && item.mrr_before != null && item.mrr_after != null
   const kindColor = item.kind === 'hosting'
     ? 'bg-info/10 text-info'
     : item.kind === 'domain'
@@ -44,7 +50,13 @@ function ItemRow({ item, type }: { item: MRRMovementItem; type: 'new' | 'churned
         <p className={`text-sm font-semibold tabular-nums ${amountClass}`}>
           {amountPrefix}{formatCurrency(item.monthly_amount)}
         </p>
-        <p className="text-[11px] text-muted">{item.billing_cycle}</p>
+        {showResize ? (
+          <p className="text-[11px] text-muted tabular-nums">
+            {formatCurrency(item.mrr_before!)} → {formatCurrency(item.mrr_after!)}
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted">{item.billing_cycle}</p>
+        )}
       </div>
     </div>
   )
@@ -57,9 +69,13 @@ export function MRRMovementItemsModal({ isOpen, onClose, type, month }: MRRMovem
 
   if (!isOpen || !type) return null
 
-  const title = type === 'new'
-    ? t('dashboard.mrrMovementItems.titleNew')
-    : t('dashboard.mrrMovementItems.titleChurned')
+  const positive = isPositiveType(type)
+  const title = {
+    new: t('dashboard.mrrMovementItems.titleNew'),
+    churned: t('dashboard.mrrMovementItems.titleChurned'),
+    expansion: t('dashboard.mrrMovementItems.titleExpansion'),
+    contraction: t('dashboard.mrrMovementItems.titleContraction'),
+  }[type]
 
   const monthLabel = month
     ? (() => {
@@ -115,8 +131,8 @@ export function MRRMovementItemsModal({ isOpen, onClose, type, month }: MRRMovem
           {data && (
             <div className="text-sm">
               <span className="text-muted">{t('dashboard.mrrMovementItems.total')}: </span>
-              <span className={`font-semibold tabular-nums ${type === 'new' ? 'text-success' : 'text-error'}`}>
-                {type === 'new' ? '+' : '-'}{formatCurrency(data.total)}
+              <span className={`font-semibold tabular-nums ${positive ? 'text-success' : 'text-error'}`}>
+                {positive ? '+' : '-'}{formatCurrency(data.total)}
               </span>
               <span className="text-muted ml-2">· {t('dashboard.mrrMovementItems.count', { count: data.count })}</span>
             </div>

@@ -512,6 +512,8 @@ export const es = {
       mrrMovementItems: {
         titleNew: 'Nuevo MRR — desglose',
         titleChurned: 'MRR perdido — desglose',
+        titleExpansion: 'Expansión de MRR — desglose',
+        titleContraction: 'Contracción de MRR — desglose',
         empty: 'Sin movimientos en este mes',
         total: 'Total',
         count_one: '{{count}} servicio',
@@ -850,6 +852,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2140: {
+          expansionContractionDrilldown: 'Las píldoras de Expansión y Contracción en Movimiento de MRR ahora son clicables: ábrelas para ver los servicios exactos que crecieron o se redujeron, cada uno con su precio mensual anterior → nuevo. La Contracción también se muestra ahora correctamente en la tarjeta',
+        },
         v2130: {
           dailyMrrReal: 'El gráfico "MRR Comprometido Diario" ahora muestra el MRR comprometido real registrado cada día, con cada movimiento en su fecha exacta. Antes reconstruía la base de clientes actual hacia atrás, lo que no podía datar bien las cancelaciones: inflaba el histórico y concentraba la caída en el último día (un retainer cancelado seguía contando hasta hoy en vez de en su fecha real). Ahora la línea es fiel al run-rate verdadero',
         },

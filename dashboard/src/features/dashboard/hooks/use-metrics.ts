@@ -252,6 +252,8 @@ export function useMRRTrend() {
   })
 }
 
+export type MRRMovementItemType = 'new' | 'churned' | 'expansion' | 'contraction'
+
 export interface MRRMovementItem {
   kind: 'hosting' | 'billable' | 'domain'
   whmcs_id: number
@@ -262,21 +264,24 @@ export interface MRRMovementItem {
   billing_cycle: string
   reference_date: string | null
   instance_id: string
+  // Only present for expansion/contraction.
+  mrr_before?: number
+  mrr_after?: number
 }
 
 export interface MRRMovementItemsResponse {
   items: MRRMovementItem[]
   total: number
   count: number
-  type: 'new' | 'churned'
+  type: MRRMovementItemType
   month: string
 }
 
 /**
- * Hook to fetch the detailed items behind a New/Churned MRR pill.
+ * Hook to fetch the detailed items behind a New/Churned/Expansion/Contraction MRR pill.
  * Disabled when type is null so we only fetch when the modal opens.
  */
-export function useMRRMovementItems(type: 'new' | 'churned' | null, month: string | null) {
+export function useMRRMovementItems(type: MRRMovementItemType | null, month: string | null) {
   const { currentInstance, getSelectedInstanceIds, allInstances } = useFilters()
   const instanceKey = currentInstance?.instance_id || 'all'
 

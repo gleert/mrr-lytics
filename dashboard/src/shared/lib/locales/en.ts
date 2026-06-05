@@ -515,6 +515,8 @@ export const en = {
       mrrMovementItems: {
         titleNew: 'New MRR — breakdown',
         titleChurned: 'Churned MRR — breakdown',
+        titleExpansion: 'Expansion MRR — breakdown',
+        titleContraction: 'Contraction MRR — breakdown',
         empty: 'No movement this month',
         total: 'Total',
         count_one: '{{count}} service',
@@ -853,6 +855,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2140: {
+          expansionContractionDrilldown: 'The Expansion and Contraction pills in MRR Movement are now clickable: open them to see the exact services that grew or shrank, each with its old → new monthly price. Contraction is also now correctly surfaced on the card',
+        },
         v2130: {
           dailyMrrReal: 'The "Daily Committed MRR" chart now shows the real committed MRR recorded each day, with every movement on its exact date. It previously reconstructed today\'s customer base backward, which could not date cancellations correctly — it inflated the history and dumped the drop on the last day (a cancelled retainer kept counting until today instead of on its real date). The line is now faithful to the true run-rate',
         },

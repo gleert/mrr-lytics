@@ -8,6 +8,8 @@ import { resolveMonthlyMovement } from '@/lib/metrics/movement-hybrid'
 
 export const dynamic = 'force-dynamic'
 
+type MovementType = 'new' | 'churned' | 'expansion' | 'contraction'
+
 interface MovementItem {
   kind: 'hosting' | 'billable' | 'domain'
   whmcs_id: number
@@ -18,18 +20,24 @@ interface MovementItem {
   billing_cycle: string
   reference_date: string | null
   instance_id: string
+  // Only set for expansion/contraction so the UI can show the price change.
+  mrr_before?: number
+  mrr_after?: number
 }
 
 /**
  * GET /api/metrics/mrr-movement/items
  *
  * Returns the individual hosting/billable items that contributed to the
- * "new" or "churned" MRR pill for a given month. Same active/inactive
- * logic as /api/metrics/mrr-movement.
+ * "new" / "churned" / "expansion" / "contraction" MRR pill for a given month.
+ * new/churned use the same active/inactive logic as /api/metrics/mrr-movement;
+ * expansion/contraction only exist in events mode (the proxy path can't observe
+ * per-service price changes), so for those types only events-mode instances
+ * contribute.
  *
  * Query params:
  *   - instance_ids: comma-separated
- *   - type: 'new' | 'churned' (required)
+ *   - type: 'new' | 'churned' | 'expansion' | 'contraction' (required)
  *   - month: 'YYYY-MM' (default: current month)
  */
 export async function GET(request: NextRequest) {
@@ -41,12 +49,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const instanceIdsParam = searchParams.get('instance_ids')
     const instanceIdParam = searchParams.get('instance_id')
-    const typeParam = (searchParams.get('type') || 'new') as 'new' | 'churned'
+    const typeParam = (searchParams.get('type') || 'new') as MovementType
     const monthParam = searchParams.get('month') // YYYY-MM, optional
 
-    if (typeParam !== 'new' && typeParam !== 'churned') {
-      throw new Error('type must be "new" or "churned"')
+    const VALID_TYPES: MovementType[] = ['new', 'churned', 'expansion', 'contraction']
+    if (!VALID_TYPES.includes(typeParam)) {
+      throw new Error('type must be "new", "churned", "expansion" or "contraction"')
     }
+    // The proxy path can only resolve new/churned (it has no per-service price
+    // history). expansion/contraction come exclusively from observed events.
+    const proxyEligible = typeParam === 'new' || typeParam === 'churned'
 
     let instanceIds: string[] = []
     if (instanceIdsParam) instanceIds = instanceIdsParam.split(',').filter(id => id.trim())
@@ -218,6 +230,9 @@ export async function GET(request: NextRequest) {
     // monthly_amount stays rounded for display only.
     let rawTotal = 0
 
+    // Proxy path: only new/churned. For expansion/contraction these loops are
+    // skipped entirely (proxy instances contribute nothing — see proxyEligible).
+    if (proxyEligible) {
     ;(hostingRes.data ?? []).forEach(s => {
       if (!proxySet.has(s.instance_id)) return
       const mrr = toMonthlyAmount(Number(s.amount) || 0, s.billingcycle || '')
@@ -287,11 +302,18 @@ export async function GET(request: NextRequest) {
         instance_id: d.instance_id,
       })
     })
+    } // end proxyEligible
 
     // Events-mode instances: source items from the observed events.
-    // ?type=new  -> event_type 'new' ONLY (reactivation excluded by design)
-    // ?type=churned -> event_type 'churn'
-    const wantTypes = typeParam === 'new' ? ['new'] : ['churn']
+    // ?type=new         -> event_type 'new' ONLY (reactivation excluded by design)
+    // ?type=churned     -> event_type 'churn'
+    // ?type=expansion   -> event_type 'expansion'
+    // ?type=contraction -> event_type 'contraction'
+    const wantTypes =
+      typeParam === 'new' ? ['new']
+      : typeParam === 'churned' ? ['churn']
+      : typeParam === 'expansion' ? ['expansion']
+      : ['contraction']
     for (const decision of eventsById.values()) {
       for (const ev of decision.events ?? []) {
         if (!wantTypes.includes(ev.event_type)) continue
@@ -319,8 +341,15 @@ export async function GET(request: NextRequest) {
           billing_cycle = 'annually'
         }
 
-        const monthly = typeParam === 'new' ? ev.mrr_after : ev.mrr_before
+        // new -> full new MRR; churn -> full lost MRR; expansion/contraction ->
+        // the delta magnitude (so the list total reconciles with the pill, which
+        // sums signed deltas). |delta| is always positive here.
+        const monthly =
+          typeParam === 'new' ? ev.mrr_after
+          : typeParam === 'churned' ? ev.mrr_before
+          : Math.abs(ev.mrr_delta)
         rawTotal += monthly
+        const isResize = typeParam === 'expansion' || typeParam === 'contraction'
         items.push({
           kind,
           whmcs_id: ev.entity_id,
@@ -331,6 +360,10 @@ export async function GET(request: NextRequest) {
           billing_cycle,
           reference_date: ev.effective_date ?? ev.observed_date,
           instance_id: instId,
+          ...(isResize ? {
+            mrr_before: Math.round(ev.mrr_before * 100) / 100,
+            mrr_after: Math.round(ev.mrr_after * 100) / 100,
+          } : {}),
         })
       }
     }
