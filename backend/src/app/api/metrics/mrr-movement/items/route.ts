@@ -5,6 +5,7 @@ import { getAuthContext } from '@/lib/auth'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { resolveMonthlyMovement } from '@/lib/metrics/movement-hybrid'
+import { resolveDerivedTerminations, type UndatedCandidate } from '@/lib/metrics/derived-termination'
 
 export const dynamic = 'force-dynamic'
 
@@ -151,12 +152,18 @@ export async function GET(request: NextRequest) {
       return amount / divisor
     }
 
+    // Recovered churn dates for undated cancellations (metrics_daily step match,
+    // see lib/metrics/derived-termination.ts). Mirrors /api/metrics/mrr-movement
+    // so the churned-items list dates the same entities in the same month.
+    // Keyed `${instance_id}:${type}:${whmcs_id}`; populated below.
+    const derivedTerm = new Map<string, Date>()
+
     // Mirrors wasActiveAt in /api/metrics/mrr-movement: a Cancelled service with
     // no terminationdate is dated to its nextduedate (cancellation proxy) at past
     // observation points, but never counts under `strict` (the current-time
     // point) so the breakdown total reconciles with the live MRR KPI.
     const hostingActiveAt = (
-      s: { regdate: string | null; nextduedate: string | null; terminationdate: string | null; domainstatus: string },
+      s: { instance_id: string; whmcs_id: number; regdate: string | null; nextduedate: string | null; terminationdate: string | null; domainstatus: string },
       date: Date,
       strict: boolean,
     ): boolean => {
@@ -166,6 +173,8 @@ export async function GET(request: NextRequest) {
       if (term && term <= date) return false
       if (term && term > date) return true
       if (['Active', 'Suspended'].includes(s.domainstatus)) return true
+      const dt = derivedTerm.get(`${s.instance_id}:hosting:${s.whmcs_id}`)
+      if (dt) return dt > date
       if (strict) return false
       const nextDue = s.nextduedate && s.nextduedate !== '0000-00-00' ? new Date(s.nextduedate) : null
       if (!nextDue) return false
@@ -178,7 +187,7 @@ export async function GET(request: NextRequest) {
     // accepts invoice_action=4 (used at the current-time observation point
     // so cancelled items show up as churned in the current month).
     const billableActiveAt = (
-      b: { duedate: string | null; invoicecount: number | null; recurcycle: string | null; recur: number | null; recurfor: number | null; cancelled_at: string | null; invoice_action?: number | null },
+      b: { instance_id: string; whmcs_id: number; duedate: string | null; invoicecount: number | null; recurcycle: string | null; recur: number | null; recurfor: number | null; cancelled_at: string | null; invoice_action?: number | null },
       date: Date,
       strict: boolean,
     ): boolean => {
@@ -195,6 +204,8 @@ export async function GET(request: NextRequest) {
         if (Math.floor(monthsDiff / cycleMonths) >= recurfor) return false
       }
       if (b.invoice_action === 4) return true
+      const dt = derivedTerm.get(`${b.instance_id}:billable:${b.whmcs_id}`)
+      if (dt) return dt > date
       if (strict) return false
       if (b.cancelled_at) return new Date(b.cancelled_at) > date
       return due >= date
@@ -211,17 +222,59 @@ export async function GET(request: NextRequest) {
     // registrationdate; 'Active' today counts; otherwise churned at expirydate
     // proxy; strict (current month) accepts only 'Active'.
     const domainActiveAt = (
-      d: { status: string | null; registrationdate: string | null; expirydate: string | null },
+      d: { instance_id: string; whmcs_id: number; status: string | null; registrationdate: string | null; expirydate: string | null },
       date: Date,
       strict: boolean,
     ): boolean => {
       const regDate = d.registrationdate && d.registrationdate > '0001-01-01' ? new Date(d.registrationdate) : null
       if (!regDate || regDate > date) return false
       if (d.status === 'Active') return true
+      const dt = derivedTerm.get(`${d.instance_id}:domain:${d.whmcs_id}`)
+      if (dt) return dt > date
       if (strict) return false
       const expDate = d.expirydate && d.expirydate > '0001-01-01' ? new Date(d.expirydate) : null
       if (!expDate) return false
       return expDate > date
+    }
+
+    // Populate derived churn dates for undated cancellations in the proxy set
+    // (same conditions as /api/metrics/mrr-movement), so a retainer that left on
+    // an undated day surfaces in the right month's churned-items list.
+    {
+      const candidates: UndatedCandidate[] = []
+      ;(billableRes.data ?? []).forEach(b => {
+        if (!proxySet.has(b.instance_id)) return
+        const mrr = toMonthlyAmount(Number(b.amount) || 0, b.recurcycle || '')
+        const due = b.duedate ? new Date(b.duedate) : null
+        if (mrr > 0 && b.invoice_action !== 4 && !b.cancelled_at && due && due > now) {
+          candidates.push({ instance_id: b.instance_id, key: `billable:${b.whmcs_id}`, mrr })
+        }
+      })
+      ;(hostingRes.data ?? []).forEach(s => {
+        if (!proxySet.has(s.instance_id)) return
+        const mrr = toMonthlyAmount(Number(s.amount) || 0, s.billingcycle || '')
+        const term = s.terminationdate && s.terminationdate !== '0000-00-00' ? new Date(s.terminationdate) : null
+        const nextDue = s.nextduedate && s.nextduedate !== '0000-00-00' ? new Date(s.nextduedate) : null
+        if (mrr > 0 && !['Active', 'Suspended'].includes(s.domainstatus) && !term && nextDue && nextDue > now) {
+          candidates.push({ instance_id: s.instance_id, key: `hosting:${s.whmcs_id}`, mrr })
+        }
+      })
+      ;(domainsRes.data ?? []).forEach(d => {
+        if (!proxySet.has(d.instance_id)) return
+        const mrr = domainMonthlyAmount(d)
+        const exp = d.expirydate && d.expirydate > '0001-01-01' ? new Date(d.expirydate) : null
+        if (mrr > 0 && d.status !== 'Active' && exp && exp > now) {
+          candidates.push({ instance_id: d.instance_id, key: `domain:${d.whmcs_id}`, mrr })
+        }
+      })
+      const resolved = await resolveDerivedTerminations(supabase, candidates, now)
+      for (const [k, v] of resolved) derivedTerm.set(k, v)
+    }
+
+    // 'YYYY-MM-DD' of a recovered churn date, or null when none was matched.
+    const derivedDateOf = (kind: string, instId: string, id: number): string | null => {
+      const d = derivedTerm.get(`${instId}:${kind}:${id}`)
+      return d ? d.toISOString().slice(0, 10) : null
     }
 
     const items: MovementItem[] = []
@@ -252,9 +305,9 @@ export async function GET(request: NextRequest) {
         description,
         monthly_amount: Math.round(mrr * 100) / 100,
         billing_cycle: s.billingcycle || '',
-        // Cancelled services often have no terminationdate; fall back to
-        // nextduedate so the churn row still shows a date.
-        reference_date: typeParam === 'new' ? s.regdate : (s.terminationdate || s.nextduedate),
+        // Cancelled services often have no terminationdate; prefer the recovered
+        // churn date, then fall back to nextduedate so the row still shows a date.
+        reference_date: typeParam === 'new' ? s.regdate : (derivedDateOf('hosting', s.instance_id, s.whmcs_id) || s.terminationdate || s.nextduedate),
         instance_id: s.instance_id,
       })
     })
@@ -276,7 +329,7 @@ export async function GET(request: NextRequest) {
         description: b.description || `Billable #${b.whmcs_id}`,
         monthly_amount: Math.round(mrr * 100) / 100,
         billing_cycle: b.recurcycle || '',
-        reference_date: typeParam === 'new' ? b.duedate : (b.cancelled_at || b.duedate),
+        reference_date: typeParam === 'new' ? b.duedate : (derivedDateOf('billable', b.instance_id, b.whmcs_id) || b.cancelled_at || b.duedate),
         instance_id: b.instance_id,
       })
     })
@@ -298,7 +351,7 @@ export async function GET(request: NextRequest) {
         description: d.domain || `Domain #${d.whmcs_id}`,
         monthly_amount: Math.round(mrr * 100) / 100,
         billing_cycle: 'annually',
-        reference_date: typeParam === 'new' ? d.registrationdate : d.expirydate,
+        reference_date: typeParam === 'new' ? d.registrationdate : (derivedDateOf('domain', d.instance_id, d.whmcs_id) || d.expirydate),
         instance_id: d.instance_id,
       })
     })

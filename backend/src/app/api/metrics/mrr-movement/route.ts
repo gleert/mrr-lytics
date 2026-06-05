@@ -6,6 +6,7 @@ import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { resolveMonthlyMovement, round2 } from '@/lib/metrics/movement-hybrid'
+import { resolveDerivedTerminations, type UndatedCandidate } from '@/lib/metrics/derived-termination'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,10 +93,17 @@ export async function GET(request: NextRequest) {
         .limit(10000),
       supabase
         .from('whmcs_domains')
-        .select('instance_id, recurringamount, registrationperiod, status, registrationdate, expirydate')
+        .select('instance_id, whmcs_id, recurringamount, registrationperiod, status, registrationdate, expirydate')
         .in('instance_id', instanceIds)
         .limit(10000),
     ])
+
+    // Derived termination dates for undated cancellations (see
+    // lib/metrics/derived-termination.ts). Populated below once `now` and the
+    // entity lists exist; the active-at closures read it by reference so they
+    // pick up the dates before the month loop runs. Keyed
+    // `${instance_id}:${type}:${id}`.
+    const derivedTerm = new Map<string, Date>()
 
     if (hostingError) {
       console.error('Hosting query error:', hostingError)
@@ -150,12 +158,16 @@ export async function GET(request: NextRequest) {
      * we never captured.
      */
     const billableActiveAt = (
-      item: { startDate: Date; cycleMonths: number; recurfor: number; invoiceAction: number; cancelledAt: Date | null; dueDate: Date },
+      item: { instance_id: string; whmcs_id: number; startDate: Date; cycleMonths: number; recurfor: number; invoiceAction: number; cancelledAt: Date | null; dueDate: Date },
       date: Date,
       strict: boolean,
     ): boolean => {
       if (!billableLifecycleActiveAt(item.startDate, item.recurfor, item.cycleMonths, date)) return false
       if (item.invoiceAction === 4) return true
+      // Undated cancellation with a recovered churn date (metrics_daily step):
+      // authoritative — overrides both the strict and the duedate-proxy paths.
+      const dt = derivedTerm.get(`${item.instance_id}:billable:${item.whmcs_id}`)
+      if (dt) return dt > date
       if (strict) return false
       if (item.cancelledAt) return item.cancelledAt > date
       return item.dueDate >= date
@@ -163,6 +175,7 @@ export async function GET(request: NextRequest) {
 
     type BillableItemMovement = {
       instance_id: string
+      whmcs_id: number
       startDate: Date
       cycleMonths: number
       recurfor: number
@@ -181,6 +194,7 @@ export async function GET(request: NextRequest) {
       startDate.setMonth(startDate.getMonth() - (item.invoicecount || 0) * cycleMonths)
       return [{
         instance_id: item.instance_id,
+        whmcs_id: item.whmcs_id,
         startDate,
         cycleMonths,
         recurfor: item.recurfor ?? 0,
@@ -225,6 +239,11 @@ export async function GET(request: NextRequest) {
       // No termination date: current Active/Suspended services were active.
       if (['Active', 'Suspended'].includes(service.domainstatus)) return true
 
+      // Undated cancellation with a recovered churn date (metrics_daily step):
+      // authoritative — overrides both the strict and the nextduedate-proxy paths.
+      const dt = derivedTerm.get(`${service.instance_id}:hosting:${service.id}`)
+      if (dt) return dt > date
+
       // Cancelled (or otherwise inactive) without a terminationdate.
       // At "now" it never counts (matches the live MRR KPI's Active-only rule).
       if (strict) return false
@@ -253,7 +272,7 @@ export async function GET(request: NextRequest) {
     //   - strict (current-time observation) only accepts 'Active', so the
     //     current month's ending total reconciles with the live MRR KPI.
     const domainActiveAt = (
-      domain: { status: string | null; registrationdate: string | null; expirydate: string | null },
+      domain: { instance_id: string; whmcs_id: number; status: string | null; registrationdate: string | null; expirydate: string | null },
       date: Date,
       strict: boolean,
     ): boolean => {
@@ -261,6 +280,9 @@ export async function GET(request: NextRequest) {
         ? new Date(domain.registrationdate) : null
       if (!regDate || regDate > date) return false
       if (domain.status === 'Active') return true
+      // Undated cancellation with a recovered churn date (metrics_daily step).
+      const dt = derivedTerm.get(`${domain.instance_id}:domain:${domain.whmcs_id}`)
+      if (dt) return dt > date
       if (strict) return false
       const expDate = domain.expirydate && domain.expirydate > '0001-01-01'
         ? new Date(domain.expirydate) : null
@@ -273,6 +295,37 @@ export async function GET(request: NextRequest) {
     const monthSources: Record<string, MonthSource> = {}
     const now = new Date()
     const asOf = now.toISOString().slice(0, 10)
+
+    // Recover churn dates for undated cancellations: entities inactive "now"
+    // with no real cancellation date and a proxy date still in the FUTURE (so
+    // the legacy proxy would treat them as active and never churn them). We
+    // match their amount to a unique metrics_daily step and inject that date
+    // into the active-at checks above. Mutates `derivedTerm` in place.
+    {
+      const candidates: UndatedCandidate[] = []
+      for (const item of billableWithStart) {
+        if (item.invoiceAction !== 4 && !item.cancelledAt && item.dueDate > now) {
+          candidates.push({ instance_id: item.instance_id, key: `billable:${item.whmcs_id}`, mrr: item.mrr })
+        }
+      }
+      for (const s of hostingServices ?? []) {
+        const term = s.terminationdate && s.terminationdate !== '0000-00-00' ? new Date(s.terminationdate) : null
+        const nextDue = s.nextduedate && s.nextduedate !== '0000-00-00' ? new Date(s.nextduedate) : null
+        const mrr = getMonthlyAmount(s)
+        if (!['Active', 'Suspended'].includes(s.domainstatus) && !term && nextDue && nextDue > now && mrr > 0) {
+          candidates.push({ instance_id: s.instance_id, key: `hosting:${s.id}`, mrr })
+        }
+      }
+      for (const d of domainServices ?? []) {
+        const exp = d.expirydate && d.expirydate > '0001-01-01' ? new Date(d.expirydate) : null
+        const mrr = domainMonthlyAmount(d)
+        if (d.status !== 'Active' && exp && exp > now && mrr > 0) {
+          candidates.push({ instance_id: d.instance_id, key: `domain:${d.whmcs_id}`, mrr })
+        }
+      }
+      const resolved = await resolveDerivedTerminations(supabase, candidates, now)
+      for (const [k, v] of resolved) derivedTerm.set(k, v)
+    }
 
     // Resolve every month's per-instance events-vs-proxy decision up front and in
     // parallel (each call already fans out per instance internally), instead of
