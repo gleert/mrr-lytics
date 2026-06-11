@@ -122,8 +122,8 @@ export function DomainsPage() {
   // Monthly series may be absent on cached responses from older backend versions
   const monthlySeries = stats?.registered_vs_expired_monthly ?? []
   const activeVsLostData = lostChartView === 'month' && monthlySeries.length > 0
-    ? monthlySeries.map(d => ({ label: formatMonthLabel(d.month), active: d.active, lost: d.lost }))
-    : (stats?.registered_vs_expired ?? []).map(d => ({ label: d.year, active: d.active, lost: d.lost }))
+    ? monthlySeries.map(d => ({ label: formatMonthLabel(d.month), active: d.active, gained: d.gained, lost: d.lost }))
+    : (stats?.registered_vs_expired ?? []).map(d => ({ label: d.year, active: d.active, gained: d.gained, lost: d.lost }))
 
   const isExpiringSoon = (expiryDate: string | null) => {
     if (!expiryDate) return false
@@ -136,7 +136,7 @@ export function DomainsPage() {
 
   const ActiveVsLostTooltip = ({ active, payload, label }: {
     active?: boolean
-    payload?: Array<{ name: string; value: number; color: string }>
+    payload?: Array<{ name: string; value: number; color: string; payload?: { gained?: number } }>
     label?: string
   }) => {
     if (!active || !payload?.length) return null
@@ -144,6 +144,7 @@ export function DomainsPage() {
     const lostEntry   = payload.find(p => p.name === 'lost')
     const activeVal   = activeEntry?.value ?? 0
     const lostVal     = lostEntry?.value   ?? 0
+    const gainedVal   = payload[0]?.payload?.gained
     const retentionPct = activeVal > 0 ? formatPercent((activeVal / (activeVal + lostVal)) * 100) : '—'
 
     return (
@@ -157,6 +158,15 @@ export function DomainsPage() {
             </div>
             <span className="text-sm font-semibold text-foreground">{formatNumber(activeVal)}</span>
           </div>
+          {typeof gainedVal === 'number' && (
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
+                <span className="text-sm text-muted">{t('domains.gainedDomains')}</span>
+              </div>
+              <span className="text-sm font-semibold text-foreground">{formatNumber(gainedVal)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />

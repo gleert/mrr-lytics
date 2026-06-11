@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2171: {
+          domainsGainedTooltip: 'El tooltip del gráfico "Dominios Activos vs Perdidos" ahora muestra también los dominios ganados en cada periodo, de forma que cada mes/año se lee de un vistazo: Activos, Ganados y Perdidos',
+        },
         v2170: {
           domainsMonthlyChart: 'El gráfico "Dominios Activos vs Perdidos" de la página de Dominios ahora se puede ver por mes: un nuevo selector Mensual/Anual muestra los últimos 12 meses de evolución de la cartera de dominios y pérdidas, junto a la vista anual de 5 años existente',
         },
@@ -1274,6 +1277,7 @@ export const es = {
       viewYearly: 'Anual',
       registered: 'Registrados',
       expired: 'Expirados',
+      gainedDomains: 'Ganados',
       lostDomains: 'Perdidos',
       retentionRate: 'Tasa de retención',
       shareOf: '% del total',

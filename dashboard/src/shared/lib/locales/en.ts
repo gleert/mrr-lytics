@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2171: {
+          domainsGainedTooltip: 'The "Active vs Lost Domains" chart tooltip now also shows domains gained in each period, so each month/year reads Active, Gained and Lost at a glance',
+        },
         v2170: {
           domainsMonthlyChart: 'The "Active vs Lost Domains" chart on the Domains page can now be viewed by month: a new Monthly/Yearly toggle shows the last 12 months of domain portfolio evolution and losses, alongside the existing 5-year view',
         },
@@ -1277,6 +1280,7 @@ export const en = {
       viewYearly: 'Yearly',
       registered: 'Registered',
       expired: 'Expired',
+      gainedDomains: 'Gained',
       lostDomains: 'Lost',
       retentionRate: 'Retention rate',
       shareOf: '% of total',

@@ -249,6 +249,12 @@ export async function GET(request: NextRequest) {
         return d.status === 'Active'
       }).length
 
+      const gained = allDomains.filter(d => {
+        if (!d.registrationdate) return false
+        const regDate = new Date(d.registrationdate)
+        return regDate >= startOfYear && regDate <= endOfYear
+      }).length
+
       const lost = allDomains.filter(d => {
         if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
         const ref = departureDate(d)
@@ -257,7 +263,7 @@ export async function GET(request: NextRequest) {
         return expDate >= startOfYear && expDate <= endOfYear
       }).length
 
-      return { year: year.toString(), active, lost }
+      return { year: year.toString(), active, gained, lost }
     })
 
     // Same series at monthly granularity (last 12 months). Mirrors the yearly
@@ -281,6 +287,12 @@ export async function GET(request: NextRequest) {
         return d.status === 'Active'
       }).length
 
+      const gained = allDomains.filter(d => {
+        if (!d.registrationdate) return false
+        const regDate = new Date(d.registrationdate)
+        return regDate >= monthStart && regDate <= monthEnd
+      }).length
+
       const lost = allDomains.filter(d => {
         if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
         const ref = departureDate(d)
@@ -290,7 +302,7 @@ export async function GET(request: NextRequest) {
       }).length
 
       const month = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`
-      return { month, active, lost }
+      return { month, active, gained, lost }
     })
 
     // Get domains expiring soon (next 30 days) - for the alert section

@@ -13,12 +13,14 @@ export interface ExpiringDomain {
 export interface RegisteredVsExpired {
   year: string
   active: number
+  gained?: number // absent on cached responses from older backend versions
   lost: number
 }
 
 export interface RegisteredVsExpiredMonthly {
   month: string // 'YYYY-MM'
   active: number
+  gained?: number // absent on cached responses from older backend versions
   lost: number
 }
 
