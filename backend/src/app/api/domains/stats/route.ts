@@ -260,6 +260,39 @@ export async function GET(request: NextRequest) {
       return { year: year.toString(), active, lost }
     })
 
+    // Same series at monthly granularity (last 12 months). Mirrors the yearly
+    // logic: past months use the departure-date proxy, the current month uses
+    // live status.
+    const registered_vs_expired_monthly = Array.from({ length: 12 }, (_, i) => {
+      const monthStart = new Date(today.getFullYear(), today.getMonth() - 11 + i, 1)
+      const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59)
+      const isCurrentMonth = monthStart.getFullYear() === today.getFullYear()
+        && monthStart.getMonth() === today.getMonth()
+
+      const active = allDomains.filter(d => {
+        if (!d.registrationdate) return false
+        const regDate = new Date(d.registrationdate)
+        if (regDate > monthEnd) return false // not yet registered
+        if (!isCurrentMonth) {
+          const ref = departureDate(d)
+          if (!ref) return false
+          return new Date(ref) > monthEnd
+        }
+        return d.status === 'Active'
+      }).length
+
+      const lost = allDomains.filter(d => {
+        if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
+        const ref = departureDate(d)
+        if (!ref) return false
+        const expDate = new Date(ref)
+        return expDate >= monthStart && expDate <= monthEnd
+      }).length
+
+      const month = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`
+      return { month, active, lost }
+    })
+
     // Get domains expiring soon (next 30 days) - for the alert section
     const expiringRaw = allDomains
       .filter(d => {
@@ -313,6 +346,7 @@ export async function GET(request: NextRequest) {
       tld_breakdown,
       all_tlds,
       registered_vs_expired,
+      registered_vs_expired_monthly,
       expiring_domains,
     }, { instance_ids: instanceIds })
   } catch (err) {

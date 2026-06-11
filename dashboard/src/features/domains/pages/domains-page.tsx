@@ -59,6 +59,7 @@ export function DomainsPage() {
   const { formatCurrency, formatNumber, formatPercent } = useCurrency()
   
   const [statusFilter, setStatusFilter] = useState('Active')
+  const [lostChartView, setLostChartView] = useState<'month' | 'year'>('month')
   const [tldFilter, setTldFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearch = useDebounce(searchQuery, 300)
@@ -112,6 +113,17 @@ export function DomainsPage() {
       </span>
     )
   }
+
+  const formatMonthLabel = (month: string) => {
+    const [y, m] = month.split('-').map(Number)
+    return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })
+  }
+
+  // Monthly series may be absent on cached responses from older backend versions
+  const monthlySeries = stats?.registered_vs_expired_monthly ?? []
+  const activeVsLostData = lostChartView === 'month' && monthlySeries.length > 0
+    ? monthlySeries.map(d => ({ label: formatMonthLabel(d.month), active: d.active, lost: d.lost }))
+    : (stats?.registered_vs_expired ?? []).map(d => ({ label: d.year, active: d.active, lost: d.lost }))
 
   const isExpiringSoon = (expiryDate: string | null) => {
     if (!expiryDate) return false
@@ -455,11 +467,35 @@ export function DomainsPage() {
 
       {/* Registered vs Expired Chart */}
       <div className="rounded-xl border border-border bg-surface">
-        <div className="flex items-center gap-3 p-4 border-b border-border">
-          <Icon name="history" size="lg" className="text-primary-400" />
-          <div>
-            <h2 className="text-lg font-medium">{t('domains.registeredVsExpiredTitle')}</h2>
-            <p className="text-sm text-muted">{t('domains.registeredVsExpiredDesc')}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <Icon name="history" size="lg" className="text-primary-400" />
+            <div>
+              <h2 className="text-lg font-medium">{t('domains.registeredVsExpiredTitle')}</h2>
+              <p className="text-sm text-muted">{t('domains.registeredVsExpiredDesc')}</p>
+            </div>
+          </div>
+          <div className="flex rounded-lg border border-border bg-surface-elevated p-0.5">
+            <button
+              type="button"
+              onClick={() => setLostChartView('month')}
+              className={cn(
+                'px-3 py-1 text-sm font-medium rounded-md transition-colors',
+                lostChartView === 'month' ? 'bg-primary-500 text-white' : 'text-muted hover:text-foreground'
+              )}
+            >
+              {t('domains.viewMonthly')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLostChartView('year')}
+              className={cn(
+                'px-3 py-1 text-sm font-medium rounded-md transition-colors',
+                lostChartView === 'year' ? 'bg-primary-500 text-white' : 'text-muted hover:text-foreground'
+              )}
+            >
+              {t('domains.viewYearly')}
+            </button>
           </div>
         </div>
 
@@ -468,7 +504,7 @@ export function DomainsPage() {
             <div className="flex items-center justify-center h-72">
               <Icon name="sync" size="xl" className="animate-spin text-muted" />
             </div>
-          ) : !stats?.registered_vs_expired?.length ? (
+          ) : !activeVsLostData.length ? (
             <div className="flex flex-col items-center justify-center h-72 text-muted">
               <Icon name="bar_chart" size="xl" className="mb-2 opacity-50" />
               <p>{t('domains.noData')}</p>
@@ -477,7 +513,7 @@ export function DomainsPage() {
             <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
-                  data={stats.registered_vs_expired}
+                  data={activeVsLostData}
                   margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
                 >
                   <defs>
@@ -497,7 +533,7 @@ export function DomainsPage() {
                     vertical={false}
                   />
                   <XAxis
-                    dataKey="year"
+                    dataKey="label"
                     tick={{ fill: 'var(--color-muted)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={{ stroke: 'var(--color-border)' }}

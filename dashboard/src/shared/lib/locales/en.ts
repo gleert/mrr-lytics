@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2170: {
+          domainsMonthlyChart: 'The "Active vs Lost Domains" chart on the Domains page can now be viewed by month: a new Monthly/Yearly toggle shows the last 12 months of domain portfolio evolution and losses, alongside the existing 5-year view',
+        },
         v2160: {
           reactivationPill: 'New "Reactivation" pill in the MRR Movement block — services that churned and later came back now have their own clickable pill with a per-service breakdown. Their MRR was already counted in the monthly net change but was invisible in the pills, so New + Churned + Expansion + Contraction did not add up to the headline figure',
         },
@@ -1269,7 +1272,9 @@ export const en = {
       byTld: 'Domains by TLD',
       byTldDesc: 'Distribution of domains by top-level domain',
       registeredVsExpiredTitle: 'Active vs Lost Domains',
-      registeredVsExpiredDesc: 'Active domain portfolio snapshot vs domains lost each year (last 5 years)',
+      registeredVsExpiredDesc: 'Active domain portfolio vs domains lost over time',
+      viewMonthly: 'Monthly',
+      viewYearly: 'Yearly',
       registered: 'Registered',
       expired: 'Expired',
       lostDomains: 'Lost',

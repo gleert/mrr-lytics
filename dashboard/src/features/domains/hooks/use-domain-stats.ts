@@ -16,6 +16,12 @@ export interface RegisteredVsExpired {
   lost: number
 }
 
+export interface RegisteredVsExpiredMonthly {
+  month: string // 'YYYY-MM'
+  active: number
+  lost: number
+}
+
 export interface DomainStats {
   total_domains: number
   active_domains: number
@@ -30,6 +36,7 @@ export interface DomainStats {
   tld_breakdown: Array<{ name: string; value: number }>
   all_tlds: string[]
   registered_vs_expired: RegisteredVsExpired[]
+  registered_vs_expired_monthly?: RegisteredVsExpiredMonthly[]
   expiring_domains: ExpiringDomain[]
 }
 

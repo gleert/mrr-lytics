@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2170: {
+          domainsMonthlyChart: 'El gráfico "Dominios Activos vs Perdidos" de la página de Dominios ahora se puede ver por mes: un nuevo selector Mensual/Anual muestra los últimos 12 meses de evolución de la cartera de dominios y pérdidas, junto a la vista anual de 5 años existente',
+        },
         v2160: {
           reactivationPill: 'Nueva píldora de "Reactivación" en el bloque de Movimiento de MRR — los servicios que se dieron de baja y luego volvieron ahora tienen su propia píldora clicable con desglose por servicio. Su MRR ya se contaba en el cambio neto mensual pero era invisible en las píldoras, por lo que Nuevo + Perdido + Expansión + Contracción no cuadraba con la cifra principal',
         },
@@ -1266,7 +1269,9 @@ export const es = {
       byTld: 'Dominios por TLD',
       byTldDesc: 'Distribución de dominios por extensión',
       registeredVsExpiredTitle: 'Dominios Activos vs Perdidos',
-      registeredVsExpiredDesc: 'Cartera de dominios activos por año vs dominios perdidos (últimos 5 años)',
+      registeredVsExpiredDesc: 'Cartera de dominios activos vs dominios perdidos a lo largo del tiempo',
+      viewMonthly: 'Mensual',
+      viewYearly: 'Anual',
       registered: 'Registrados',
       expired: 'Expirados',
       lostDomains: 'Perdidos',
