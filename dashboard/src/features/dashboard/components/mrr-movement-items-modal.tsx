@@ -11,8 +11,9 @@ interface MRRMovementItemsModalProps {
   month: string | null
 }
 
-// new/expansion are positive (green, +); churned/contraction are negative (red, -).
-const isPositiveType = (type: MRRMovementItemType) => type === 'new' || type === 'expansion'
+// new/expansion/reactivation are positive (green, +); churned/contraction are negative (red, -).
+const isPositiveType = (type: MRRMovementItemType) =>
+  type === 'new' || type === 'expansion' || type === 'reactivation'
 
 function ItemRow({ item, type }: { item: MRRMovementItem; type: MRRMovementItemType }) {
   const { formatCurrency } = useCurrency()
@@ -75,6 +76,7 @@ export function MRRMovementItemsModal({ isOpen, onClose, type, month }: MRRMovem
     churned: t('dashboard.mrrMovementItems.titleChurned'),
     expansion: t('dashboard.mrrMovementItems.titleExpansion'),
     contraction: t('dashboard.mrrMovementItems.titleContraction'),
+    reactivation: t('dashboard.mrrMovementItems.titleReactivation'),
   }[type]
 
   const monthLabel = month

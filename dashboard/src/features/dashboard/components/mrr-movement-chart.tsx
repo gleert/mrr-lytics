@@ -11,7 +11,7 @@ export function MRRMovementChart() {
   const { t } = useTranslation()
   const { data, isLoading } = useMRRMovement(6)
   const { formatCurrency, formatCurrencyWithSign } = useCurrency()
-  const [drilldown, setDrilldown] = React.useState<'new' | 'churned' | 'expansion' | 'contraction' | null>(null)
+  const [drilldown, setDrilldown] = React.useState<'new' | 'churned' | 'expansion' | 'contraction' | 'reactivation' | null>(null)
 
   const latestMonth = data?.movement_data?.[data.movement_data.length - 1]
 
@@ -84,6 +84,27 @@ export function MRRMovementChart() {
                 </div>
                 <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
                   +{formatAmount(latestMonth.new_mrr)}
+                  <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
+                </span>
+              </button>
+            )}
+
+            {/* Reactivation — only shown when populated (events mode). A service
+                that churned earlier and came back; without this pill the visible
+                pills wouldn't sum to the net_change headline. */}
+            {latestMonth.reactivation_mrr > 0 && (
+              <button
+                type="button"
+                onClick={() => setDrilldown('reactivation')}
+                className="group flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-full bg-white/90 text-primary-700 font-medium transition-all hover:scale-105 hover:shadow-lg cursor-pointer text-left w-full sm:w-auto sm:min-w-[14rem]"
+                title={t('dashboard.mrrMovementItems.openHint')}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name="restart_alt" size="sm" />
+                  <span className="text-xs sm:text-sm">{t('dashboard.mrrMovement.reactivation')}</span>
+                </div>
+                <span className="flex items-center gap-1 font-bold text-sm sm:text-base">
+                  +{formatAmount(latestMonth.reactivation_mrr)}
                   <Icon name="chevron_right" size="sm" className="opacity-0 group-hover:opacity-70 transition-opacity" />
                 </span>
               </button>

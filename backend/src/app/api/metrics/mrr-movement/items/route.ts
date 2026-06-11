@@ -9,7 +9,7 @@ import { resolveDerivedTerminations, type UndatedCandidate } from '@/lib/metrics
 
 export const dynamic = 'force-dynamic'
 
-type MovementType = 'new' | 'churned' | 'expansion' | 'contraction'
+type MovementType = 'new' | 'churned' | 'expansion' | 'contraction' | 'reactivation'
 
 interface MovementItem {
   kind: 'hosting' | 'billable' | 'domain'
@@ -30,15 +30,16 @@ interface MovementItem {
  * GET /api/metrics/mrr-movement/items
  *
  * Returns the individual hosting/billable items that contributed to the
- * "new" / "churned" / "expansion" / "contraction" MRR pill for a given month.
- * new/churned use the same active/inactive logic as /api/metrics/mrr-movement;
- * expansion/contraction only exist in events mode (the proxy path can't observe
- * per-service price changes), so for those types only events-mode instances
- * contribute.
+ * "new" / "churned" / "expansion" / "contraction" / "reactivation" MRR pill
+ * for a given month. new/churned use the same active/inactive logic as
+ * /api/metrics/mrr-movement; expansion/contraction/reactivation only exist in
+ * events mode (the proxy path can't observe per-service price changes nor
+ * distinguish a returning service from a new one), so for those types only
+ * events-mode instances contribute.
  *
  * Query params:
  *   - instance_ids: comma-separated
- *   - type: 'new' | 'churned' | 'expansion' | 'contraction' (required)
+ *   - type: 'new' | 'churned' | 'expansion' | 'contraction' | 'reactivation' (required)
  *   - month: 'YYYY-MM' (default: current month)
  */
 export async function GET(request: NextRequest) {
@@ -53,12 +54,13 @@ export async function GET(request: NextRequest) {
     const typeParam = (searchParams.get('type') || 'new') as MovementType
     const monthParam = searchParams.get('month') // YYYY-MM, optional
 
-    const VALID_TYPES: MovementType[] = ['new', 'churned', 'expansion', 'contraction']
+    const VALID_TYPES: MovementType[] = ['new', 'churned', 'expansion', 'contraction', 'reactivation']
     if (!VALID_TYPES.includes(typeParam)) {
-      throw new Error('type must be "new", "churned", "expansion" or "contraction"')
+      throw new Error('type must be "new", "churned", "expansion", "contraction" or "reactivation"')
     }
     // The proxy path can only resolve new/churned (it has no per-service price
-    // history). expansion/contraction come exclusively from observed events.
+    // history, and a returning service is indistinguishable from a new one).
+    // expansion/contraction/reactivation come exclusively from observed events.
     const proxyEligible = typeParam === 'new' || typeParam === 'churned'
 
     let instanceIds: string[] = []
@@ -358,15 +360,17 @@ export async function GET(request: NextRequest) {
     } // end proxyEligible
 
     // Events-mode instances: source items from the observed events.
-    // ?type=new         -> event_type 'new' ONLY (reactivation excluded by design)
-    // ?type=churned     -> event_type 'churn'
-    // ?type=expansion   -> event_type 'expansion'
-    // ?type=contraction -> event_type 'contraction'
+    // ?type=new          -> event_type 'new' ONLY (reactivation has its own pill)
+    // ?type=churned      -> event_type 'churn'
+    // ?type=expansion    -> event_type 'expansion'
+    // ?type=contraction  -> event_type 'contraction'
+    // ?type=reactivation -> event_type 'reactivation'
     const wantTypes =
       typeParam === 'new' ? ['new']
       : typeParam === 'churned' ? ['churn']
       : typeParam === 'expansion' ? ['expansion']
-      : ['contraction']
+      : typeParam === 'contraction' ? ['contraction']
+      : ['reactivation']
     for (const decision of eventsById.values()) {
       for (const ev of decision.events ?? []) {
         if (!wantTypes.includes(ev.event_type)) continue
@@ -394,11 +398,11 @@ export async function GET(request: NextRequest) {
           billing_cycle = 'annually'
         }
 
-        // new -> full new MRR; churn -> full lost MRR; expansion/contraction ->
-        // the delta magnitude (so the list total reconciles with the pill, which
-        // sums signed deltas). |delta| is always positive here.
+        // new/reactivation -> full regained MRR; churn -> full lost MRR;
+        // expansion/contraction -> the delta magnitude (so the list total
+        // reconciles with the pill, which sums signed deltas).
         const monthly =
-          typeParam === 'new' ? ev.mrr_after
+          typeParam === 'new' || typeParam === 'reactivation' ? ev.mrr_after
           : typeParam === 'churned' ? ev.mrr_before
           : Math.abs(ev.mrr_delta)
         rawTotal += monthly

@@ -507,6 +507,7 @@ export const en = {
         expansion: 'Expansion',
         contraction: 'Contraction',
         churned: 'Churned',
+        reactivation: 'Reactivation',
         endingMrr: 'Ending MRR',
         netChange: 'Net Change',
         growthMessage: 'MRR growth this month',
@@ -517,6 +518,7 @@ export const en = {
         titleChurned: 'Churned MRR — breakdown',
         titleExpansion: 'Expansion MRR — breakdown',
         titleContraction: 'Contraction MRR — breakdown',
+        titleReactivation: 'Reactivated MRR — breakdown',
         empty: 'No movement this month',
         total: 'Total',
         count_one: '{{count}} service',
@@ -855,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2160: {
+          reactivationPill: 'New "Reactivation" pill in the MRR Movement block — services that churned and later came back now have their own clickable pill with a per-service breakdown. Their MRR was already counted in the monthly net change but was invisible in the pills, so New + Churned + Expansion + Contraction did not add up to the headline figure',
+        },
         v2150: {
           healthScoreProportional: 'The Business Health score is now proportional: each factor (MRR momentum, churn, client base, overdue invoices) moves the score in proportion to how much was actually lost vs retained, instead of flat all-or-nothing thresholds that stacked toward zero. Overdue invoices are now weighted by amount (relative to MRR), not just the invoice count. The result is a fairer, less alarmist number that still reflects real severity',
         },

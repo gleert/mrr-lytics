@@ -504,6 +504,7 @@ export const es = {
         expansion: 'Expansión',
         contraction: 'Contracción',
         churned: 'Perdido',
+        reactivation: 'Reactivación',
         endingMrr: 'MRR Final',
         netChange: 'Cambio Neto',
         growthMessage: 'Crecimiento de MRR este mes',
@@ -514,6 +515,7 @@ export const es = {
         titleChurned: 'MRR perdido — desglose',
         titleExpansion: 'Expansión de MRR — desglose',
         titleContraction: 'Contracción de MRR — desglose',
+        titleReactivation: 'MRR reactivado — desglose',
         empty: 'Sin movimientos en este mes',
         total: 'Total',
         count_one: '{{count}} servicio',
@@ -852,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2160: {
+          reactivationPill: 'Nueva píldora de "Reactivación" en el bloque de Movimiento de MRR — los servicios que se dieron de baja y luego volvieron ahora tienen su propia píldora clicable con desglose por servicio. Su MRR ya se contaba en el cambio neto mensual pero era invisible en las píldoras, por lo que Nuevo + Perdido + Expansión + Contracción no cuadraba con la cifra principal',
+        },
         v2150: {
           healthScoreProportional: 'El score de Salud del Negocio ahora es proporcional: cada factor (evolución del MRR, churn, base de clientes, facturas vencidas) mueve la puntuación en proporción a lo que realmente se ha perdido frente a lo que queda, en lugar de umbrales planos de todo-o-nada que se apilaban hacia cero. Las facturas vencidas ahora pesan por importe (relativo al MRR), no solo por número. El resultado es una cifra más justa y menos alarmista que sigue reflejando la gravedad real',
         },

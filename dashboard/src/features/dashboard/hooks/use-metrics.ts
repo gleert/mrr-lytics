@@ -158,6 +158,7 @@ export interface MovementDataPoint {
   month: string
   starting_mrr: number
   new_mrr: number
+  reactivation_mrr: number
   churned_mrr: number
   expansion_mrr: number
   contraction_mrr: number
@@ -167,6 +168,7 @@ export interface MovementDataPoint {
 
 export interface MRRMovementTotals {
   new_mrr: number
+  reactivation_mrr: number
   churned_mrr: number
   expansion_mrr: number
   contraction_mrr: number
@@ -252,7 +254,7 @@ export function useMRRTrend() {
   })
 }
 
-export type MRRMovementItemType = 'new' | 'churned' | 'expansion' | 'contraction'
+export type MRRMovementItemType = 'new' | 'churned' | 'expansion' | 'contraction' | 'reactivation'
 
 export interface MRRMovementItem {
   kind: 'hosting' | 'billable' | 'domain'
@@ -278,8 +280,9 @@ export interface MRRMovementItemsResponse {
 }
 
 /**
- * Hook to fetch the detailed items behind a New/Churned/Expansion/Contraction MRR pill.
- * Disabled when type is null so we only fetch when the modal opens.
+ * Hook to fetch the detailed items behind a New/Churned/Expansion/Contraction/
+ * Reactivation MRR pill. Disabled when type is null so we only fetch when the
+ * modal opens.
  */
 export function useMRRMovementItems(type: MRRMovementItemType | null, month: string | null) {
   const { currentInstance, getSelectedInstanceIds, allInstances } = useFilters()
