@@ -66,7 +66,7 @@ function getQueryClient() {
         queryClient: browserQueryClient,
         persister: localStoragePersister,
         maxAge: 30 * 60 * 1000, // 30 minutes
-        buster: 'v2', // Change this to bust cache
+        buster: 'v3', // Change this to bust cache (v3: domains "gained" now excludes cancelled/expired — old cached stats were stale)
         dehydrateOptions: {
           // Don't persist module-version: it's the update banner source — must always
           // reflect the live endpoint, not a possibly-stale localStorage snapshot.
