@@ -24,6 +24,13 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.18.0',
+    date: '2026-06-17',
+    changes: [
+      { type: 'improvement', text: 'changelog.entries.v2180.domainsGainedExcludeCancelled' },
+    ],
+  },
+  {
     version: '2.17.1',
     date: '2026-06-11',
     changes: [

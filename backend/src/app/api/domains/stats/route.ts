@@ -124,14 +124,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // New domains registered in period - use separate query for accuracy
+    // New domains registered in period - use separate query for accuracy.
+    // Excludes registrations that are already Cancelled/Expired: a domain
+    // registered and then quickly cancelled (test/fraudulent signups, the
+    // nov-dec 2025 bot wave) never represented a real acquisition, so it would
+    // only inflate the "gained" figure. Mirrors the `gained` series below.
     const { count: newDomainsCount } = await supabase
       .from('whmcs_domains')
       .select('*', { count: 'exact', head: true })
       .in('instance_id', instanceIds)
       .gte('registrationdate', startDate.toISOString().split('T')[0])
       .lte('registrationdate', endDate.toISOString().split('T')[0])
-    
+      .not('status', 'in', '("Cancelled","Expired")')
+
     const new_domains = newDomainsCount ?? 0
 
     // Total recurring revenue from active domains
@@ -149,6 +154,7 @@ export async function GET(request: NextRequest) {
 
     const prev_new_domains = allDomains.filter(d => {
       if (!d.registrationdate) return false
+      if (d.status === 'Cancelled' || d.status === 'Expired') return false
       const regDate = new Date(d.registrationdate)
       return regDate >= prevStartDate && regDate < prevEndDate
     }).length
@@ -251,6 +257,9 @@ export async function GET(request: NextRequest) {
 
       const gained = allDomains.filter(d => {
         if (!d.registrationdate) return false
+        // Only count registrations that stuck — exclude domains already
+        // Cancelled/Expired (quick-cancel / bot-wave signups never acquired).
+        if (d.status === 'Cancelled' || d.status === 'Expired') return false
         const regDate = new Date(d.registrationdate)
         return regDate >= startOfYear && regDate <= endOfYear
       }).length
@@ -289,6 +298,9 @@ export async function GET(request: NextRequest) {
 
       const gained = allDomains.filter(d => {
         if (!d.registrationdate) return false
+        // Only count registrations that stuck — exclude domains already
+        // Cancelled/Expired (quick-cancel / bot-wave signups never acquired).
+        if (d.status === 'Cancelled' || d.status === 'Expired') return false
         const regDate = new Date(d.registrationdate)
         return regDate >= monthStart && regDate <= monthEnd
       }).length

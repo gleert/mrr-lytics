@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2180: {
+          domainsGainedExcludeCancelled: 'El indicador «Ganados» (KPI «Nuevos dominios» y la serie del gráfico «Dominios Activos vs Perdidos») ahora cuenta solo las altas que siguen activas: se excluyen los dominios registrados y luego cancelados o expirados, como los registros de prueba o fraudulentos. Una nota al pie del gráfico lo explica',
+        },
         v2171: {
           domainsGainedTooltip: 'El tooltip del gráfico "Dominios Activos vs Perdidos" ahora muestra también los dominios ganados en cada periodo, de forma que cada mes/año se lee de un vistazo: Activos, Ganados y Perdidos',
         },
@@ -1279,6 +1282,7 @@ export const es = {
       expired: 'Expirados',
       gainedDomains: 'Ganados',
       lostDomains: 'Perdidos',
+      gainedFootnote: '«Ganados» cuenta solo las altas que siguen activas. Se excluyen los dominios registrados y luego cancelados o expirados (p. ej. registros de prueba o fraudulentos).',
       retentionRate: 'Tasa de retención',
       shareOf: '% del total',
       noData: 'No hay datos de dominios disponibles',

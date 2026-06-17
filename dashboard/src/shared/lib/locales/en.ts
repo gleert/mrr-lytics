@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2180: {
+          domainsGainedExcludeCancelled: 'The "Gained" metric (the "New domains" KPI and the "Active vs Lost Domains" chart series) now counts only registrations that are still active: domains registered and then cancelled or expired — such as test or fraudulent signups — are excluded. A chart footnote explains it',
+        },
         v2171: {
           domainsGainedTooltip: 'The "Active vs Lost Domains" chart tooltip now also shows domains gained in each period, so each month/year reads Active, Gained and Lost at a glance',
         },
@@ -1282,6 +1285,7 @@ export const en = {
       expired: 'Expired',
       gainedDomains: 'Gained',
       lostDomains: 'Lost',
+      gainedFootnote: '"Gained" counts only registrations that are still active. Domains registered and then cancelled or expired are excluded (e.g. test or fraudulent signups).',
       retentionRate: 'Retention rate',
       shareOf: '% of total',
       noData: 'No domain data available',

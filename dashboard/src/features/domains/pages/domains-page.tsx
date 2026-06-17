@@ -587,6 +587,12 @@ export function DomainsPage() {
               </ResponsiveContainer>
             </div>
           )}
+          {!!activeVsLostData.length && (
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-muted">
+              <Icon name="info" size="sm" className="mt-0.5 flex-shrink-0 opacity-70" />
+              <span>{t('domains.gainedFootnote')}</span>
+            </p>
+          )}
         </div>
       </div>
 
