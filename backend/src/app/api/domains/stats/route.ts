@@ -269,7 +269,16 @@ export async function GET(request: NextRequest) {
         const ref = departureDate(d)
         if (!ref) return false
         const expDate = new Date(ref)
-        return expDate >= startOfYear && expDate <= endOfYear
+        if (expDate < startOfYear || expDate > endOfYear) return false
+        // Symmetry with `gained`: a domain registered AND gone within the same
+        // period was never a sustained domain (quick-cancel / bot-wave signup),
+        // so it is neither a real gain nor a real loss. Without this it would
+        // show as a one-sided loss spike that the active line never reflects.
+        if (d.registrationdate) {
+          const regDate = new Date(d.registrationdate)
+          if (regDate >= startOfYear && regDate <= endOfYear) return false
+        }
+        return true
       }).length
 
       return { year: year.toString(), active, gained, lost }
@@ -310,7 +319,14 @@ export async function GET(request: NextRequest) {
         const ref = departureDate(d)
         if (!ref) return false
         const expDate = new Date(ref)
-        return expDate >= monthStart && expDate <= monthEnd
+        if (expDate < monthStart || expDate > monthEnd) return false
+        // Symmetry with `gained`: skip domains registered AND gone within the
+        // same month (quick-cancel / bot-wave signups) — never a real loss.
+        if (d.registrationdate) {
+          const regDate = new Date(d.registrationdate)
+          if (regDate >= monthStart && regDate <= monthEnd) return false
+        }
+        return true
       }).length
 
       const month = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`

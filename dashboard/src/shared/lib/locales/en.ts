@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2181: {
+          domainsLostSymmetry: 'The "Active vs Lost Domains" chart now also excludes from "Lost" the domains registered and removed within their own period (test or fraudulent signups), matching the existing "Gained" rule. These previously showed as a loss spike the active line never reflected (e.g. the nov-dec 2025 bot wave); the two series reconcile again',
+        },
         v2180: {
           domainsGainedExcludeCancelled: 'The "Gained" metric (the "New domains" KPI and the "Active vs Lost Domains" chart series) now counts only registrations that are still active: domains registered and then cancelled or expired — such as test or fraudulent signups — are excluded. A chart footnote explains it',
         },
@@ -1285,7 +1288,7 @@ export const en = {
       expired: 'Expired',
       gainedDomains: 'Gained',
       lostDomains: 'Lost',
-      gainedFootnote: '"Gained" counts only registrations that are still active. Domains registered and then cancelled or expired are excluded (e.g. test or fraudulent signups).',
+      gainedFootnote: 'Domains registered and removed within their own period (test or fraudulent signups) count as neither gained nor lost. "Gained" additionally only includes registrations still active.',
       retentionRate: 'Retention rate',
       shareOf: '% of total',
       noData: 'No domain data available',

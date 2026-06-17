@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2181: {
+          domainsLostSymmetry: 'El gráfico «Dominios Activos vs Perdidos» ahora excluye también de «Perdidos» los dominios registrados y dados de baja en su propio periodo (altas de prueba o fraudulentas), igual que ya se hacía con «Ganados». Antes estos aparecían como un pico de pérdidas que la línea de activos nunca reflejaba (p. ej. la oleada de bots de nov-dic 2025): las dos series vuelven a cuadrar',
+        },
         v2180: {
           domainsGainedExcludeCancelled: 'El indicador «Ganados» (KPI «Nuevos dominios» y la serie del gráfico «Dominios Activos vs Perdidos») ahora cuenta solo las altas que siguen activas: se excluyen los dominios registrados y luego cancelados o expirados, como los registros de prueba o fraudulentos. Una nota al pie del gráfico lo explica',
         },
@@ -1282,7 +1285,7 @@ export const es = {
       expired: 'Expirados',
       gainedDomains: 'Ganados',
       lostDomains: 'Perdidos',
-      gainedFootnote: '«Ganados» cuenta solo las altas que siguen activas. Se excluyen los dominios registrados y luego cancelados o expirados (p. ej. registros de prueba o fraudulentos).',
+      gainedFootnote: 'Los dominios registrados y dados de baja en su propio periodo (altas de prueba o fraudulentas) no cuentan ni como ganados ni como perdidos. «Ganados» además solo incluye las altas que siguen activas.',
       retentionRate: 'Tasa de retención',
       shareOf: '% del total',
       noData: 'No hay datos de dominios disponibles',
