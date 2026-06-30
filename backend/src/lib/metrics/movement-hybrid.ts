@@ -48,10 +48,40 @@ export interface EventRow {
   mrr_delta: number
   observed_date: string
   effective_date: string | null
+  /**
+   * True for a domain 'new' event that is really a pre-existing domain the sync
+   * finally captured (see isDomainBackfill), not a real sale. Set in
+   * resolveOneMonth; undefined elsewhere (e.g. the churn path, which ignores it).
+   */
+  is_backfill?: boolean
 }
 
 /**
- * All amounts are FULL precision (not pre-rounded) — like active-set.ts. Consumers
+ * A domain is "old enough" to be treated as pre-existing (a backfill) when it was
+ * registered more than this many days before we first OBSERVED it active. The
+ * daily snapshot diff emits a 'new' event the first time it sees a domain in the
+ * active set; when a long-standing domain was absent from the synced active set
+ * for a while (sync coverage gaps) and a later sync includes it, that 'new' event
+ * is spurious. Prod data shows a clean split: real new domains are observed within
+ * ~44 days of registration, backfills are 12-15 years old. 365 days sits well
+ * inside that gap while keeping the risk of hiding a genuine recent transfer-in low.
+ */
+export const BACKFILL_MIN_AGE_DAYS = 365
+
+/**
+ * Is this domain 'new' event a backfill (pre-existing domain, not a real sale)?
+ * Pure. registrationDate is 'YYYY-MM-DD' (or null/sentinel when unknown -> not a
+ * backfill, since we can't justify hiding it). A registrationDate after the
+ * observation (negative age) is likewise not a backfill.
+ */
+export function isDomainBackfill(observedDate: string, registrationDate: string | null): boolean {
+  if (!registrationDate || registrationDate <= '0001-01-01') return false
+  const ageDays = (parseDay(observedDate) - parseDay(registrationDate)) / DAY_MS
+  return ageDays > BACKFILL_MIN_AGE_DAYS
+}
+
+/**
+ * All amounts are FULL precision (not pre-rounded) -- like active-set.ts. Consumers
  * sum these across instances/entities and round ONCE at the edge, so the totals
  * reconcile with the live KPI to the cent (round-then-sum here would inject
  * per-instance drift and make a drill-down list total disagree with its pill).
@@ -90,7 +120,7 @@ export interface ChurnDecision {
  * Is the window fully covered by observation? The window must start strictly AFTER
  * the cold-start seed day, so every movement inside it was captured as an event
  * (the seed day itself emits zero events and bakes pre-existing state into the
- * baseline). No long "maturity" wait — a month/window is trusted as soon as it is
+ * baseline). No long "maturity" wait -- a month/window is trusted as soon as it is
  * entirely within the observed period; the reconciliation guard is the safety net.
  */
 export function isFullyObserved(firstObserved: string | null, windowStart: string): boolean {
@@ -100,17 +130,21 @@ export function isFullyObserved(firstObserved: string | null, windowStart: strin
 
 /** Sum event deltas per type at full precision. churn/contraction deltas are negative. */
 export function summarizeEvents(events: EventRow[]): {
-  new_mrr: number
+  new_mrr: number          // real new only (excludes backfills)
+  backfill_mrr: number     // domain 'new' events flagged is_backfill (pre-existing domains)
   reactivation_mrr: number
   expansion_mrr: number
   contraction_mrr: number  // negative (sum of negative contraction deltas)
   churned_mrr: number      // positive magnitude
-  net_events: number       // signed sum of ALL deltas (churn/contraction stay negative)
+  net_events: number       // signed sum of ALL deltas, INCLUDING backfills (guard input)
 } {
-  let neu = 0, rea = 0, exp = 0, con = 0, chu = 0
+  let neu = 0, bak = 0, rea = 0, exp = 0, con = 0, chu = 0
   for (const e of events) {
     switch (e.event_type) {
-      case 'new': neu += e.mrr_delta; break
+      // A backfill is a pre-existing domain the sync finally captured, not a sale.
+      // Its delta leaves new_mrr (folded into starting_mrr by the caller) but MUST
+      // stay in net_events so the reconciliation guard still matches metrics_daily.
+      case 'new': if (e.is_backfill) bak += e.mrr_delta; else neu += e.mrr_delta; break
       case 'reactivation': rea += e.mrr_delta; break
       case 'expansion': exp += e.mrr_delta; break
       case 'contraction': con += e.mrr_delta; break
@@ -119,30 +153,31 @@ export function summarizeEvents(events: EventRow[]): {
   }
   return {
     new_mrr: neu,
+    backfill_mrr: bak,
     reactivation_mrr: rea,
     expansion_mrr: exp,
     contraction_mrr: con,
     churned_mrr: -chu, // positive magnitude
-    net_events: neu + rea + exp + con + chu,
+    net_events: neu + bak + rea + exp + con + chu,
   }
 }
 
 /**
  * Reconciliation tolerance. metrics_daily.mrr is DECIMAL(12,2): each snapshot
- * endpoint carries up to ±0.005 of cent-rounding, so netDaily (a difference of
+ * endpoint carries up to +/-0.005 of cent-rounding, so netDaily (a difference of
  * two rounded endpoints) can differ from the full-precision event net by up to
  * ~1 cent even when the data is perfectly correct. 0.02 absorbs that with margin
- * while staying far below any real movement (smallest realistic ≈ €0.40/mo for a
- * cheap domain) — verified against prod 2026-06-04: events reconcile with
+ * while staying far below any real movement (smallest realistic ~ EUR0.40/mo for a
+ * cheap domain) -- verified against prod 2026-06-04: events reconcile with
  * metrics_daily to within ~0.6 cents (pure accumulated rounding, no real drift).
  */
 export const GUARD_TOLERANCE = 0.02
 
 /**
  * Conservation guard: does the events' net match the metrics_daily delta within
- * GUARD_TOLERANCE? Compares at FULL precision — do NOT pre-round netEvents, as
+ * GUARD_TOLERANCE? Compares at FULL precision -- do NOT pre-round netEvents, as
  * rounding it to cents would inflate a sub-cent rounding gap into a full cent and
- * spuriously fail (e.g. true diff 0.006 → 0.01 after rounding both sides).
+ * spuriously fail (e.g. true diff 0.006 -> 0.01 after rounding both sides).
  */
 export function guardOk(netEvents: number, netDaily: number): boolean {
   return Math.abs(netEvents - netDaily) < GUARD_TOLERANCE
@@ -180,7 +215,7 @@ async function firstObservedDate(supabase: Admin, instanceId: string): Promise<s
  * Adjacent months are contiguous with no overlap: month M's dE equals month M+1's
  * dS (since the next window starts the day after monthEnd), so no event is dropped
  * or double-counted. If the last days of a month have no snapshot, events observed
- * in that gap are attributed to the NEXT month's bar — a harmless cosmetic shift;
+ * in that gap are attributed to the NEXT month's bar -- a harmless cosmetic shift;
  * each month's guard still reconciles against its own anchors.
  */
 async function fetchAnchors(
@@ -243,6 +278,44 @@ async function fetchEvents(
   }))
 }
 
+/**
+ * Flag domain 'new' events that are really pre-existing domains the sync finally
+ * captured (see isDomainBackfill). Mutates the passed events in place, setting
+ * is_backfill. Looks up each domain's registrationdate once per instance/window.
+ * Only domain 'new' events are considered; everything else is left untouched.
+ */
+async function markDomainBackfills(
+  supabase: Admin,
+  instanceId: string,
+  events: EventRow[],
+): Promise<void> {
+  const domainNewIds = Array.from(
+    new Set(
+      events
+        .filter((e) => e.entity_type === 'domain' && e.event_type === 'new')
+        .map((e) => e.entity_id),
+    ),
+  )
+  if (domainNewIds.length === 0) return
+
+  const { data } = await supabase
+    .from('whmcs_domains')
+    .select('whmcs_id, registrationdate')
+    .eq('instance_id', instanceId)
+    .in('whmcs_id', domainNewIds)
+    .limit(10000)
+
+  const regById = new Map<number, string | null>()
+  for (const d of data ?? []) {
+    regById.set(d.whmcs_id as number, (d.registrationdate as string | null) ?? null)
+  }
+  for (const e of events) {
+    if (e.entity_type === 'domain' && e.event_type === 'new') {
+      e.is_backfill = isDomainBackfill(e.observed_date, regById.get(e.entity_id) ?? null)
+    }
+  }
+}
+
 async function resolveOneMonth(
   supabase: Admin,
   instanceId: string,
@@ -258,14 +331,20 @@ async function resolveOneMonth(
   if (!anchors) return proxy('missing_metrics_daily')
 
   const events = await fetchEvents(supabase, instanceId, anchors.startDate, anchors.endDate)
+  await markDomainBackfills(supabase, instanceId, events)
   const s = summarizeEvents(events)
   const netDaily = anchors.mrrEnd - anchors.mrrStart
+  // Guard uses net_events, which still includes backfill deltas, so flagging
+  // backfills never changes whether the month reconciles (events vs proxy).
   if (!guardOk(s.net_events, netDaily)) return proxy('guard_failed')
 
   // Full precision throughout (see EventsBreakdown docs). Consumers round at the
-  // edge; starting/ending are the metrics_daily anchors (already cents).
+  // edge; ending is the metrics_daily anchor (already cents). Backfills (old
+  // domains the sync finally captured) are folded into starting_mrr instead of
+  // being shown as new sales; ending is unchanged, so the identity still holds:
+  //   starting' + new' + ... - churned = (mrrStart + backfill) + (new - backfill) + ... = ending.
   const breakdown: EventsBreakdown = {
-    starting_mrr: anchors.mrrStart,
+    starting_mrr: anchors.mrrStart + s.backfill_mrr,
     new_mrr: s.new_mrr,
     reactivation_mrr: s.reactivation_mrr,
     churned_mrr: s.churned_mrr,

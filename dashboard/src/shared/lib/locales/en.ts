@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2182: {
+          domainBackfillNotNew: 'Long-standing domains that the sync only captured recently no longer appear as "New" in the MRR Movement breakdown. A domain registered over a year before we first observed it (a pre-existing domain backfilled by a later sync, not a new sale) is now folded into the starting MRR instead of inflating the "New" pill',
+        },
         v2181: {
           domainsLostSymmetry: 'The "Active vs Lost Domains" chart now also excludes from "Lost" the domains registered and removed within their own period (test or fraudulent signups), matching the existing "Gained" rule. These previously showed as a loss spike the active line never reflected (e.g. the nov-dec 2025 bot wave); the two series reconcile again',
         },

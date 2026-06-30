@@ -286,7 +286,7 @@ export async function GET(request: NextRequest) {
     let rawTotal = 0
 
     // Proxy path: only new/churned. For expansion/contraction these loops are
-    // skipped entirely (proxy instances contribute nothing — see proxyEligible).
+    // skipped entirely (proxy instances contribute nothing -- see proxyEligible).
     if (proxyEligible) {
     ;(hostingRes.data ?? []).forEach(s => {
       if (!proxySet.has(s.instance_id)) return
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
       if (!matches) return
       rawTotal += mrr
       const product = productName.get(`${s.instance_id}:${s.packageid}`)
-      const description = [product, s.domain].filter(Boolean).join(' — ') || `Service #${s.whmcs_id}`
+      const description = [product, s.domain].filter(Boolean).join(' 2014 ') || `Service #${s.whmcs_id}`
       items.push({
         kind: 'hosting',
         whmcs_id: s.whmcs_id,
@@ -374,6 +374,10 @@ export async function GET(request: NextRequest) {
     for (const decision of eventsById.values()) {
       for (const ev of decision.events ?? []) {
         if (!wantTypes.includes(ev.event_type)) continue
+        // Backfills (old domains the sync finally captured) are folded into
+        // starting MRR by movement-hybrid, not counted as new -- keep them out
+        // of the 'new' drilldown so the list reconciles with the pill.
+        if (ev.event_type === 'new' && ev.is_backfill) continue
         const instId = decision.instance_id
         const kind = ev.entity_type
         let description: string
@@ -384,7 +388,7 @@ export async function GET(request: NextRequest) {
           const s = (hostingRes.data ?? []).find(h => h.instance_id === instId && h.whmcs_id === ev.entity_id)
           client_id = s?.client_id ?? null
           const product = s ? productName.get(`${instId}:${s.packageid}`) : undefined
-          description = [product, s?.domain].filter(Boolean).join(' — ') || `Service #${ev.entity_id}`
+          description = [product, s?.domain].filter(Boolean).join(' 2014 ') || `Service #${ev.entity_id}`
           billing_cycle = s?.billingcycle || ''
         } else if (kind === 'billable') {
           const b = (billableRes.data ?? []).find(x => x.instance_id === instId && x.whmcs_id === ev.entity_id)

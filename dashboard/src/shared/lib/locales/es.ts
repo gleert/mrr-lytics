@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2182: {
+          domainBackfillNotNew: 'Los dominios antiguos que la sincronización solo capturó recientemente ya no aparecen como «Nuevos» en el desglose de Movimiento de MRR. Un dominio registrado más de un año antes de observarlo por primera vez (un dominio preexistente recuperado por una sincronización posterior, no una venta nueva) ahora se integra en el MRR inicial en vez de inflar el indicador «Nuevos»',
+        },
         v2181: {
           domainsLostSymmetry: 'El gráfico «Dominios Activos vs Perdidos» ahora excluye también de «Perdidos» los dominios registrados y dados de baja en su propio periodo (altas de prueba o fraudulentas), igual que ya se hacía con «Ganados». Antes estos aparecían como un pico de pérdidas que la línea de activos nunca reflejaba (p. ej. la oleada de bots de nov-dic 2025): las dos series vuelven a cuadrar',
         },
