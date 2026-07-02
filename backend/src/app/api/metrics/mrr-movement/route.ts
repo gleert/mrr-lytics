@@ -297,14 +297,23 @@ export async function GET(request: NextRequest) {
     const asOf = now.toISOString().slice(0, 10)
 
     // Recover churn dates for undated cancellations: entities inactive "now"
-    // with no real cancellation date and a proxy date still in the FUTURE (so
-    // the legacy proxy would treat them as active and never churn them). We
-    // match their amount to a unique metrics_daily step and inject that date
-    // into the active-at checks above. Mutates `derivedTerm` in place.
+    // with no real cancellation date. We match their amount to a unique
+    // metrics_daily step and inject that date into the active-at checks above.
+    // Mutates `derivedTerm` in place. The resolver is correct-or-nothing (unique
+    // amount<->step, no rival same-amount candidate), so it is safe to feed it
+    // every undated cancellation and let it decline the ambiguous ones.
+    //
+    // Billable: any inactive item with no cancelled_at is a candidate, whether
+    // its duedate is future OR already past. WHMCS often advances the duedate to
+    // the next unbilled period even after the service stopped, so the coarse
+    // duedate proxy OVERSHOOTS the real churn (e.g. the EUR5125 Pig & Hen Magento
+    // retainer that left 2026-05-18 but carries duedate 2026-07-01, which the
+    // proxy would otherwise report as churned in the current month). The old
+    // `dueDate > now` gate missed exactly these recently-lapsed items.
     {
       const candidates: UndatedCandidate[] = []
       for (const item of billableWithStart) {
-        if (item.invoiceAction !== 4 && !item.cancelledAt && item.dueDate > now) {
+        if (item.invoiceAction !== 4 && !item.cancelledAt) {
           candidates.push({ instance_id: item.instance_id, key: `billable:${item.whmcs_id}`, mrr: item.mrr })
         }
       }

@@ -248,7 +248,12 @@ export async function GET(request: NextRequest) {
         if (!proxySet.has(b.instance_id)) return
         const mrr = toMonthlyAmount(Number(b.amount) || 0, b.recurcycle || '')
         const due = b.duedate ? new Date(b.duedate) : null
-        if (mrr > 0 && b.invoice_action !== 4 && !b.cancelled_at && due && due > now) {
+        // Broadened to include recently-lapsed duedates, not just future ones:
+        // WHMCS advances the duedate past the real churn, so the coarse proxy
+        // overshoots (see the EUR5125 Pig & Hen retainer note in
+        // /api/metrics/mrr-movement). Resolver is correct-or-nothing, so past-due
+        // undated cancellations are safe to feed. Mirrors that endpoint's gate.
+        if (mrr > 0 && b.invoice_action !== 4 && !b.cancelled_at && due) {
           candidates.push({ instance_id: b.instance_id, key: `billable:${b.whmcs_id}`, mrr })
         }
       })
