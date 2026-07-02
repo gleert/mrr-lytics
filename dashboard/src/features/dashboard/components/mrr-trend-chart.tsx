@@ -92,6 +92,15 @@ export function MRRTrendChart() {
   const usingCategories = data?.using_categories ?? false
   const uncategorizedPct = data?.uncategorized_mrr_pct ?? 0
 
+  // Value shown next to each category in the selector: the latest month's MRR
+  // (right end of the line / today's committed run-rate), NOT the 12-month
+  // average, so a category that has since churned reads 0 instead of a residual.
+  const lastMonthByGroup = useMemo<Record<string, number>>(() => {
+    const md = data?.monthly_data
+    if (!md || md.length === 0) return {}
+    return md[md.length - 1].groups || {}
+  }, [data?.monthly_data])
+
   return (
     <div className="rounded-xl border border-border bg-surface">
       {/* Header */}
@@ -190,7 +199,7 @@ export function MRRTrendChart() {
                       />
                       <span className="flex-1 text-sm truncate">{group.name}</span>
                       <span className="text-xs text-muted">
-                        {formatCurrency(group.total_mrr / 12, { maximumFractionDigits: 0 })}
+                        {formatCurrency(lastMonthByGroup[group.name] ?? 0, { maximumFractionDigits: 0 })}
                       </span>
                     </label>
                   ))}
