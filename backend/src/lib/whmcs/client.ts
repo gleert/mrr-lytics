@@ -120,6 +120,7 @@ export class WhmcsClient {
           clients: 0,
           cancellation_requests: 0,
           client_closures: 0,
+          billable_item_cancellations: 0,
         },
       },
       data: {
@@ -133,6 +134,7 @@ export class WhmcsClient {
         clients: [],
         cancellation_requests: [],
         client_closures: [],
+        billable_item_cancellations: [],
       },
     }
 
@@ -153,6 +155,7 @@ export class WhmcsClient {
       allData.data.clients.push(...result.data.clients)
       allData.data.cancellation_requests.push(...(result.data.cancellation_requests || []))
       allData.data.client_closures.push(...(result.data.client_closures || []))
+      ;(allData.data.billable_item_cancellations ??= []).push(...(result.data.billable_item_cancellations || []))
 
       // Update meta from last fetch
       allData.meta = {
@@ -168,6 +171,7 @@ export class WhmcsClient {
           clients: allData.data.clients.length,
           cancellation_requests: allData.data.cancellation_requests.length,
           client_closures: allData.data.client_closures.length,
+          billable_item_cancellations: allData.data.billable_item_cancellations?.length ?? 0,
         },
       }
 
@@ -183,6 +187,7 @@ export class WhmcsClient {
         result.data.clients,
         result.data.cancellation_requests || [],
         result.data.client_closures || [],
+        result.data.billable_item_cancellations || [],
       ]
       
       // If any table has exactly limit records, there might be more
