@@ -28,11 +28,31 @@ const STATUS_COLORS: Record<string, string> = {
   Active: '#10B981',      // Green
   Pending: '#F59E0B',     // Amber
   'Pending Transfer': '#F59E0B',
+  'Pending Registration': '#F59E0B',
+  Grace: '#F59E0B',       // Amber
+  Redemption: '#F97316',  // Orange
   Expired: '#EF4444',     // Red
   Cancelled: '#6B7280',   // Gray
   Transferred: '#8B5CF6', // Purple
+  'Transferred Away': '#8B5CF6',
   Fraud: '#DC2626',       // Dark red
   Unknown: '#9CA3AF',     // Light gray
+}
+
+// Known statuses map to translated labels; anything else falls back to the raw
+// WHMCS status string so tenant-specific statuses still render.
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  Active: 'domains.statusActive',
+  Pending: 'domains.statusPending',
+  'Pending Transfer': 'domains.statusPendingTransfer',
+  'Pending Registration': 'domains.statusPendingRegistration',
+  Grace: 'domains.statusGrace',
+  Redemption: 'domains.statusRedemption',
+  Expired: 'domains.statusExpired',
+  Cancelled: 'domains.statusCancelled',
+  Transferred: 'domains.statusTransferred',
+  'Transferred Away': 'domains.statusTransferredAway',
+  Fraud: 'domains.statusFraud',
 }
 
 const TLD_COLORS = [
@@ -70,6 +90,10 @@ export function DomainsPage() {
   
   // Get all TLDs from stats for filter dropdown
   const availableTlds = stats?.all_tlds || []
+  // All statuses actually present in the data, for the status filter dropdown
+  const availableStatuses = stats?.all_statuses || []
+  const statusLabel = (status: string) =>
+    STATUS_LABEL_KEYS[status] ? t(STATUS_LABEL_KEYS[status]) : status
   
   const { data: domainsData, isLoading: listLoading } = useDomainsList({
     status: statusFilter,
@@ -103,13 +127,18 @@ export function DomainsPage() {
       Active: 'bg-success/10 text-success',
       Pending: 'bg-warning/10 text-warning',
       'Pending Transfer': 'bg-warning/10 text-warning',
+      'Pending Registration': 'bg-warning/10 text-warning',
+      Grace: 'bg-warning/10 text-warning',
+      Redemption: 'bg-warning/10 text-warning',
       Expired: 'bg-error/10 text-error',
       Cancelled: 'bg-error/10 text-error',
+      Fraud: 'bg-error/10 text-error',
       Transferred: 'bg-muted/10 text-muted',
+      'Transferred Away': 'bg-muted/10 text-muted',
     }
     return (
       <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', styles[status] || 'bg-muted/10 text-muted')}>
-        {status}
+        {statusLabel(status)}
       </span>
     )
   }
@@ -720,10 +749,9 @@ export function DomainsPage() {
               className="px-3 py-1.5 text-sm rounded-lg border border-border bg-surface-elevated"
             >
               <option value="all">{t('domains.allStatuses')}</option>
-              <option value="Active">{t('domains.statusActive')}</option>
-              <option value="Pending">{t('domains.statusPending')}</option>
-              <option value="Expired">{t('domains.statusExpired')}</option>
-              <option value="Cancelled">{t('domains.statusCancelled')}</option>
+              {availableStatuses.map((s) => (
+                <option key={s} value={s}>{statusLabel(s)}</option>
+              ))}
             </select>
 
             {/* TLD filter */}

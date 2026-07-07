@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2183: {
+          domainStatusFilterAll: 'El filtro de estado de la lista de dominios ahora muestra todos los estados presentes en tus datos (como "Transferido" o "En gracia"), no solo un conjunto fijo de cuatro. Los estados distintos de Activo, Pendiente, Expirado y Cancelado antes no se podian filtrar aunque cientos de dominios los tuvieran',
+        },
         v2182: {
           domainBackfillNotNew: 'Los dominios antiguos que la sincronización solo capturó recientemente ya no aparecen como «Nuevos» en el desglose de Movimiento de MRR. Un dominio registrado más de un año antes de observarlo por primera vez (un dominio preexistente recuperado por una sincronización posterior, no una venta nueva) ahora se integra en el MRR inicial en vez de inflar el indicador «Nuevos»',
         },
@@ -1260,8 +1263,15 @@ export const es = {
       allTlds: 'Todos los TLDs',
       statusActive: 'Activo',
       statusPending: 'Pendiente',
+      statusPendingTransfer: 'Transferencia pendiente',
+      statusPendingRegistration: 'Registro pendiente',
+      statusGrace: 'En gracia',
+      statusRedemption: 'En redencion',
       statusExpired: 'Expirado',
       statusCancelled: 'Cancelado',
+      statusFraud: 'Fraude',
+      statusTransferred: 'Transferido',
+      statusTransferredAway: 'Transferido',
       searchPlaceholder: 'Buscar dominios...',
       domain: 'Dominio',
       client: 'Cliente',

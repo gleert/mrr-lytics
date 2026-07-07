@@ -201,6 +201,19 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 6) // Limit to 6 statuses
 
+    // Every distinct status present, for the domain list filter dropdown.
+    // Unlike status_breakdown this is neither period-restricted nor capped, so
+    // the filter always offers every status the tenant actually has
+    // (e.g. "Transferred Away", "Grace") instead of a hardcoded set of four.
+    const allStatusCounts = new Map<string, number>()
+    allDomains.forEach(d => {
+      const status = d.status || 'Unknown'
+      allStatusCounts.set(status, (allStatusCounts.get(status) || 0) + 1)
+    })
+    const all_statuses = Array.from(allStatusCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name)
+
     // Calculate breakdown by TLD (top 5 + Others). Only active domains —
     // the chart represents the current TLD mix, not historical.
     const tldCounts = new Map<string, number>()
@@ -385,6 +398,7 @@ export async function GET(request: NextRequest) {
       status_breakdown,
       tld_breakdown,
       all_tlds,
+      all_statuses,
       registered_vs_expired,
       registered_vs_expired_monthly,
       expiring_domains,

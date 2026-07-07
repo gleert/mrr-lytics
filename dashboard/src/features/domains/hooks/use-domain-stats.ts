@@ -37,6 +37,7 @@ export interface DomainStats {
   status_breakdown: Array<{ name: string; value: number }>
   tld_breakdown: Array<{ name: string; value: number }>
   all_tlds: string[]
+  all_statuses: string[]
   registered_vs_expired: RegisteredVsExpired[]
   registered_vs_expired_monthly?: RegisteredVsExpiredMonthly[]
   expiring_domains: ExpiringDomain[]

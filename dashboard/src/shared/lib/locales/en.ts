@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2183: {
+          domainStatusFilterAll: 'The domain list status filter now lists every status present in your data (such as "Transferred Away" and "Grace"), not just a fixed set of four. Statuses beyond Active, Pending, Expired and Cancelled were previously impossible to filter even when hundreds of domains had them',
+        },
         v2182: {
           domainBackfillNotNew: 'Long-standing domains that the sync only captured recently no longer appear as "New" in the MRR Movement breakdown. A domain registered over a year before we first observed it (a pre-existing domain backfilled by a later sync, not a new sale) is now folded into the starting MRR instead of inflating the "New" pill',
         },
@@ -1263,8 +1266,15 @@ export const en = {
       allTlds: 'All TLDs',
       statusActive: 'Active',
       statusPending: 'Pending',
+      statusPendingTransfer: 'Pending Transfer',
+      statusPendingRegistration: 'Pending Registration',
+      statusGrace: 'Grace',
+      statusRedemption: 'Redemption',
       statusExpired: 'Expired',
       statusCancelled: 'Cancelled',
+      statusFraud: 'Fraud',
+      statusTransferred: 'Transferred',
+      statusTransferredAway: 'Transferred Away',
       searchPlaceholder: 'Search domains...',
       domain: 'Domain',
       client: 'Client',
