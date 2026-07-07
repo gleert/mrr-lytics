@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2184: {
+          domainsLostTransferredAway: 'El grafico "Dominios Activos vs Perdidos" ahora cuenta como perdidos los dominios transferidos a otro registrador. Ya desaparecian de la linea de activos pero nunca aparecian como perdidos, lo que inflaba la retencion (solo en 2025 habia 44 transferencias invisibles). Los dominios en estado de gracia (recuperable) siguen excluidos hasta que pasan a activo o expirado',
+        },
         v2183: {
           domainStatusFilterAll: 'El filtro de estado de la lista de dominios ahora muestra todos los estados presentes en tus datos (como "Transferido" o "En gracia"), no solo un conjunto fijo de cuatro. Los estados distintos de Activo, Pendiente, Expirado y Cancelado antes no se podian filtrar aunque cientos de dominios los tuvieran',
         },

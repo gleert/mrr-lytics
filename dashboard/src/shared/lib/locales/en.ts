@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2184: {
+          domainsLostTransferredAway: 'The "Active vs Lost Domains" chart now counts domains transferred away to another registrar as lost. They already dropped out of the active line but never showed up as lost, which overstated retention (44 transfers-away in 2025 alone were invisible). Domains in the recoverable Grace state are still excluded until they resolve to active or expired',
+        },
         v2183: {
           domainStatusFilterAll: 'The domain list status filter now lists every status present in your data (such as "Transferred Away" and "Grace"), not just a fixed set of four. Statuses beyond Active, Pending, Expired and Cancelled were previously impossible to filter even when hundreds of domains had them',
         },

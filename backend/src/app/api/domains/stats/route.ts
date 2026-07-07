@@ -181,6 +181,16 @@ export async function GET(request: NextRequest) {
       return null
     }
 
+    // Statuses that count as a domain leaving the base (churn) in the
+    // active-vs-lost chart. "Transferred Away" = moved to another registrar: a
+    // genuine departure that the active line already drops (via departureDate)
+    // but that previously never appeared in "lost", overstating retention
+    // (e.g. 44 transfers-away in 2025 alone at Naranjatec). "Grace" is
+    // deliberately excluded: it is recoverable and resolves to Active or Expired,
+    // and is only counted once it lands in one of those.
+    const isLostStatus = (status: string): boolean =>
+      status === 'Expired' || status === 'Cancelled' || status === 'Transferred Away'
+
     const periodStartStr = startDate.toISOString().split('T')[0]
     const periodEndStr = endDate.toISOString().split('T')[0]
     const statusCounts = new Map<string, number>()
@@ -244,8 +254,8 @@ export async function GET(request: NextRequest) {
     const all_tlds = sortedTlds.map(t => t.name)
 
     // Calculate active vs lost by year (last 5 years)
-    // active: domains that existed (registered before end of year) and had not expired/cancelled before end of year
-    // lost: domains with status Expired/Cancelled whose expirydate falls within that year
+    // active: domains that existed (registered before end of year) and had not left the base before end of year
+    // lost: domains that left the base (Expired/Cancelled/Transferred Away, see isLostStatus) whose departure date falls within that year
     const currentYear = new Date().getFullYear()
 
     const registered_vs_expired = Array.from({ length: 5 }, (_, i) => {
@@ -278,7 +288,7 @@ export async function GET(request: NextRequest) {
       }).length
 
       const lost = allDomains.filter(d => {
-        if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
+        if (!isLostStatus(d.status)) return false
         const ref = departureDate(d)
         if (!ref) return false
         const expDate = new Date(ref)
@@ -328,7 +338,7 @@ export async function GET(request: NextRequest) {
       }).length
 
       const lost = allDomains.filter(d => {
-        if (d.status !== 'Expired' && d.status !== 'Cancelled') return false
+        if (!isLostStatus(d.status)) return false
         const ref = departureDate(d)
         if (!ref) return false
         const expDate = new Date(ref)
