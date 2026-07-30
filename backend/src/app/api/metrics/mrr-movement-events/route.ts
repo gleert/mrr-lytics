@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthContext } from '@/lib/auth'
+import { assertInstancesOwned } from '@/lib/auth/instance-access'
 import { success, error } from '@/utils/api-response'
 import { UnauthorizedError } from '@/utils/errors'
 
@@ -49,6 +50,9 @@ export async function GET(request: NextRequest) {
     let instanceIds: string[] = []
     if (instanceIdsParam) instanceIds = instanceIdsParam.split(',').filter((id) => id.trim())
     else if (instanceIdParam) instanceIds = [instanceIdParam]
+
+    // Reject instance ids this tenant does not own (see lib/auth/instance-access).
+    await assertInstancesOwned(auth.tenant_id, instanceIds)
     if (instanceIds.length === 0) throw new Error('No instance specified')
 
     // Resolve month window [monthStart, nextMonthStart) as YYYY-MM-DD strings.

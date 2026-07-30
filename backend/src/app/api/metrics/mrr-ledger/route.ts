@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { getAuthContext } from '@/lib/auth'
+import { assertInstancesOwned } from '@/lib/auth/instance-access'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { toMonthlyAmount } from '@/lib/metrics/mrr-live'
 import { success, error } from '@/utils/api-response'
@@ -55,6 +56,9 @@ export async function GET(request: NextRequest) {
     let instanceIds: string[] = []
     if (instanceIdsParam) instanceIds = instanceIdsParam.split(',').filter(id => id.trim())
     else if (instanceIdParam) instanceIds = [instanceIdParam]
+
+    // Reject instance ids this tenant does not own (see lib/auth/instance-access).
+    await assertInstancesOwned(auth.tenant_id, instanceIds)
     if (instanceIds.length === 0) throw new Error('No instance specified')
 
     const supabase = createAdminClient()
