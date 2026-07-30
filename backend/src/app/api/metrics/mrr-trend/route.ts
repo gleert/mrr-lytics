@@ -13,6 +13,7 @@ import {
   domainMonthlyMrr,
   applyDerivedTerminations,
 } from '@/lib/metrics/committed-mrr'
+import { buildMonthWindow, monthStartOf, monthEndOf } from '@/lib/metrics/month-window'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,11 +89,10 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get date range (last 12 months)
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setMonth(startDate.getMonth() - 11)
-    startDate.setDate(1) // Start of month
+    // Date range: the last 12 calendar months, ending with the current one. Built
+    // via buildMonthWindow, NOT setMonth+setDate(1) -- see month-window.ts for why
+    // the naive version shifts the window forward a month on the 29th-31st.
+    const { start: startDate, keys: monthKeys } = buildMonthWindow(12)
 
     // --- Fetch all needed data in parallel ---
     const mdSinceStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`
@@ -267,13 +267,15 @@ export async function GET(request: NextRequest) {
     let lastMonthTotalMRR = 0
 
     for (let i = 0; i < 12; i++) {
-      const monthDate = new Date(startDate)
-      monthDate.setMonth(startDate.getMonth() + i)
-      const monthEnd = new Date(monthDate)
-      monthEnd.setMonth(monthEnd.getMonth() + 1)
-      monthEnd.setDate(0) // Last day of month
+      const monthDate = monthStartOf(startDate, i)
+      // End-of-day on the last day, so a service registered on the 31st still
+      // counts. The old version inherited the request's time-of-day here.
+      const monthEnd = monthEndOf(startDate, i)
 
-      const monthKey = monthDate.toISOString().substring(0, 7) // YYYY-MM
+      // Local calendar month, NOT toISOString(): for a local time whose UTC
+      // equivalent lands on the previous day (e.g. 00:30 in UTC+2), toISOString
+      // would label the month one behind.
+      const monthKey = monthKeys[i]
       const groupMRR: Record<string, number> = {}
       let totalMRR = 0
       let categorizedMRR = 0

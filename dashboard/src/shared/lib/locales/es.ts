@@ -854,6 +854,9 @@ export const es = {
         security: 'Seguridad',
       },
       entries: {
+        v2185: {
+          movementWindowMonthShift: 'El bloque de Crecimiento/Decrecimiento de MRR podia mostrar el mes SIGUIENTE los dias 29, 30 y 31 de algunos meses (por ejemplo "agosto de 2026" el 30 de julio), con una cifra neta sin sentido y sin la pastilla de "Nuevo MRR". La ventana de meses se calculaba con una operacion de fechas que desbordaba en dias que el mes de destino no tiene, desplazando un mes todo el rango de 6 y 12 meses. El grafico de evolucion de MRR estaba afectado igual',
+        },
         v2184: {
           domainsLostTransferredAway: 'El grafico "Dominios Activos vs Perdidos" ahora cuenta como perdidos los dominios transferidos a otro registrador. Ya desaparecian de la linea de activos pero nunca aparecian como perdidos, lo que inflaba la retencion (solo en 2025 habia 44 transferencias invisibles). Los dominios en estado de gracia (recuperable) siguen excluidos hasta que pasan a activo o expirado',
         },

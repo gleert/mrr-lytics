@@ -7,6 +7,7 @@ import { UnauthorizedError } from '@/utils/errors'
 import { getHistoryDaysLimit } from '@/lib/subscription/limits'
 import { resolveMonthlyMovement, round2 } from '@/lib/metrics/movement-hybrid'
 import { resolveDerivedTerminations, type UndatedCandidate } from '@/lib/metrics/derived-termination'
+import { buildMonthWindow, monthStartOf } from '@/lib/metrics/month-window'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,10 +70,10 @@ export async function GET(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Get date range — start (months-1) months ago so the last iteration is the current month
-    const startDate = new Date()
-    startDate.setMonth(startDate.getMonth() - months + 1)
-    startDate.setDate(1) // Start of month
+    // Date range: `months` calendar months ending with the current one. Built via
+    // buildMonthWindow, NOT setMonth+setDate(1) -- see month-window.ts for why the
+    // naive version silently shifts the whole window forward a month on the 29th-31st.
+    const { start: startDate, keys: monthKeys } = buildMonthWindow(months)
 
     // Get hosting services + billable items + domains in parallel
     const [
@@ -339,20 +340,13 @@ export async function GET(request: NextRequest) {
     // Resolve every month's per-instance events-vs-proxy decision up front and in
     // parallel (each call already fans out per instance internally), instead of
     // awaiting one month at a time inside the loop.
-    const monthKeys: string[] = []
-    for (let i = 0; i < months; i++) {
-      const d = new Date(startDate)
-      d.setMonth(startDate.getMonth() + i)
-      monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-    }
     const decisionsByMonth = new Map(
       (await Promise.all(monthKeys.map((k) => resolveMonthlyMovement(instanceIds, k, asOf))))
         .map((decisions, idx) => [monthKeys[idx], decisions] as const)
     )
 
     for (let i = 0; i < months; i++) {
-      const monthDate = new Date(startDate)
-      monthDate.setMonth(startDate.getMonth() + i)
+      const monthDate = monthStartOf(startDate, i)
 
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
       const naturalMonthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
@@ -366,7 +360,7 @@ export async function GET(request: NextRequest) {
       // invoice_action snapshot, so they use the cancelled_at + duedate proxy.
       const isCurrentMonth = naturalMonthEnd > now
 
-      const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
+      const monthKey = monthKeys[i]
 
       // Per-instance events-vs-proxy decision for this month (resolved above).
       const decisions = decisionsByMonth.get(monthKey) ?? []

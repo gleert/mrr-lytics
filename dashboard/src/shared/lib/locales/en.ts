@@ -857,6 +857,9 @@ export const en = {
         security: 'Security',
       },
       entries: {
+        v2185: {
+          movementWindowMonthShift: 'The MRR growth/decline block could show the NEXT month on the 29th, 30th and 31st of certain months (for example "August 2026" on 30 July), with a meaningless net figure and a missing "New MRR" pill. The month window was built with a date calculation that overflowed on days the target month does not have, shifting the whole 6 and 12 month range forward. The MRR trend chart was affected the same way',
+        },
         v2184: {
           domainsLostTransferredAway: 'The "Active vs Lost Domains" chart now counts domains transferred away to another registrar as lost. They already dropped out of the active line but never showed up as lost, which overstated retention (44 transfers-away in 2025 alone were invisible). Domains in the recoverable Grace state are still excluded until they resolve to active or expired',
         },

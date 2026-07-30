@@ -24,6 +24,13 @@ const CHANGE_CONFIG: Record<ChangeType, { icon: string; color: string; bgColor: 
 // Changelog entries - newest first
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.18.5',
+    date: '2026-07-30',
+    changes: [
+      { type: 'fix', text: 'changelog.entries.v2185.movementWindowMonthShift' },
+    ],
+  },
+  {
     version: '2.18.4',
     date: '2026-07-07',
     changes: [
