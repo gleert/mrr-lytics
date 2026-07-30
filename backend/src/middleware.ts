@@ -168,6 +168,33 @@ export async function middleware(request: NextRequest) {
     return addCorsHeaders(response, origin)
   }
 
+  // Impersonation tokens are minted by us (HS256 over ENCRYPTION_KEY), not by
+  // Supabase, so every Supabase-JWT validator below rejects them. Resolve them
+  // HERE, ahead of the USER_PATHS branch, so an impersonated session can still
+  // read /api/user/* -- notably /api/user/tenants, which is how the dashboard
+  // learns which instances the impersonated tenant owns. Without this the call
+  // 401s, React Query falls back to the superadmin's own persisted tenant list,
+  // and the impersonated tab silently renders the WRONG tenant's instance.
+  //
+  // /api/admin/* is deliberately excluded: that is the superadmin surface, and
+  // an impersonated session must never manage tenants or mint further
+  // impersonation tokens.
+  if (isJwtToken(token) && !pathname.startsWith('/api/admin')) {
+    const impersonation = await validateImpersonationToken(token)
+    if (impersonation) {
+      const requestHeaders = new Headers(request.headers)
+      requestHeaders.set('x-tenant-id', impersonation.tenant_id)
+      requestHeaders.set('x-tenant-scopes', JSON.stringify(['read', 'write', 'sync', 'admin']))
+      requestHeaders.set('x-auth-id', `impersonation:${impersonation.impersonated_by}`)
+      requestHeaders.set('x-auth-type', 'jwt')
+      requestHeaders.set('x-impersonating', 'true')
+      requestHeaders.set('x-impersonated-by', impersonation.impersonated_by)
+
+      const response = NextResponse.next({ request: { headers: requestHeaders } })
+      return addCorsHeaders(response, origin)
+    }
+  }
+
   // Handle user-specific paths (JWT only, no tenant required)
   if (USER_PATHS.some((path) => pathname.startsWith(path))) {
     if (!isJwtToken(token)) {
@@ -308,25 +335,7 @@ export async function middleware(request: NextRequest) {
     let authId: string
     let authType: 'api_key' | 'jwt'
 
-    // Check if this is an impersonation token first
-    const impersonation = await validateImpersonationToken(token)
-    if (impersonation) {
-      tenantId = impersonation.tenant_id
-      scopes = ['read', 'write', 'sync', 'admin']
-      authId = `impersonation:${impersonation.impersonated_by}`
-      authType = 'jwt'
-
-      const requestHeaders = new Headers(request.headers)
-      requestHeaders.set('x-tenant-id', tenantId)
-      requestHeaders.set('x-tenant-scopes', JSON.stringify(scopes))
-      requestHeaders.set('x-auth-id', authId)
-      requestHeaders.set('x-auth-type', authType)
-      requestHeaders.set('x-impersonating', 'true')
-      requestHeaders.set('x-impersonated-by', impersonation.impersonated_by)
-
-      const response = NextResponse.next({ request: { headers: requestHeaders } })
-      return addCorsHeaders(response, origin)
-    }
+    // Impersonation tokens are already resolved above, ahead of USER_PATHS.
 
     if (isJwtToken(token)) {
       // Validate as Supabase JWT

@@ -94,6 +94,24 @@ interface FiltersProviderProps {
 const STORAGE_KEY_INSTANCE = 'mrrlytics-current-instance'
 const STORAGE_KEY_PERIOD = 'mrrlytics-current-period'
 
+/**
+ * Where to persist the selected instance.
+ *
+ * An impersonated tab shares localStorage with the superadmin's own tab (same
+ * origin, opened via window.open), so a single global key made the impersonated
+ * view restore the superadmin's instance id -- it validated fine against the
+ * stale instance list and Demo got selected instead of the tenant's own. Scope
+ * the key to the impersonated tenant so each session keeps its own selection.
+ */
+function instanceStorageKey(): string {
+  try {
+    const impersonating = sessionStorage.getItem('impersonating_tenant_id')
+    return impersonating ? `${STORAGE_KEY_INSTANCE}:${impersonating}` : STORAGE_KEY_INSTANCE
+  } catch {
+    return STORAGE_KEY_INSTANCE
+  }
+}
+
 export function FiltersProvider({ children }: FiltersProviderProps) {
   const { isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
@@ -175,7 +193,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
   React.useEffect(() => {
     if (allInstances.length > 0 && !initialized) {
       // Try to restore from localStorage
-      const storedInstanceId = localStorage.getItem(STORAGE_KEY_INSTANCE)
+      const storedInstanceId = localStorage.getItem(instanceStorageKey())
       
       // If stored "all" and user has multiple instances, set to null (all)
       if (storedInstanceId === ALL_INSTANCES_ID && hasMultipleInstances) {
@@ -199,7 +217,7 @@ export function FiltersProvider({ children }: FiltersProviderProps) {
   // Save instance to localStorage when changed
   const setCurrentInstance = React.useCallback((instance: WhmcsInstance | null) => {
     setCurrentInstanceState(instance)
-    localStorage.setItem(STORAGE_KEY_INSTANCE, instance?.instance_id || ALL_INSTANCES_ID)
+    localStorage.setItem(instanceStorageKey(), instance?.instance_id || ALL_INSTANCES_ID)
   }, [])
 
   // Save period to localStorage when changed

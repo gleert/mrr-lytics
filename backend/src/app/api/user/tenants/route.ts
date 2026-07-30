@@ -1,5 +1,5 @@
 import { headers } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { success, error } from '@/utils/api-response'
 
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,56 @@ interface TenantWithInstances {
   instances: WhmcsInstance[]
 }
 
+type AdminClient = SupabaseClient
+
+/**
+ * Impersonated view: the one tenant being impersonated, with its instances.
+ * Mirrors the shape of the normal per-user response so the dashboard needs no
+ * special case. Instance filtering matches get_tenant_instances (active/error,
+ * ordered by name) so the impersonated tab sees exactly what the real user sees.
+ */
+async function getImpersonatedTenant(supabase: AdminClient, tenantId: string) {
+  const [{ data: tenant }, { data: instances }] = await Promise.all([
+    supabase.from('tenants').select('id, name, slug, currency, settings').eq('id', tenantId).single(),
+    supabase
+      .from('whmcs_instances')
+      .select('id, name, slug, whmcs_url, status, last_sync_at')
+      .eq('tenant_id', tenantId)
+      .in('status', ['active', 'error'])
+      .order('name', { ascending: true }),
+  ])
+
+  if (!tenant) {
+    return error(new Error('Impersonated tenant not found'), 404)
+  }
+
+  const settings = (tenant.settings as Record<string, unknown>) || {}
+  const mapped: WhmcsInstance[] = (instances || []).map((i) => ({
+    instance_id: i.id as string,
+    instance_name: i.name as string,
+    instance_slug: i.slug as string,
+    whmcs_url: i.whmcs_url as string,
+    status: i.status as string,
+    last_sync_at: i.last_sync_at as string | null,
+  }))
+
+  return success({
+    tenants: [
+      {
+        tenant_id: tenant.id as string,
+        tenant_name: tenant.name as string,
+        tenant_slug: tenant.slug as string,
+        role: 'admin',
+        is_default: true,
+        currency: (tenant.currency as string) || 'EUR',
+        company_name: settings.company_name ?? null,
+        instances: mapped,
+      },
+    ],
+    total_instances: mapped.length,
+  })
+}
+
 /**
  * GET /api/user/tenants - Get all tenants with their WHMCS instances
  * 
@@ -37,6 +87,8 @@ export async function GET() {
     const headersList = await headers()
     const authType = headersList.get('x-auth-type')
     const authId = headersList.get('x-auth-id')
+    const isImpersonating = headersList.get('x-impersonating') === 'true'
+    const impersonatedTenantId = headersList.get('x-tenant-id')
 
     // Only JWT auth (dashboard users) can access this endpoint
     if (authType !== 'jwt' || !authId) {
@@ -53,6 +105,14 @@ export async function GET() {
         },
       }
     )
+
+    // Impersonation: x-auth-id is `impersonation:<superadmin uuid>`, not a real
+    // user, so the per-user RPCs below would return nothing. Scope to the single
+    // impersonated tenant from x-tenant-id instead (the middleware already
+    // verified the token's signature, so this header is trustworthy here).
+    if (isImpersonating && impersonatedTenantId) {
+      return await getImpersonatedTenant(supabase, impersonatedTenantId)
+    }
 
     // Get user's tenants
     const { data: tenants, error: tenantsError } = await supabase

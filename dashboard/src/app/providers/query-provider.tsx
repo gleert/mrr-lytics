@@ -27,6 +27,28 @@ const localStoragePersister = {
   },
 }
 
+/**
+ * Cache buster, scoped to the impersonated tenant when there is one.
+ *
+ * An impersonated tab is opened with window.open on the SAME origin, so it
+ * shares localStorage with the superadmin's own tab -- including the persisted
+ * query cache. Without scoping, the impersonated session restores the
+ * superadmin's own ['user','tenants'] payload and renders HIS instance (Demo)
+ * instead of the tenant's. Folding the tenant into the buster makes React Query
+ * discard the persisted cache whenever the scope changes, which happens at
+ * restore time (module init), before any query can be served from it.
+ */
+function cacheBuster(): string {
+  const base = 'v4' // v4: domains "lost" now excludes same-period quick-cancels, symmetric with "gained"
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('impersonating')
+    const tenantId = fromUrl || sessionStorage.getItem('impersonating_tenant_id')
+    return tenantId ? `${base}-imp-${tenantId}` : base
+  } catch {
+    return base
+  }
+}
+
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -66,7 +88,7 @@ function getQueryClient() {
         queryClient: browserQueryClient,
         persister: localStoragePersister,
         maxAge: 30 * 60 * 1000, // 30 minutes
-        buster: 'v4', // Change this to bust cache (v4: domains "lost" now excludes same-period quick-cancels, symmetric with "gained")
+        buster: cacheBuster(), // see cacheBuster(): bump the base string to invalidate every client
         dehydrateOptions: {
           // Don't persist module-version: it's the update banner source — must always
           // reflect the live endpoint, not a possibly-stale localStorage snapshot.
